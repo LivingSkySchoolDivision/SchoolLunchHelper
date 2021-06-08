@@ -14,14 +14,14 @@ namespace lunch_project
         public double Cost { get; }
         public string StudentID { get; }
         public string StudentName { get; }
-        public int FoodID { get; }
+        public string FoodID { get; }
         public string FoodName { get; } 
-        public int SchoolID { get; }
+        public string SchoolID { get; } 
         public string SchoolName { get; }
         public DateTime Time { get; }
         public string ID { get; }
 
-        public Transaction(string StudentID, int FoodID, string FoodName, double Cost, string StudentName) 
+        public Transaction(string StudentID, string FoodID, string FoodName, double Cost, string StudentName) 
         {
             this.Cost = Cost; 
             this.StudentID = StudentID; 
@@ -29,15 +29,15 @@ namespace lunch_project
             this.FoodID = FoodID;
             this.FoodName = FoodName;
             //this.SchoolID = //could get this from config file
-            this.SchoolID = 0; //DEBUG
+            this.SchoolID = "test"; //DEBUG
             //this.SchoolName = //could get this from config file
             this.SchoolName = ""; //DEBUG
             this.Time = DateTime.Now;
-            this.ID = Time.ToString("yyyyMMddHHmmssff"); //ID is a number (stored as a string) generated from the current year, month, day, minute, second, and two decimal digits of a second. Hours are in 24hr time
+            this.ID = Time.ToString("yyyyMMddHHmmssff") + SchoolID; //ID is a number (stored as a string) generated from the current year, month, day, minute, second, two decimal digits of a second, and the SchoolID. Hours are in 24hr time
         }
 
         [JsonConstructor]
-        public Transaction(double Cost, string StudentID, string StudentName, int FoodID, string FoodName, int SchoolID, string SchoolName, DateTime Time, string ID)
+        public Transaction(double Cost, string StudentID, string StudentName, string FoodID, string FoodName, string SchoolID, string SchoolName, DateTime Time, string ID)
         {
             this.Cost = Cost;
             this.StudentID = StudentID;
@@ -78,12 +78,6 @@ namespace lunch_project
         }
         */
 
-        /*
-        protected void OnStudentNameChanged([dgcolStudentName] string name = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-        */
 
     }
 }

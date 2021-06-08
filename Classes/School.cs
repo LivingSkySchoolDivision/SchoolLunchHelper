@@ -9,9 +9,9 @@ namespace lunch_project
     public class School
     {
         public string Name { get; }
-        public int ID { get; }
+        public string ID { get; }
 
-        public School(string Name, int ID)
+        public School(string Name, string ID)
         {
             this.Name = Name;
             this.ID = ID;
