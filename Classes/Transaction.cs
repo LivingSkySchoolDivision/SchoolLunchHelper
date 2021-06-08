@@ -28,10 +28,10 @@ namespace lunch_project
             this.StudentName = StudentName; 
             this.FoodID = FoodID;
             this.FoodName = FoodName;
-            //this.SchoolID = //could get this from config file
-            this.SchoolID = "test"; //DEBUG
-            //this.SchoolName = //could get this from config file
-            this.SchoolName = ""; //DEBUG
+            this.SchoolID = MainWindow.ThisSchool.ID;
+            //this.SchoolID = "test"; //DEBUG
+            this.SchoolName = MainWindow.ThisSchool.Name;
+            //this.SchoolName = ""; //DEBUG
             this.Time = DateTime.Now;
             this.ID = Time.ToString("yyyyMMddHHmmssff") + SchoolID; //ID is a number (stored as a string) generated from the current year, month, day, minute, second, two decimal digits of a second, and the SchoolID. Hours are in 24hr time
         }

@@ -28,8 +28,8 @@ namespace lunch_project
         public FoodItem(string Name, double Cost)
         {
             this.Name = Name;
-            this.SchoolID = "test"; //DEBUG
-            //this.SchoolID = //get from config file
+            //this.SchoolID = "test"; //DEBUG
+            this.SchoolID = MainWindow.ThisSchool.ID;
             this.ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
             this.Cost = Cost;
             Description = "";
@@ -38,9 +38,19 @@ namespace lunch_project
         public FoodItem(string Name, double Cost, string Description) 
         {
             this.Name = Name;
-            this.SchoolID = "test"; //DEBUG
-            //this.SchoolID = //get from config file
+            //this.SchoolID = "test"; //DEBUG
+            this.SchoolID = MainWindow.ThisSchool.ID;
             this.ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
+            this.Cost = Cost;
+            this.Description = Description;
+        }
+
+        //deserialization constructor
+        public FoodItem(string Name, string SchoolID, string ID, double Cost, string Description)
+        {
+            this.Name = Name;
+            this.SchoolID = SchoolID;
+            this.ID = ID;
             this.Cost = Cost;
             this.Description = Description;
         }
