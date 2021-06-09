@@ -8,13 +8,16 @@ namespace lunch_project
 {
     public class School
     {
-        public string Name { get; }
-        public int ID { get; }
+        private string _Name;
+        private string _ID;
 
-        public School(string Name, int ID)
+        public string Name { get { return _Name; } }
+        public string ID { get { return _ID; } }
+
+        public School(string Name, string ID)
         {
-            this.Name = Name;
-            this.ID = ID;
+            _Name = Name;
+            _ID = ID;
         }
     }
 }

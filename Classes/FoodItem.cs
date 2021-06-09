@@ -8,38 +8,57 @@ namespace lunch_project
 {
     public class FoodItem
     {
-        public string Name { get; set; } 
-        public int ID { get; }
-        public int SchoolID { get; }
-        public double Cost { get; set; }
-        public string Description { get; set; }
+        private string _Name;
+        private string _ID;
+        private string _SchoolID;
+        private double _Cost;
+        private string _Description;
 
+        public string Name { get { return _Name; } } 
+        public string ID { get { return _ID; } }
+        public string SchoolID { get { return _SchoolID; } }
+        public double Cost { get { return _Cost; } }
+        public string Description { get { return _Description; } }
 
+        /*
         public FoodItem() //DEBUG
         {
             Name = "";
-            ID = -1;
-            SchoolID = -1;
+            ID = "-1";
+            SchoolID = "-1";
             Cost = 0.0;
             Description = "";
         }
+        */
 
-        public FoodItem(string Name, int ID, int SchoolID, double Cost) //need to generate unique ID instead of passing it in
+        public FoodItem(string Name, double Cost)
         {
-            this.Name = Name;
-            this.ID = ID;
-            this.SchoolID = SchoolID;
-            this.Cost = Cost;
-            Description = "";
+            _Name = Name;
+            //this.SchoolID = "test"; //DEBUG
+            _SchoolID = MainWindow.ThisSchool.ID;
+            _ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
+            _Cost = Cost;
+            _Description = "";
         }
 
-        public FoodItem(string Name, int ID, int SchoolID, double Cost, string Description) //need to generate unique ID instead of passing it in
+        public FoodItem(string Name, double Cost, string Description) 
         {
-            this.Name = Name;
-            this.ID = ID;
-            this.SchoolID = SchoolID;
-            this.Cost = Cost;
-            this.Description = Description;
+            _Name = Name;
+            //this.SchoolID = "test"; //DEBUG
+            _SchoolID = MainWindow.ThisSchool.ID;
+            _ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
+            _Cost = Cost;
+            _Description = Description;
+        }
+
+        //deserialization constructor
+        public FoodItem(string Name, string SchoolID, string ID, double Cost, string Description)
+        {
+            _Name = Name;
+            _SchoolID = SchoolID;
+            _ID = ID;
+            _Cost = Cost;
+            _Description = Description;
         }
 
         

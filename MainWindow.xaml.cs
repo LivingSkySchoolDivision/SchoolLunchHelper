@@ -41,6 +41,9 @@ namespace lunch_project
         private string transactionsJsonPath = "TransactionsLog.json"; //this path will need to change
         //may need to add isProgramBusy field, maybe there's a built-in method
 
+        private static School _ThisSchool = new School("school1", "1");
+        public static School ThisSchool { get { return _ThisSchool; } } 
+
 
         public MainWindow()
         {
@@ -52,10 +55,14 @@ namespace lunch_project
             guiTransactions = new();
             students = new();
             unsyncedTransactions = new();
-            foodItems.Add(new FoodItem("pizza", 1, 1, 1.11, "test description test description test description test description test description test description test description test description test description"));
-            foodItems.Add(new FoodItem("soup", 2, 2, 2.22, ""));
-            students.Add(new Student("1111", "student1", 1, 11, "no medical info (1)"));
-            students.Add(new Student("2222", "student2", 2, 22, "no medical info (2)"));
+            foodItems.Add(new FoodItem("pizza", 1.11, "test description test description test description test description test description test description test description test description test description"));
+            foodItems.Add(new FoodItem("soup", 2.22, ""));
+            students.Add(new Student("1111", "student1", "1", 11, "no medical info (1)"));
+            students.Add(new Student("2222", "student2", "2", 22, "no medical info (2)"));
+            schools.Add(new School("school1", "1"));
+            schools.Add(new School("school2", "2"));
+            schools.Add(new School("school3", "3"));
+            Trace.WriteLine(foodItems[0].Description); //DEBUG
             //DEBUG END
 
             if (!File.Exists(transactionsJsonPath))
@@ -153,7 +160,7 @@ namespace lunch_project
         /**<summary>Generates a new transaction and adds it to the transactions collection
          * </summary>
          */
-        private void GenerateTransaction(string StudentID, int FoodID, string foodName, double cost)
+        private void GenerateTransaction(string StudentID, string FoodID, string foodName, double cost)
         { //if this needs to be async the json stuff will (likely) need to change
             Student student = GetStudentByID(StudentID); 
             if (student == null)
@@ -250,7 +257,7 @@ namespace lunch_project
                 FoodItem selectedItem = dataGridFoodItems.SelectedItem as FoodItem;
                 if(selectedItem != null)
                 {
-                    int foodID = selectedItem.ID;
+                    string foodID = selectedItem.ID;
                     string foodName = selectedItem.Name;
                     double cost = selectedItem.Cost;
                     Student student = GetStudentByID(studentID);
