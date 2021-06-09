@@ -8,11 +8,17 @@ namespace lunch_project
 {
     public class FoodItem
     {
-        public string Name { get; set; } 
-        public string ID { get; }
-        public string SchoolID { get; }
-        public double Cost { get; set; }
-        public string Description { get; set; }
+        private string _Name;
+        private string _ID;
+        private string _SchoolID;
+        private double _Cost;
+        private string _Description;
+
+        public string Name { get { return _Name; } } 
+        public string ID { get { return _ID; } }
+        public string SchoolID { get { return _SchoolID; } }
+        public double Cost { get { return _Cost; } }
+        public string Description { get { return _Description; } }
 
         /*
         public FoodItem() //DEBUG
@@ -27,32 +33,32 @@ namespace lunch_project
 
         public FoodItem(string Name, double Cost)
         {
-            this.Name = Name;
+            _Name = Name;
             //this.SchoolID = "test"; //DEBUG
-            this.SchoolID = MainWindow.ThisSchool.ID;
-            this.ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
-            this.Cost = Cost;
-            Description = "";
+            _SchoolID = MainWindow.ThisSchool.ID;
+            _ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
+            _Cost = Cost;
+            _Description = "";
         }
 
         public FoodItem(string Name, double Cost, string Description) 
         {
-            this.Name = Name;
+            _Name = Name;
             //this.SchoolID = "test"; //DEBUG
-            this.SchoolID = MainWindow.ThisSchool.ID;
-            this.ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
-            this.Cost = Cost;
-            this.Description = Description;
+            _SchoolID = MainWindow.ThisSchool.ID;
+            _ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
+            _Cost = Cost;
+            _Description = Description;
         }
 
         //deserialization constructor
         public FoodItem(string Name, string SchoolID, string ID, double Cost, string Description)
         {
-            this.Name = Name;
-            this.SchoolID = SchoolID;
-            this.ID = ID;
-            this.Cost = Cost;
-            this.Description = Description;
+            _Name = Name;
+            _SchoolID = SchoolID;
+            _ID = ID;
+            _Cost = Cost;
+            _Description = Description;
         }
 
         

@@ -41,7 +41,8 @@ namespace lunch_project
         private string transactionsJsonPath = "TransactionsLog.json"; //this path will need to change
         //may need to add isProgramBusy field, maybe there's a built-in method
 
-        public static School ThisSchool { get; set; } //this should be readonly, but if it is it can't be initialized to a value
+        private static School _ThisSchool = new School("school1", "1");
+        public static School ThisSchool { get { return _ThisSchool; } } 
 
 
         public MainWindow()
@@ -61,7 +62,7 @@ namespace lunch_project
             schools.Add(new School("school1", "1"));
             schools.Add(new School("school2", "2"));
             schools.Add(new School("school3", "3"));
-            ThisSchool = schools[0];
+            Trace.WriteLine(foodItems[0].Description); //DEBUG
             //DEBUG END
 
             if (!File.Exists(transactionsJsonPath))
