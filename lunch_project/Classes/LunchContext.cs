@@ -13,7 +13,8 @@ namespace lunch_project
     {
         public DbSet<Student> Students { get; set; }
         public DbSet<FoodItem> FoodItems { get; set; }
-        //transactions should not be loaded from the database, only sent
+        public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<School> Schools { get; set; }
 
         public LunchContext()
         {
@@ -30,22 +31,7 @@ namespace lunch_project
             }
         }
 
-        /*
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Student>(entity =>
-            {
-                entity.Property(e => e.Name)
-                    .IsRequired(true);
-            });
 
-            modelBuilder.Entity<FoodItem>(entity =>
-            {
-                entity.Property(e => e.ID)
-                    .IsRequired(true);
-            });
-        }
-        */
 
     }
 }
