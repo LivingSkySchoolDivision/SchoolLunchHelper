@@ -10,8 +10,9 @@ namespace lunch_project
 		private double _Balance;
 		private string _MedicalInfo;
 
-		public string StudentID { get { return _StudentID; } } 
-		public string Name { get { return _Name; } set { _Name = value; } }
+		//private setter is for EF Core
+		public string StudentID { get { return _StudentID; } private set { _StudentID = value; } } 
+		public string Name { get { return _Name; } private set { _Name = value; } }
 		public string SchoolID { get { return _SchoolID; } set { _SchoolID = value; } }
 		public double Balance { get { return _Balance; } set { _Balance = value; } }
 		public string MedicalInfo { get { return _MedicalInfo; } set { _MedicalInfo = value; } }

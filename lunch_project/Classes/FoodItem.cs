@@ -14,11 +14,12 @@ namespace lunch_project
         private double _Cost;
         private string _Description;
 
-        public string Name { get { return _Name; } } 
-        public string ID { get { return _ID; } }
-        public string SchoolID { get { return _SchoolID; } }
-        public double Cost { get { return _Cost; } }
-        public string Description { get { return _Description; } }
+        //private setters are for EF Core
+        public string Name { get { return _Name; } private set { _Name = value; } } 
+        public string ID { get { return _ID; } private set { _ID = value; } }
+        public string SchoolID { get { return _SchoolID; } private set { _SchoolID = value; } }
+        public double Cost { get { return _Cost; } private set { _Cost = value; } }
+        public string Description { get { return _Description; } private set { _Description = value; } }
 
         /*
         public FoodItem() //DEBUG

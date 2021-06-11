@@ -19,7 +19,9 @@ namespace lunch_project.Classes
         public DbSet<School> Schools { get; set; }
 
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) //automatically called for each instance
+        /**<summary>Configures connection to the database, automatically called for each instance</summary>
+         */
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) 
         {
             if (!optionsBuilder.IsConfigured)
             {
@@ -28,10 +30,14 @@ namespace lunch_project.Classes
             }
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+
+        /**<summary>Configures the model for the database</summary>
+         */
+        /*protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //Fluent API stuff
         }
+        */
 
     }
 }
