@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace Data.Models
 {
-    class FoodItem
+    public class FoodItem
     {
         [Required]
         public string Name { get; set; }
 
-        [Key, Required]
+        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string ID { get; set; }
 
         [Required] 

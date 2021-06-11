@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace Data.Models
 {
-    class Student
+    public class Student
     {
-        [Key, Required]
+        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string StudentID { get; set; }
 
         [Required]
@@ -19,7 +19,7 @@ namespace Data.Models
         [Required]
         public string SchoolID { get; set; }
 
-        [Column(TypeName = "decimal(18, 2)"), Required]
+        [Column(TypeName = "decimal(18, 2)"), Required] //computed column - sum of student's transactions
         public double Balance { get; set; }
 
         [Required(AllowEmptyStrings = true)]

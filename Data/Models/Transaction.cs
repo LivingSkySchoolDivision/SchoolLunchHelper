@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Data.Models
 {
-    class Transaction
+    public class Transaction
     {
         [Column(TypeName = "decimal(18, 2)"), Required]
         public double Cost { get; set; }
@@ -34,7 +34,7 @@ namespace Data.Models
         [Required]
         public DateTime Time { get; set; }
 
-        [Required]
+        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string ID { get; set; }
     }
 }
