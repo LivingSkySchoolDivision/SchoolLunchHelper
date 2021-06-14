@@ -10,20 +10,16 @@ namespace Data.Models
 {
     public class School
     {
-        /*
-        [Required]
-        public string Name { get; set; }
-
-        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public string ID { get; set; }
-        */
-
         private string _Name;
         private string _ID;
 
         //private setters are for EF Core
+        [Required]
         public string Name { get { return _Name; } private set { _Name = value; } }
+
+        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string ID { get { return _ID; } private set { _ID = value; } }
+
 
         public School(string Name, string ID)
         {

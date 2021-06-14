@@ -10,23 +10,6 @@ namespace Data.Models
 {
     public class FoodItem
     {
-        /*
-        [Required]
-        public string Name { get; set; }
-
-        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public string ID { get; set; }
-
-        [Required] 
-        public string SchoolID { get; set; }
-
-        [Column(TypeName = "decimal(18, 2)"), Required]
-        public double Cost { get; set; }
-
-        [Required(AllowEmptyStrings = true)]
-        public string Descriptiion { get; set; }
-        */
-
         private string _Name;
         private string _ID;
         private string _SchoolID;
@@ -34,11 +17,21 @@ namespace Data.Models
         private string _Description;
 
         //private setters are for EF Core
+        [Required]
         public string Name { get { return _Name; } private set { _Name = value; } }
+
+        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string ID { get { return _ID; } private set { _ID = value; } }
+
+        [Required]
         public string SchoolID { get { return _SchoolID; } private set { _SchoolID = value; } }
+
+        [Column(TypeName = "decimal(18, 2)"), Required]
         public double Cost { get { return _Cost; } private set { _Cost = value; } }
+
+        [Required(AllowEmptyStrings = true)]
         public string Description { get { return _Description; } private set { _Description = value; } }
+
 
         private FoodItem(string Name, string SchoolID, string ID, double Cost, string Description)
         {
