@@ -11,8 +11,9 @@ namespace lunch_project
         private string _Name;
         private string _ID;
 
-        public string Name { get { return _Name; } }
-        public string ID { get { return _ID; } }
+        //private setters are for EF Core
+        public string Name { get { return _Name; } private set { _Name = value; } }
+        public string ID { get { return _ID; } private set { _ID = value; } }
 
         public School(string Name, string ID)
         {
