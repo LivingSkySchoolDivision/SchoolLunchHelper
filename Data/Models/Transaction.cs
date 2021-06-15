@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Data.Models
@@ -48,8 +49,8 @@ namespace Data.Models
         [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string ID { get { return _ID; } private set { _ID = value; } }
 
-
-        private Transaction(double Cost, string StudentID, string StudentName, string FoodID, string FoodName, string SchoolID, string SchoolName, DateTime Time, string ID)
+        [JsonConstructor]
+        public Transaction(double Cost, string StudentID, string StudentName, string FoodID, string FoodName, string SchoolID, string SchoolName, DateTime Time, string ID)
         {
             _Cost = Cost;
             _StudentID = StudentID;
@@ -61,5 +62,20 @@ namespace Data.Models
             _Time = Time;
             _ID = ID;
         }
+
+        public Transaction(string StudentID, string FoodID, string FoodName, double Cost, string StudentName, string SchoolID, string SchoolName)
+        {
+            _Cost = Cost;
+            _StudentID = StudentID;
+            _StudentName = StudentName;
+            _FoodID = FoodID;
+            _FoodName = FoodName;
+            _SchoolID = SchoolID;
+            _SchoolName = SchoolName;
+            _Time = DateTime.Now;
+            _ID = Time.ToString("yyyyMMddHHmmssff") + SchoolID; //ID is a number (stored as a string) generated from the current year, month, day, minute, second, two decimal digits of a second, and the SchoolID. Hours are in 24hr time
+        }
+
+
     }
 }

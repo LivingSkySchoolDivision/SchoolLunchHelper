@@ -32,7 +32,7 @@ namespace Data.Models
         [Required(AllowEmptyStrings = true)]
         public string Description { get { return _Description; } private set { _Description = value; } }
 
-
+        //deserialization constructor
         private FoodItem(string Name, string SchoolID, string ID, double Cost, string Description)
         {
             _Name = Name;
@@ -41,5 +41,26 @@ namespace Data.Models
             _Cost = Cost;
             _Description = Description;
         }
+
+        public FoodItem(string Name, double Cost, string SchoolID)
+        {
+            _Name = Name;
+            _SchoolID = SchoolID;
+            _ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
+            _Cost = Cost;
+            _Description = "";
+        }
+
+        public FoodItem(string Name, double Cost, string Description, string SchoolID)
+        {
+            _Name = Name;
+            _SchoolID = SchoolID;
+            _ID = DateTime.Now.ToString("yyyyMMddHHmmssff") + SchoolID;
+            _Cost = Cost;
+            _Description = Description;
+        }
+
+
+
     }
 }

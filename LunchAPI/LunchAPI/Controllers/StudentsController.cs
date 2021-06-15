@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using LunchAPI.Models;
+using Data.Models;
+using lunch_project.Classes;
 
 namespace LunchAPI.Controllers
 {
@@ -13,9 +14,9 @@ namespace LunchAPI.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
-        private readonly ApiContext _context;
+        private readonly DataDbContext _context;
 
-        public StudentsController(ApiContext context)
+        public StudentsController(DataDbContext context)
         {
             _context = context;
         }

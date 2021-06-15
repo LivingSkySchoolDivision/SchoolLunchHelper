@@ -33,7 +33,7 @@ namespace Data.Models
 		public string MedicalInfo { get { return _MedicalInfo; } set { _MedicalInfo = value; } }
 
 
-		private Student(string StudentID, string Name, string SchoolID, double Balance, string MedicalInfo)
+		public Student(string StudentID, string Name, string SchoolID, double Balance, string MedicalInfo)
 		{
 			_StudentID = StudentID;
 			_Name = Name;
@@ -41,5 +41,6 @@ namespace Data.Models
 			_Balance = Balance;
 			_MedicalInfo = MedicalInfo;
 		}
+
 	}
 }

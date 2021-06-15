@@ -18,6 +18,7 @@ using System.Data;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
+using Data.Models;
 
 //debug:
 using System.Diagnostics;
@@ -55,7 +56,7 @@ namespace lunch_project
             guiTransactions = new();
             students = new();
             unsyncedTransactions = new();
-            foodItems.Add(new FoodItem("pizza", 1.11, "test description test description test description test description test description test description test description test description test description"));
+            foodItems.Add(new FoodItem("pizza", 1.11, "test description test description test description test description test description test description test description test description test description", "school1"));
             foodItems.Add(new FoodItem("soup", 2.22, ""));
             students.Add(new Student("1111", "student1", "1", 11, "no medical info (1)"));
             students.Add(new Student("2222", "student2", "2", 22, "no medical info (2)"));
@@ -168,7 +169,7 @@ namespace lunch_project
                 MessageBox.Show("Student not found, please ensure the student number was entered correctly.", "Unknown student", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            lastTransaction = new Transaction(StudentID, FoodID, foodName, cost, student.Name); //sets last transaction so it can be undone
+            lastTransaction = new Transaction(StudentID, FoodID, foodName, cost, student.Name, ThisSchool.ID, ThisSchool.Name); //sets last transaction so it can be undone
 
             //add new transaction to the GUI list and the JSON list
             guiTransactions.Add(lastTransaction);
