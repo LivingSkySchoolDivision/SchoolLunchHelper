@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using LunchAPI.Models;
+using lunch_project.Classes;
 
 namespace LunchAPI
 {
@@ -28,7 +28,7 @@ namespace LunchAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<ApiContext>(opt => opt.UseInMemoryDatabase("LunchAPI")); //DEBUG - tells ApiContext to use an in-memory database
+            services.AddDbContext<DataDbContext>(opt => opt.UseInMemoryDatabase("LunchAPI")); //DEBUG - tells DataDbContext to use an in-memory database
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
