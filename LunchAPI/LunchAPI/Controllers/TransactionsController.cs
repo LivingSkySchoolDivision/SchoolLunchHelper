@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Data.Models;
 using lunch_project.Classes;
+using Repositories;
 
 namespace LunchAPI.Controllers
 {
@@ -14,25 +15,25 @@ namespace LunchAPI.Controllers
     [ApiController]
     public class TransactionsController : ControllerBase
     {
-        private readonly DataDbContext _context;
+        private readonly TransactionsRepository repo;
 
         public TransactionsController(DataDbContext context)
         {
-            _context = context;
+            repo = new TransactionsRepository(context);
         }
 
         // GET: api/Transactions
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions()
         {
-            return await _context.Transactions.ToListAsync();
+            return await repo.GetTransactions();
         }
 
         // GET: api/Transactions/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Transaction>> GetTransaction(string id)
         {
-            var transaction = await _context.Transactions.FindAsync(id);
+            var transaction = await repo.FindAsync(id);
 
             if (transaction == null)
             {
@@ -52,15 +53,15 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(transaction).State = EntityState.Modified;
+            repo.ModifiedEntityState(transaction);
 
             try
             {
-                await _context.SaveChangesAsync();
+                await repo.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!TransactionExists(id))
+                if (!repo.TransactionExists(id))
                 {
                     return NotFound();
                 }
@@ -78,14 +79,14 @@ namespace LunchAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Transaction>> PostTransaction(Transaction transaction)
         {
-            _context.Transactions.Add(transaction);
+            repo.Add(transaction);
             try
             {
-                await _context.SaveChangesAsync();
+                await repo.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
-                if (TransactionExists(transaction.ID))
+                if (repo.TransactionExists(transaction.ID))
                 {
                     return Conflict();
                 }
@@ -102,21 +103,18 @@ namespace LunchAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTransaction(string id)
         {
-            var transaction = await _context.Transactions.FindAsync(id);
+            var transaction = await repo.FindAsync(id);
             if (transaction == null)
             {
                 return NotFound();
             }
 
-            _context.Transactions.Remove(transaction);
-            await _context.SaveChangesAsync();
+            repo.Remove(transaction);
+            await repo.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool TransactionExists(string id)
-        {
-            return _context.Transactions.Any(e => e.ID == id);
-        }
+        
     }
 }

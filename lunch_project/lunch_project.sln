@@ -16,7 +16,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Data", "Data", "{DA994DD3-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data", "..\Data\Data.csproj", "{DA1F0DEF-66AA-48D7-A877-393ED03F27BC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LunchAPI", "..\LunchAPI\LunchAPI\LunchAPI.csproj", "{608F5ADE-05C7-419B-985E-BE6CA0E7C964}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LunchAPI", "..\LunchAPI\LunchAPI\LunchAPI.csproj", "{608F5ADE-05C7-419B-985E-BE6CA0E7C964}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repositories", "Repositories", "{8F64F1DE-CEEE-4BB2-9B33-229EBB9A2913}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Repositories", "..\Repositories\Repositories.csproj", "{3A6F7599-E841-4806-BF7B-84AD5DAA3708}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -36,6 +40,10 @@ Global
 		{608F5ADE-05C7-419B-985E-BE6CA0E7C964}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{608F5ADE-05C7-419B-985E-BE6CA0E7C964}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{608F5ADE-05C7-419B-985E-BE6CA0E7C964}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A6F7599-E841-4806-BF7B-84AD5DAA3708}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A6F7599-E841-4806-BF7B-84AD5DAA3708}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A6F7599-E841-4806-BF7B-84AD5DAA3708}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A6F7599-E841-4806-BF7B-84AD5DAA3708}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,6 +51,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{6C558096-6643-48CF-A374-E7BD434C38D5} = {7951BF4F-1DB7-4234-BC0E-244F586B244C}
 		{DA1F0DEF-66AA-48D7-A877-393ED03F27BC} = {DA994DD3-D568-4833-B8A2-B4764703E3D5}
+		{3A6F7599-E841-4806-BF7B-84AD5DAA3708} = {8F64F1DE-CEEE-4BB2-9B33-229EBB9A2913}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F1B6B42-4EBC-4EE9-AE89-A76DD1E92206}

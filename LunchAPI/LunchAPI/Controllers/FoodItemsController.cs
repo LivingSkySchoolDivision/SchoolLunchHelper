@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Data.Models;
 using lunch_project.Classes;
+using Repositories;
 
 namespace LunchAPI.Controllers
 {
@@ -14,25 +15,26 @@ namespace LunchAPI.Controllers
     [ApiController]
     public class FoodItemsController : ControllerBase
     {
-        private readonly DataDbContext _context;
+        private readonly FoodItemsRepository repo;
+
 
         public FoodItemsController(DataDbContext context)
         {
-            _context = context;
+            repo = new FoodItemsRepository(context);
         }
 
         // GET: api/FoodItems
         [HttpGet]
         public async Task<ActionResult<IEnumerable<FoodItem>>> GetFoodItems()
         {
-            return await _context.FoodItems.ToListAsync();
+            return await repo.GetFoodItems();
         }
 
         // GET: api/FoodItems/5
         [HttpGet("{id}")]
         public async Task<ActionResult<FoodItem>> GetFoodItem(string id)
         {
-            var foodItem = await _context.FoodItems.FindAsync(id);
+            var foodItem = await repo.FindAsync(id);
 
             if (foodItem == null)
             {
@@ -52,15 +54,15 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(foodItem).State = EntityState.Modified;
+            repo.ModifiedEntityState(foodItem);
 
             try
             {
-                await _context.SaveChangesAsync();
+                await repo.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!FoodItemExists(id))
+                if (!repo.FoodItemExists(id))
                 {
                     return NotFound();
                 }
@@ -78,14 +80,14 @@ namespace LunchAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<FoodItem>> PostFoodItem(FoodItem foodItem)
         {
-            _context.FoodItems.Add(foodItem);
+            repo.Add(foodItem);
             try
             {
-                await _context.SaveChangesAsync();
+                await repo.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
-                if (FoodItemExists(foodItem.ID))
+                if (repo.FoodItemExists(foodItem.ID))
                 {
                     return Conflict();
                 }
@@ -102,21 +104,17 @@ namespace LunchAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFoodItem(string id)
         {
-            var foodItem = await _context.FoodItems.FindAsync(id);
+            var foodItem = await repo.FindAsync(id);
             if (foodItem == null)
             {
                 return NotFound();
             }
 
-            _context.FoodItems.Remove(foodItem);
-            await _context.SaveChangesAsync();
+            repo.Remove(foodItem);
+            await repo.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool FoodItemExists(string id)
-        {
-            return _context.FoodItems.Any(e => e.ID == id);
-        }
     }
 }

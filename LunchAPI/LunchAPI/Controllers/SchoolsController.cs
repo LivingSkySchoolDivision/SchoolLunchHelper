@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Data.Models;
 using lunch_project.Classes;
+using Repositories;
 
 namespace LunchAPI.Controllers
 {
@@ -14,25 +15,26 @@ namespace LunchAPI.Controllers
     [ApiController]
     public class SchoolsController : ControllerBase
     {
-        private readonly DataDbContext _context;
+
+        private readonly SchoolsRepository repo;
 
         public SchoolsController(DataDbContext context)
         {
-            _context = context;
+            repo = new SchoolsRepository(context);
         }
 
         // GET: api/Schools
         [HttpGet]
         public async Task<ActionResult<IEnumerable<School>>> GetSchools()
         {
-            return await _context.Schools.ToListAsync();
+            return await repo.GetSchools();
         }
 
         // GET: api/Schools/5
         [HttpGet("{id}")]
         public async Task<ActionResult<School>> GetSchool(string id)
         {
-            var school = await _context.Schools.FindAsync(id);
+            var school = await repo.FindAsync(id);
 
             if (school == null)
             {
@@ -52,15 +54,15 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(school).State = EntityState.Modified;
+            repo.ModifiedEntityState(school);
 
             try
             {
-                await _context.SaveChangesAsync();
+                await repo.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!SchoolExists(id))
+                if (!repo.SchoolExists(id))
                 {
                     return NotFound();
                 }
@@ -78,14 +80,14 @@ namespace LunchAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<School>> PostSchool(School school)
         {
-            _context.Schools.Add(school);
+            repo.Add(school);
             try
             {
-                await _context.SaveChangesAsync();
+                await repo.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
-                if (SchoolExists(school.ID))
+                if (repo.SchoolExists(school.ID))
                 {
                     return Conflict();
                 }
@@ -102,21 +104,17 @@ namespace LunchAPI.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSchool(string id)
         {
-            var school = await _context.Schools.FindAsync(id);
+            var school = await repo.FindAsync(id);
             if (school == null)
             {
                 return NotFound();
             }
 
-            _context.Schools.Remove(school);
-            await _context.SaveChangesAsync();
+            repo.Remove(school);
+            await repo.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool SchoolExists(string id)
-        {
-            return _context.Schools.Any(e => e.ID == id);
-        }
     }
 }
