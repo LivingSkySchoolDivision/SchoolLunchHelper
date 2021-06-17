@@ -15,7 +15,6 @@ namespace LunchAPI.Controllers
     [ApiController]
     public class StudentsController : ControllerBase
     {
-        //private readonly DataDbContext _context;
         private readonly StudentsRepository repo;
 
         public StudentsController(DataDbContext context)
