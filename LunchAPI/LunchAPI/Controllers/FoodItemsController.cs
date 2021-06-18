@@ -18,9 +18,9 @@ namespace LunchAPI.Controllers
         private readonly FoodItemsRepository repo;
 
 
-        public FoodItemsController(DataDbContext context)
+        public FoodItemsController()
         {
-            repo = new FoodItemsRepository(context);
+            repo = new FoodItemsRepository();
         }
 
         // GET: api/FoodItems

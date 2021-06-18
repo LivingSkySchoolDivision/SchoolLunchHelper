@@ -8,8 +8,7 @@ using System.Threading.Tasks;
 
 namespace lunch_project.Classes
 {
-    /**<summary>This DbContext class creates the database structure based on the model classes, 
-     * migrations will be based off of it</summary>
+    /**<summary>Used to create database migrations, gets data from and sends data to the database.</summary>
      */
     public class DataDbContext : DbContext
     {
@@ -19,9 +18,11 @@ namespace lunch_project.Classes
         public DbSet<School> Schools { get; set; }
 
 
-        public DataDbContext(DbContextOptions<DataDbContext> options) : base(options) //do not use this to directly create an instance of this class
+        public DataDbContext(DbContextOptions<DataDbContext> options) : base(options)
         {
         }
+
+        public DataDbContext() { }
 
         /**<summary>Configures connection to the database, automatically called for each instance</summary>
          */

@@ -15,11 +15,10 @@ namespace Repositories
      */
     public class FoodItemsRepository
     {
-        private readonly DataDbContext _context;
+        private readonly DataDbContext _context = ContextInjector.Context;
 
-        public FoodItemsRepository(DataDbContext context) 
+        public FoodItemsRepository() 
         {
-            _context = context;
         }
 
         public async Task<ActionResult<IEnumerable<FoodItem>>> GetFoodItems()

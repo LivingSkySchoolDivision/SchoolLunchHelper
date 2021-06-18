@@ -15,11 +15,10 @@ namespace Repositories
      */
     public class TransactionsRepository
     {
-        private readonly DataDbContext _context;
+        private readonly DataDbContext _context = ContextInjector.Context;
 
-        public TransactionsRepository(DataDbContext context)
+        public TransactionsRepository()
         {
-            _context = context;
         }
 
         public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions()

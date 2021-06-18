@@ -17,9 +17,9 @@ namespace LunchAPI.Controllers
     {
         private readonly TransactionsRepository repo;
 
-        public TransactionsController(DataDbContext context)
+        public TransactionsController()
         {
-            repo = new TransactionsRepository(context);
+            repo = new TransactionsRepository();
         }
 
         // GET: api/Transactions

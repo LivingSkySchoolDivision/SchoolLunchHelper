@@ -17,9 +17,9 @@ namespace LunchAPI.Controllers
     {
         private readonly StudentsRepository repo;
 
-        public StudentsController(DataDbContext context)
+        public StudentsController()
         {
-            repo = new StudentsRepository(context);
+            repo = new StudentsRepository();
         }
 
         // GET: api/Students

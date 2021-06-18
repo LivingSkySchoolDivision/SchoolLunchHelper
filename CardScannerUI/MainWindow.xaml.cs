@@ -19,6 +19,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
 using Data.Models;
+using LunchAPI;
 
 //debug:
 using System.Diagnostics;
@@ -65,6 +66,9 @@ namespace CardScannerUI
             Trace.WriteLine(foodItems[0].Description); //DEBUG
             //DEBUG END
 
+            GetData();
+
+
             if (!File.Exists(transactionsJsonPath))
             {
                 File.Create(transactionsJsonPath);
@@ -99,6 +103,10 @@ namespace CardScannerUI
 
         }
 
+        private void GetData()
+        {
+            throw new NotImplementedException();
+        }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {

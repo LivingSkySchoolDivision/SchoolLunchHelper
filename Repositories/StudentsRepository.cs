@@ -14,11 +14,10 @@ namespace Repositories
 {
     public class StudentsRepository
     {
-        private readonly DataDbContext _context;
+        private readonly DataDbContext _context = ContextInjector.Context;
 
-        public StudentsRepository(DataDbContext context)
+        public StudentsRepository()
         {
-            _context = context;
         }
 
         public async Task<ActionResult<IEnumerable<Student>>> GetStudents()
