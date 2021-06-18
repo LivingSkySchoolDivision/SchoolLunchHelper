@@ -24,6 +24,7 @@ using LunchAPI;
 //debug:
 using System.Diagnostics;
 using System.Collections.ObjectModel;
+using System.Net.Http;
 
 namespace CardScannerUI
 {
@@ -50,7 +51,11 @@ namespace CardScannerUI
         {
             InitializeComponent(); //this has to happen before anything to do with the GUI
 
-            //DEBUG START (this will be replaced with getting data from EF Core)
+            ApiHelper.Init();
+            GetData();
+
+
+            //DEBUG START 
             schools = new();
             foodItems = new();
             guiTransactions = new();
@@ -65,8 +70,6 @@ namespace CardScannerUI
             schools.Add(new School("school3", "3"));
             Trace.WriteLine(foodItems[0].Description); //DEBUG
             //DEBUG END
-
-            GetData();
 
 
             if (!File.Exists(transactionsJsonPath))
@@ -105,7 +108,13 @@ namespace CardScannerUI
 
         private void GetData()
         {
-            throw new NotImplementedException();
+            using (var client = ApiHelper.ApiClient)
+            {
+                var getStudents = client.GetAsync("Student");
+                getStudents.Wait();
+                var test = getStudents.Result; //DEBUG
+                
+            }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
