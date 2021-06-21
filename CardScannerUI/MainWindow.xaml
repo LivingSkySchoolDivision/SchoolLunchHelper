@@ -3,12 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:lunch_project"
+        xmlns:local="clr-namespace:CardScannerUI"
         mc:Ignorable="d"
         Title="Lunch Transactions" Height="550" Width="850"
         ResizeMode="NoResize"
         Background="#FF3F3F46"
         Loaded="Window_Loaded"
+        Closing="Window_Closing"
         VerticalAlignment="Stretch">
 
     <Grid Margin="0,0,0,-6">

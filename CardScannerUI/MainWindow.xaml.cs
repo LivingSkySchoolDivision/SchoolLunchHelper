@@ -20,11 +20,13 @@ using System.Text.Json.Serialization;
 using System.IO;
 using Data.Models;
 using LunchAPI;
+using System.Net.Http.Formatting;
+using System.Net.Http;
 
 //debug:
 using System.Diagnostics;
 using System.Collections.ObjectModel;
-using System.Net.Http;
+
 
 namespace CardScannerUI
 {
@@ -52,7 +54,7 @@ namespace CardScannerUI
             InitializeComponent(); //this has to happen before anything to do with the GUI
 
             ApiHelper.Init();
-            GetData();
+            //GetDataAsync(); //!!the program will not wait for this without an await statment, but then MainWindow() would have to be async
 
 
             //DEBUG START 
@@ -99,23 +101,12 @@ namespace CardScannerUI
                     Trace.WriteLine("deserialized-> studentID: " + i.StudentID + " studentName: " + i.StudentName + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID);
                 }
 
-                //everything should have been loaded by the time it gets here - may want to check that none of the collections are null
 
             }
 
 
         }
 
-        private void GetData()
-        {
-            using (var client = ApiHelper.ApiClient)
-            {
-                var getStudents = client.GetAsync("Student");
-                getStudents.Wait();
-                var test = getStudents.Result; //DEBUG
-                
-            }
-        }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
@@ -127,6 +118,62 @@ namespace CardScannerUI
             buttonUndoTransaction.IsEnabled = false;
         }
 
+        private void Window_Closing(object sender, CancelEventArgs e)
+        {
+
+        }
+
+
+
+        private async Task GetDataAsync() 
+        {
+            using (var client = ApiHelper.ApiClient)
+            {
+                try
+                {
+                    var response = await client.GetAsync("Students");
+                    students = await response.Content.ReadAsAsync<List<Student>>();
+                    foreach (Student i in students) //DEBUG
+                    {
+                        Trace.WriteLine("Name: " + i.Name + " StudentID: " + i.StudentID + " SchoolID: " + i.SchoolID + " Balance: " + i.Balance + " MedicalInfo: " + i.MedicalInfo);
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Students could not be loaded from the database.", "Failed to load students", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                try
+                {
+                    var response = await client.GetAsync("Schools");
+                    schools = await response.Content.ReadAsAsync<List<School>>();
+                    foreach (School i in schools) //DEBUG
+                    {
+                        Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID);
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Schools could not be loaded from the database.", "Failed to load schools", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+                try
+                {
+                    var response = await client.GetAsync("FoodItems");
+                    foodItems = await response.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+                    foreach (FoodItem i in foodItems) //DEBUG
+                    {
+                        Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Food items could not be loaded from the database.", "Failed to load food items", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+
+            }
+
+        }
 
 
         public bool ValidStudentID(string studentID)
@@ -227,14 +274,29 @@ namespace CardScannerUI
         private void Click_buttonSync(object sender, RoutedEventArgs e)
         {
             //should add "sync and exit the program?" dialog box
+            MessageBoxResult result =
+                  MessageBox.Show(
+                    "Sync and exit the program?",
+                    "Sync",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+            if (result == MessageBoxResult.No)
+            {
+                return;
+            }
 
             //code to sync to the database
 
             //clear the JSON (!!THIS NEEDS TO BE IN AN IF THAT CHECKS THAT EVERYTHING WAS SYNCED TO THE DATABASE)
             File.Delete(transactionsJsonPath);
             //need to make sure the program can't do anything else while syncing is in progress, maybe have a loading bar window open
-            MessageBox.Show("Syncing is complete, the program will now be closed", "Syncing complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                "Syncing is complete, the program will now be closed", 
+                "Syncing complete", 
+                MessageBoxButton.OK, 
+                MessageBoxImage.Information); //this dialog box may not be necessary
             this.Close(); //close the program after syncing
+
         }
 
 
@@ -294,6 +356,6 @@ namespace CardScannerUI
             }
         }
 
-
+        
     }
 }

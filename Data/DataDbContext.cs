@@ -22,16 +22,21 @@ namespace lunch_project.Classes
         {
         }
 
-        public DataDbContext() { }
+        public DataDbContext() 
+        {  
+        }
 
         /**<summary>Configures connection to the database, automatically called for each instance</summary>
          */
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) 
         {
+            optionsBuilder.UseInMemoryDatabase("testDb");
+
             if (!optionsBuilder.IsConfigured)
             {
                 //optionsBuilder.UseSqlServer(connectionString)
                 //base.OnConfiguring(optionsBuilder);
+
             }
         }
 

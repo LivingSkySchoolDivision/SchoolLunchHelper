@@ -73,7 +73,7 @@ namespace Data.Models
             _SchoolID = SchoolID;
             _SchoolName = SchoolName;
             _Time = DateTime.Now;
-            _ID = Time.ToString("yyyyMMddHHmmssff") + SchoolID; //ID is a number (stored as a string) generated from the current year, month, day, minute, second, two decimal digits of a second, and the SchoolID. Hours are in 24hr time
+            _ID = Time.ToString("yyyyMMddHHmmssff") + StudentID; //ID is a number (stored as a string) generated from the current year, month, day, minute, second, two decimal digits of a second, and the student's student number. Hours are in 24hr time
         }
 
 
