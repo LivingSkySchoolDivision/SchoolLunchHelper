@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Data.Models;
 using lunch_project.Classes;
 using Repositories;
+using System.Diagnostics; //DEBUG 
 
 namespace LunchAPI.Controllers
 {
@@ -79,6 +80,8 @@ namespace LunchAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Transaction>> PostTransaction(Transaction transaction)
         {
+            Trace.WriteLine("PostTransaction->  name: " + transaction.StudentName + " ID: " + transaction.StudentID + " cost: " + transaction.Cost + " item: " + transaction.FoodName + " foodID: " + transaction.FoodID + " schoolName: " + transaction.SchoolName + " schoolID: " + transaction.SchoolID); //DEBUG
+            
             repo.Add(transaction);
             try
             {

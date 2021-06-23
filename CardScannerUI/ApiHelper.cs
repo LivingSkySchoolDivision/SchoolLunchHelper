@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace CardScannerUI
 {
+    /**<remarks>Must call Init() before use</remarks>
+     */
     public static class ApiHelper
     {
         private static HttpClient apiClient;

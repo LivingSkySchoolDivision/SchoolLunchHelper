@@ -40,6 +40,7 @@ namespace CardScannerUI
         private ObservableCollection<Transaction> guiTransactions;
         private ObservableCollection<Transaction> unsyncedTransactions; //this gets the transactions from the JSON that did not sync, don't want them on the GUI so keep them separate
         private List<Student> students;
+        private HttpClient client;
 
         private Transaction lastTransaction;
         private string transactionsJsonPath = "TransactionsLog.json"; //this path will need to change
@@ -57,6 +58,9 @@ namespace CardScannerUI
             foodItems = new();
             guiTransactions = new();
             students = new();
+
+            ApiHelper.Init(); //initializes settings for the HttpClient
+            client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
             unsyncedTransactions = new();
 
             if (!File.Exists(transactionsJsonPath))
@@ -79,6 +83,7 @@ namespace CardScannerUI
                     if (!(info.Length == 0)) //if file is not empty (if it's empty nothing needs to happen, the program can continue as normal)
                     {
                         //!!do something with the unreadable info
+                        Trace.WriteLine("could not deserialize"); //DEBUG
                     }
                 }
                 foreach (Transaction i in unsyncedTransactions) //DEBUG
@@ -104,8 +109,12 @@ namespace CardScannerUI
             Trace.WriteLine(foodItems[0].Description); //DEBUG
             //DEBUG END
 
-            ApiHelper.Init(); //initialize the HTTP client
-            GetDataAsync(); //adds items from the database to the program's collections
+            //GetDataAsync(); //the program is not going to wait for this. adds items from the database to the program's collections
+            //var task = GetStudentsAsync();
+            //task.Wait();
+            var getDataTask = GetDataAsync();
+            getDataTask.Wait(); //waits for students, schools, and foodItems collections to get data from the database
+            
 
             //set up the data binding
             dataGridTransactions.DataContext = guiTransactions;
@@ -116,57 +125,80 @@ namespace CardScannerUI
             buttonUndoTransaction.IsEnabled = false;
         }
 
+
         private void Window_Closing(object sender, CancelEventArgs e)
         {
             MessageBoxResult result =
                   MessageBox.Show(
                     "Sync and exit the program?",
-                    "Sync",
+                    "Lunch Helper",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
             if (result == MessageBoxResult.No)
             {
                 e.Cancel = true;
             }
+            var syncTask = SyncTransactionsAsync(); 
+            syncTask.Wait(); //waits for data to be synced before closing
+            //!!need to test and make sure this actually waits for the data to be synced
         }
 
 
 
-        private async void GetDataAsync() 
-        {
-            using (var client = ApiHelper.ApiClient)
+        private async Task GetDataAsync() 
+        {/*!!causes: "Exception thrown: 'System.InvalidOperationException' in System.Net.Http.dll
+An exception of type 'System.InvalidOperationException' occurred in System.Net.Http.dll but was not handled in user code
+An invalid request URI was provided. The request URI must either be an absolute URI or BaseAddress must be set."
+          */
+            try
             {
-                try
+                var responseStudents = await client.GetAsync("Students");
+                students = await responseStudents.Content.ReadAsAsync<List<Student>>();
+                foreach (Student i in students) //DEBUG
                 {
-                    var responseStudents = await client.GetAsync("Students");
-                    students = await responseStudents.Content.ReadAsAsync<List<Student>>();
-                    foreach (Student i in students) //DEBUG
-                    {
-                        Trace.WriteLine("Name: " + i.Name + " StudentID: " + i.StudentID + " SchoolID: " + i.SchoolID + " Balance: " + i.Balance + " MedicalInfo: " + i.MedicalInfo);
-                    }
+                    Trace.WriteLine("Name: " + i.Name + " StudentID: " + i.StudentID + " SchoolID: " + i.SchoolID + " Balance: " + i.Balance + " MedicalInfo: " + i.MedicalInfo);
+                }
 
-                    var responseSchools = await client.GetAsync("Schools");
-                    schools = await responseSchools.Content.ReadAsAsync<List<School>>();
-                    foreach (School i in schools) //DEBUG
-                    {
-                        Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID);
-                    }
+                var responseSchools = await client.GetAsync("Schools");
+                schools = await responseSchools.Content.ReadAsAsync<List<School>>();
+                foreach (School i in schools) //DEBUG
+                {
+                    Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID);
+                }
                     
-                    var responseFood = await client.GetAsync("FoodItems");
-                    foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
-                    foreach (FoodItem i in foodItems) //DEBUG
-                    {
-                        Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
-                    }
-                }
-                catch
+                var responseFood = await client.GetAsync("FoodItems");
+                foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+                foreach (FoodItem i in foodItems) //DEBUG
                 {
-                    MessageBox.Show("Failed to connect to the database", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
                 }
-
+            }
+            catch
+            {
+                MessageBox.Show("Failed to connect to the database", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
         }
+
+        #region unused async get data methods
+        private async Task<List<Student>> GetStudentsAsync()
+        {
+            var responseStudents = await client.GetAsync("Students");
+            return await responseStudents.Content.ReadAsAsync<List<Student>>();
+        }
+
+        private async Task<List<School>> GetSchoolsAsync()
+        {
+            var responseSchools = await client.GetAsync("Schools");
+            return await responseSchools.Content.ReadAsAsync<List<School>>();
+        }
+
+        private async Task<ObservableCollection<FoodItem>> GetFoodItemsAsync()
+        {
+            var responseFood = await client.GetAsync("FoodItems");
+            return await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+        }
+        #endregion
 
 
         public bool ValidStudentID(string studentID)
@@ -266,50 +298,45 @@ namespace CardScannerUI
 
         private void Click_buttonSync(object sender, RoutedEventArgs e)
         {
-            MessageBoxResult result =
-                  MessageBox.Show(
-                    "Sync and exit the program?",
-                    "Sync",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-            if (result == MessageBoxResult.No)
-            {
-                return;
-            }
-
-            SyncTransactionsAsync();
-
-            //need to make sure the program can't do anything else while syncing is in progress, maybe have a loading bar window open
-            
-            this.Close(); //close the program
+            this.Close(); //the window_close event handles syncing and exiting
 
         }
 
-        private async void SyncTransactionsAsync()
+        private async Task SyncTransactionsAsync()
         {
             List<string> syncedTransactionIDs = new List<string>(); //stores the IDs of the transactions that have been synced
+            //List<Transaction> syncedTransactions = new List<Transaction>();
             bool successfullySynced = true;
-            using (var client = ApiHelper.ApiClient)
+
+            foreach (Transaction i in unsyncedTransactions)
             {
-                foreach (Transaction i in unsyncedTransactions)
+                try
                 {
-                    try
+                    //if successfully synced, add to list of synced transactions
+                    //var response = await client.PostAsync<Transaction>("Transactions", i,); //need MediaTypeFormatter as 3rd argument
+                    string jsonString = JsonSerializer.Serialize(i);
+                    var httpContent = new StringContent(jsonString);
+                    var response = await client.PostAsync("Transactions", httpContent); //!!controller's PostTransaction() method takes a Transaction object as an argument, this is sending a json-serialized string of the Transaction, this may cause problems but need to test it
+                    if (response.IsSuccessStatusCode)
                     {
-                        //if successfully synced, add to list of synced transactions
-                        //var response = client.PostAsync("Transactions", i); //!!"cannot convert from Transaction to content"
-                        
+                        syncedTransactionIDs.Add(i.ID);
+                        //syncedTransactions.Add(i);
                     }
-                    catch
+                    else
                     {
-                        //if not synced, do not add to list of synced
                         successfullySynced = false;
                     }
                 }
+                catch
+                {
+                    //if not synced, do not add to list of synced
+                    successfullySynced = false;
+                }
             }
+            
             //make sure synced and unsynced transactions lists match, if not, remove synced from unsynced 
             if (successfullySynced)
             {
-                //delete the JSON (!!THIS NEEDS TO BE IN AN IF THAT CHECKS THAT EVERYTHING WAS SYNCED TO THE DATABASE)
                 File.Delete(transactionsJsonPath);
 
                 MessageBox.Show(
@@ -321,7 +348,11 @@ namespace CardScannerUI
             else
             {
                 //remove the transactions that were synced from the unsynced transactions list (compare by ID to avoid potential bugs)
-                //and update the json file with the new unsynced transactions list
+                int testInt = unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactionIDs.Any(y => y.Equals(x.ID))); //testInt is for DEBUG
+                Trace.WriteLine(testInt); //DEBUG
+                //unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactions.Any(y => y.ID.Equals(x.ID)));
+                string SerializeJsonString = JsonSerializer.Serialize(unsyncedTransactions);
+                File.WriteAllText(transactionsJsonPath, SerializeJsonString); //overwrites the JSON with the updated list of unsynced transactions
                 MessageBox.Show(
                         "Syncing failed and will be completed later. The program will now be closed",
                         "Syncing failed",

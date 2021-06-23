@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CardScannerUI"
         mc:Ignorable="d"
-        Title="Lunch Transactions" Height="550" Width="850"
+        Title="Lunch Helper" Height="550" Width="850"
         ResizeMode="NoResize"
         Background="#FF3F3F46"
         Loaded="Window_Loaded"
@@ -90,7 +90,7 @@
         <TextBlock x:Name="txtSelectedFoodDescription" HorizontalAlignment="Left" Height="132" Margin="78,388,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="164" Foreground="White" FontSize="11"
                    ScrollViewer.VerticalScrollBarVisibility="Auto"/>
         <Button x:Name="buttonUndoTransaction" Content="Undo last transaction" HorizontalAlignment="Left" Margin="400,10,0,0" VerticalAlignment="Top" Width="120" Click="Click_buttonUndoTransaction"/>
-        <Button x:Name="buttonSync" Content="Press when lunch is over" HorizontalAlignment="Left" Margin="577,10,0,0" VerticalAlignment="Top" Click="Click_buttonSync" Background="Coral" FontSize="14"/>
+        <Button x:Name="buttonSync" Content="Press when lunch is over" HorizontalAlignment="Left" Margin="577,10,0,0" VerticalAlignment="Top" Click="Click_buttonSync" BorderBrush="Coral" FontSize="14"/>
 
     </Grid>
 </Window>
