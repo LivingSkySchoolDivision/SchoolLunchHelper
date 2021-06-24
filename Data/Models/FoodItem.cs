@@ -13,7 +13,7 @@ namespace Data.Models
         private string _Name;
         private string _ID;
         private string _SchoolID;
-        private double _Cost;
+        private decimal _Cost;
         private string _Description;
 
         //private setters are for EF Core
@@ -27,13 +27,13 @@ namespace Data.Models
         public string SchoolID { get { return _SchoolID; } private set { _SchoolID = value; } }
 
         [Column(TypeName = "decimal(18, 2)"), Required]
-        public double Cost { get { return _Cost; } private set { _Cost = value; } }
+        public decimal Cost { get { return _Cost; } private set { _Cost = value; } }
 
         [Required(AllowEmptyStrings = true)]
         public string Description { get { return _Description; } private set { _Description = value; } }
 
         //deserialization constructor
-        private FoodItem(string Name, string SchoolID, string ID, double Cost, string Description)
+        private FoodItem(string Name, string SchoolID, string ID, decimal Cost, string Description)
         {
             _Name = Name;
             _SchoolID = SchoolID;
@@ -42,7 +42,7 @@ namespace Data.Models
             _Description = Description;
         }
 
-        public FoodItem(string Name, double Cost, string SchoolID)
+        public FoodItem(string Name, decimal Cost, string SchoolID)
         {
             _Name = Name;
             _SchoolID = SchoolID;
@@ -51,7 +51,7 @@ namespace Data.Models
             _Description = "";
         }
 
-        public FoodItem(string Name, double Cost, string Description, string SchoolID)
+        public FoodItem(string Name, decimal Cost, string Description, string SchoolID)
         {
             _Name = Name;
             _SchoolID = SchoolID;

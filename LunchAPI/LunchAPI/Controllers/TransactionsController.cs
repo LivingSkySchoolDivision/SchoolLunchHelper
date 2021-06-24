@@ -46,6 +46,7 @@ namespace LunchAPI.Controllers
 
         // PUT: api/Transactions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // Modifies existing transactions
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTransaction(string id, Transaction transaction)
         {
@@ -77,6 +78,7 @@ namespace LunchAPI.Controllers
 
         // POST: api/Transactions
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // Adds new transactions, if the transaction exists, it will not be added
         [HttpPost]
         public async Task<ActionResult<Transaction>> PostTransaction(Transaction transaction)
         {

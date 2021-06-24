@@ -99,8 +99,8 @@ namespace CardScannerUI
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             //DEBUG START 
-            foodItems.Add(new FoodItem("pizza", 1.11, "test description test description test description test description test description test description test description test description test description", "school1"));
-            foodItems.Add(new FoodItem("soup", 2.22, ""));
+            foodItems.Add(new FoodItem("pizza", 1.11M, "test description test description test description test description test description test description test description test description test description", "school1"));
+            foodItems.Add(new FoodItem("soup", 2.22M, ""));
             students.Add(new Student("1111", "student1", "1", 11, "no medical info (1)"));
             students.Add(new Student("2222", "student2", "2", 22, "no medical info (2)"));
             schools.Add(new School("school1", "1"));
@@ -249,7 +249,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
         /**<summary>Generates a new transaction and adds it to the transactions collection
          * </summary>
          */
-        private void GenerateTransaction(string StudentID, string FoodID, string foodName, double cost)
+        private void GenerateTransaction(string StudentID, string FoodID, string foodName, decimal cost)
         { //if this needs to be async the json stuff will (likely) need to change
             Student student = GetStudentByID(StudentID);
             if (student == null)
@@ -400,7 +400,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 {
                     string foodID = selectedItem.ID;
                     string foodName = selectedItem.Name;
-                    double cost = selectedItem.Cost;
+                    decimal cost = selectedItem.Cost;
                     Student student = GetStudentByID(studentID);
                     //Trace.WriteLine(foodID); //DEBUG
                     GenerateTransaction(studentID, foodID, foodName, cost); //this automatically updates lastTransaction

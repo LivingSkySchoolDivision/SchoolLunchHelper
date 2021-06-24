@@ -13,7 +13,7 @@ namespace Data.Models
 		private string _StudentID;
 		private string _Name;
 		private string _SchoolID;
-		private double _Balance;
+		private decimal _Balance;
 		private string _MedicalInfo;
 			
 		//private setter is for EF Core
@@ -27,13 +27,13 @@ namespace Data.Models
 		public string SchoolID { get { return _SchoolID; } set { _SchoolID = value; } }
 
 		[Column(TypeName = "decimal(18, 2)"), Required] //computed column - sum of student's transactions
-		public double Balance { get { return _Balance; } set { _Balance = value; } }
+		public decimal Balance { get { return _Balance; } set { _Balance = value; } }
 
 		[Required(AllowEmptyStrings = true)]
 		public string MedicalInfo { get { return _MedicalInfo; } set { _MedicalInfo = value; } }
 
 
-		public Student(string StudentID, string Name, string SchoolID, double Balance, string MedicalInfo)
+		public Student(string StudentID, string Name, string SchoolID, decimal Balance, string MedicalInfo)
 		{
 			_StudentID = StudentID;
 			_Name = Name;

@@ -11,7 +11,7 @@ namespace Data.Models
 {
     public class Transaction
     {
-        private double _Cost;
+        private decimal _Cost; //cost for transactions that remove money from a student's balance is positive, if money is added to a balance the cost is negative
         private string _StudentID;
         private string _StudentName;
         private string _FoodID;
@@ -23,7 +23,7 @@ namespace Data.Models
 
         //private setters are for EF Core
         [Column(TypeName = "decimal(18, 2)"), Required]
-        public double Cost { get { return _Cost; } private set { _Cost = value; } }
+        public decimal Cost { get { return _Cost; } private set { _Cost = value; } }
 
         [Required]
         public string StudentID { get { return _StudentID; } private set { _StudentID = value; } }
@@ -50,7 +50,7 @@ namespace Data.Models
         public string ID { get { return _ID; } private set { _ID = value; } }
 
         [JsonConstructor]
-        public Transaction(double Cost, string StudentID, string StudentName, string FoodID, string FoodName, string SchoolID, string SchoolName, DateTime Time, string ID)
+        public Transaction(decimal Cost, string StudentID, string StudentName, string FoodID, string FoodName, string SchoolID, string SchoolName, DateTime Time, string ID)
         {
             _Cost = Cost;
             _StudentID = StudentID;
@@ -63,7 +63,7 @@ namespace Data.Models
             _ID = ID;
         }
 
-        public Transaction(string StudentID, string FoodID, string FoodName, double Cost, string StudentName, string SchoolID, string SchoolName)
+        public Transaction(string StudentID, string FoodID, string FoodName, decimal Cost, string StudentName, string SchoolID, string SchoolName)
         {
             _Cost = Cost;
             _StudentID = StudentID;

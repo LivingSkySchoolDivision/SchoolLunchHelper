@@ -40,6 +40,14 @@ namespace lunch_project.Classes
             }
         }
 
+        /*
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Student>()
+                .Property(x => x.Balance)
+                .HasComputedColumnSql("");//!!need to get it to find transactions with a certain student number
+        }
+        */
 
 
 
