@@ -10,10 +10,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Repositories
 {
+    /**<summary>Updates student balances when a transaction is created, updated, or deleted</summary>
+     */
     public class BalanceCalculator 
     {
-        private readonly StudentsRepository repo = new();
-
+        private readonly StudentsRepository studentsRepo = new();
 
         public BalanceCalculator()
         {
@@ -21,58 +22,36 @@ namespace Repositories
         }
 
 
-        public async Task<bool> UpdateBalanceNewTransaction(Transaction transaction) //may need to change return type
+        public async Task UpdateBalanceNewTransaction(Transaction transaction)
+        { //exceptions are handled by the transactions controller
+            Student student = await studentsRepo.FindAsync(transaction.StudentID); //find the student that the transaction belongs to
+            student.Balance -= transaction.Cost; //subtract the cost from the student's balance
+            studentsRepo.ModifiedEntityState(student); //tell EF Core that the student has been modified
+            await studentsRepo.SaveChangesAsync();
+        }
+
+
+        public async Task UpdateBalanceRemoveTransaction(Transaction transaction)
         {
-            var student = await repo.FindAsync(transaction.StudentID); //need to check that student can be found since this doesn't get called from the student controller
-            if (student == null)
-            {
-                return false;
-            }
-
-            student.Balance -= transaction.Cost;
-
-            repo.ModifiedEntityState(student);
-            try
-            {
-                await repo.SaveChangesAsync();
-            }
-            catch
-            {
-                return false;
-            }
-
-            return true;
+            Student student = await studentsRepo.FindAsync(transaction.StudentID);
+            student.Balance += transaction.Cost;
+            studentsRepo.ModifiedEntityState(student);
+            await studentsRepo.SaveChangesAsync();
         }
 
 
-        public async Task<bool> UpdateBalanceModifiedTransaction(Transaction transaction, Decimal oldCost) //may need to change return type
-        { //need the old transaction's cost as an argument
-            var student = await repo.FindAsync(transaction.StudentID); //need to check that student can be found since this doesn't get called from the student controller
-            if (student == null)
-            {
-                return false;
-            }
+        public async Task UpdateBalanceModifiedTransactionCost(Transaction updatedTransaction, Decimal oldCost)
+        { //this needs to return before the transaction is modified in EF Core
+            Student student = await studentsRepo.FindAsync(updatedTransaction.StudentID);
 
+            //refund the cost of the old transaction and subtract the cost of the new transaction from the student's balance
             student.Balance += oldCost;
-            student.Balance -= transaction.Cost;
+            student.Balance -= updatedTransaction.Cost;
 
-            repo.ModifiedEntityState(student);
-            try
-            {
-                await repo.SaveChangesAsync();
-            }
-            catch
-            {
-                return false;
-            }
-
-            return true;
+            studentsRepo.ModifiedEntityState(student);
+            await studentsRepo.SaveChangesAsync();
         }
 
-        public async Task<bool> UpdateBalanceDeleteTransaction(Transaction transaction)
-        {//if this returns false the transaction should not be deleted, this method needs to be called/return before deleting the transaction
-
-        }
 
     }
 }

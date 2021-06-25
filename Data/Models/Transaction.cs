@@ -26,10 +26,10 @@ namespace Data.Models
         public decimal Cost { get { return _Cost; } private set { _Cost = value; } }
 
         [Required]
-        public string StudentID { get { return _StudentID; } private set { _StudentID = value; } }
+        public string StudentID { get { return _StudentID; } set { _StudentID = value; } }
 
         [Required]
-        public string StudentName { get { return _StudentName; } private set { _StudentName = value; } }
+        public string StudentName { get { return _StudentName; } set { _StudentName = value; } }
 
         [Required]
         public string FoodID { get { return _FoodID; } private set { _FoodID = value; } }

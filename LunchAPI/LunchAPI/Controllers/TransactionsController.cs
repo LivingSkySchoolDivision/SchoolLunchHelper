@@ -18,9 +18,12 @@ namespace LunchAPI.Controllers
     {
         private readonly TransactionsRepository repo;
 
+        private readonly BalanceCalculator balanceCalculator;
+
         public TransactionsController()
         {
             repo = new TransactionsRepository();
+            balanceCalculator = new BalanceCalculator();
         }
 
         // GET: api/Transactions
@@ -46,14 +49,31 @@ namespace LunchAPI.Controllers
 
         // PUT: api/Transactions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        // Modifies existing transactions
+        // Modifies existing transactions 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTransaction(string id, Transaction transaction)
-        {
+        {//!!in progress
             if (id != transaction.ID)
             {
                 return BadRequest();
             }
+
+            //finding the cost of the transaction in the database before it is modified so the student's balance can be changed accordingly
+            Transaction repoTransaction = await repo.FindAsync(id);
+            if (repoTransaction == null)
+            {
+                return NotFound();
+            }
+            else if (repoTransaction.StudentID != transaction.StudentID) //if the transaction is changed to belong to a different student
+            {//!!if the student ID changes, the student name (and in some cases school ID and name) will also need to change
+                await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
+                await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
+            }
+            else if (repoTransaction.Cost != transaction.Cost) //if the old and new cost are not the same, the student's balance needs to be updated
+            {
+                await balanceCalculator.UpdateBalanceModifiedTransactionCost(transaction, repoTransaction.Cost);
+            }
+            
 
             repo.ModifiedEntityState(transaction);
 
@@ -83,11 +103,12 @@ namespace LunchAPI.Controllers
         public async Task<ActionResult<Transaction>> PostTransaction(Transaction transaction)
         {
             Trace.WriteLine("PostTransaction->  name: " + transaction.StudentName + " ID: " + transaction.StudentID + " cost: " + transaction.Cost + " item: " + transaction.FoodName + " foodID: " + transaction.FoodID + " schoolName: " + transaction.SchoolName + " schoolID: " + transaction.SchoolID); //DEBUG
-            
+
             repo.Add(transaction);
             try
             {
                 await repo.SaveChangesAsync();
+                await balanceCalculator.UpdateBalanceNewTransaction(transaction);
             }
             catch (DbUpdateException)
             {
@@ -113,6 +134,8 @@ namespace LunchAPI.Controllers
             {
                 return NotFound();
             }
+
+            await balanceCalculator.UpdateBalanceRemoveTransaction(transaction);
 
             repo.Remove(transaction);
             await repo.SaveChangesAsync();
