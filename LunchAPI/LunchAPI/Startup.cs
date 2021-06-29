@@ -20,7 +20,10 @@ namespace LunchAPI
     {
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            Configuration = new ConfigurationBuilder()
+                .AddConfiguration(configuration)
+                .AddEnvironmentVariables()
+                .Build();
         }
 
         public IConfiguration Configuration { get; }
@@ -28,7 +31,7 @@ namespace LunchAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddDbContext<DataDbContext>(opt => opt.UseInMemoryDatabase("LunchAPI")); //DEBUG - tells DataDbContext to use an in-memory database
+            //services.AddDbContext<DataDbContext>(opt => opt.UseSqlServer("LunchAPI")); //!!
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

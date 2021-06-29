@@ -57,7 +57,7 @@
                  KeyDown="OnEnterKeyDownHandler_StudentNum"/>
 
 
-        <DataGrid x:Name="dataGridFoodItems" Margin="10,143,608,211"
+        <DataGrid x:Name="dataGridFoodItems" Margin="10,143,608,199"
                   CanUserAddRows="False" IsReadOnly="True"
                   AutoGenerateColumns="False" RowDetailsVisibilityMode="VisibleWhenSelected"
                   CanUserDeleteRows="False"
@@ -90,9 +90,10 @@
         <TextBlock x:Name="txtSelectedFoodDescription" HorizontalAlignment="Left" Height="132" Margin="78,388,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="164" Foreground="White" FontSize="11"
                    ScrollViewer.VerticalScrollBarVisibility="Auto"/>
         <Button x:Name="buttonUndoTransaction" Content="Undo last transaction" HorizontalAlignment="Left" Margin="305,10,0,0" VerticalAlignment="Top" Width="120" Click="Click_buttonUndoTransaction"/>
-        <Button x:Name="buttonSync" Content="Press when lunch is over" HorizontalAlignment="Left" Margin="475,7,0,0" VerticalAlignment="Top" Click="Click_buttonSync" BorderBrush="Coral" FontSize="14"/>
+        <Button x:Name="buttonSync" Content="Send all transactions" HorizontalAlignment="Left" Margin="475,7,0,0" VerticalAlignment="Top" Click="Click_buttonSync" BorderBrush="Coral" FontSize="14"/>
         <TextBlock x:Name="txtUnsyncedTransactionsCount" Text="" HorizontalAlignment="Left" Margin="793,11,0,0" VerticalAlignment="Top" Foreground="LightGray" FontWeight="Bold"/>
-        <Label Content="Transactions:" HorizontalAlignment="Left" Margin="713,6,0,0" VerticalAlignment="Top" Width="80" Foreground="LightGray"/>
+        <Label Content="Unsent transactions:" HorizontalAlignment="Left" Margin="676,6,0,0" VerticalAlignment="Top" Width="117" Foreground="LightGray"/>
+        <ProgressBar Margin="10,505,723,0" VerticalAlignment="Top" Width="117" Height="15" Minimum="0" Maximum="100" IsIndeterminate="True" Visibility="Hidden"/>
 
     </Grid>
 </Window>

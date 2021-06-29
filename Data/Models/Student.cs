@@ -26,7 +26,7 @@ namespace Data.Models
 		[Required]
 		public string SchoolID { get { return _SchoolID; } set { _SchoolID = value; } }
 
-		[Column(TypeName = "decimal(18, 2)"), Required] //computed column - sum of student's transactions
+		[Column(TypeName = "decimal(18, 2)"), Required] //updated by balanace calculator when transactions are sent to the API
 		public decimal Balance { get { return _Balance; } set { _Balance = value; } }
 
 		[Required(AllowEmptyStrings = true)]

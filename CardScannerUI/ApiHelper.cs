@@ -15,10 +15,10 @@ namespace CardScannerUI
         public static HttpClient ApiClient { get { return apiClient; } private set { apiClient = value; } }
 
 
-        public static void Init()
+        public static void Init(String ApiUri)
         {
             apiClient = new HttpClient();
-            //apiClient.BaseAddress = new Uri(api address); //needs the address of the API
+            apiClient.BaseAddress = new Uri(ApiUri); //needs the address of the API
         }
     }
 }

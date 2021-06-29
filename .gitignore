@@ -390,3 +390,6 @@ FodyWeavers.xsd
 
 # Transaction Log
 TransactionsLog.json
+
+# config file (CardScannerUI)
+App.config

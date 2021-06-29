@@ -27,6 +27,7 @@ using System.Net.Http;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Timers;
+using System.Configuration;
 
 namespace CardScannerUI
 {
@@ -60,13 +61,15 @@ namespace CardScannerUI
             foodItems = new();
             guiTransactions = new();
             students = new();
-
-            ApiHelper.Init(); //initializes settings for the HttpClient
-            client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
             unsyncedTransactions = new();
-            //transactionsTimer = new();
             lastTransactionStopwatch = new();
 
+            //moved http client code to Window_Loaded
+            //ApiHelper.Init(); //initializes settings for the HttpClient
+            //client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
+
+
+            /*
             if (!File.Exists(transactionsJsonPath))
             {
                 File.Create(transactionsJsonPath);
@@ -96,7 +99,7 @@ namespace CardScannerUI
                 }
                 txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
             }
-            
+            this is now the LoadTransactionsFromJson() method and it is called in Window_Loaded*/
 
         }
 
@@ -111,15 +114,34 @@ namespace CardScannerUI
             schools.Add(new School("school1", "1"));
             schools.Add(new School("school2", "2"));
             schools.Add(new School("school3", "3"));
-            Trace.WriteLine(foodItems[0].Description); //DEBUG
             //DEBUG END
+
+            //String config = ConfigurationManager.ConnectionStrings["database"].ConnectionString;
+            //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            //var connectionString = configFile.ConnectionStrings.ConnectionStrings["database"].ConnectionString;
+            //MessageBox.Show(connectionString); //DEBUG
+
+            //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            //var apiUri = configFile.ConnectionStrings.ConnectionStrings["test"].ConnectionString;
+
+            var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            var apiUri = configFile.AppSettings.Settings["test"].Value.ToString();
+            MessageBox.Show(apiUri); //DEBUG
+            Trace.WriteLine(apiUri); //DEBUG
+
+            ApiHelper.Init(apiUri); //initializes settings for the HttpClient
+            client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
+
+            LoadTransactionsFromJson();
 
             //GetDataAsync(); //the program is not going to wait for this. adds items from the database to the program's collections
             //var task = GetStudentsAsync();
             //task.Wait();
+
+            /*!! commented out for testing
             var getDataTask = GetDataAsync();
             getDataTask.Wait(); //waits for students, schools, and foodItems collections to get data from the database
-            
+            */
 
             //set up the data binding
             dataGridTransactions.DataContext = guiTransactions;
@@ -135,7 +157,7 @@ namespace CardScannerUI
         {
             MessageBoxResult result =
                   MessageBox.Show(
-                    "Sync and exit the program?",
+                    "Send all transactions and exit the program?",
                     "Lunch Helper",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
@@ -153,6 +175,39 @@ namespace CardScannerUI
             //!!need to test and make sure this actually waits for the data to be synced
         }
 
+
+        private void LoadTransactionsFromJson()
+        {
+            if (!File.Exists(transactionsJsonPath))
+            {
+                File.Create(transactionsJsonPath);
+                Trace.WriteLine("nothing to deserialize"); //DEBUG
+            }
+            else
+            {
+                //read the objects into unsyncedTransactions
+                string jsonString = File.ReadAllText(transactionsJsonPath);
+                try
+                {
+                    unsyncedTransactions = JsonSerializer.Deserialize<ObservableCollection<Transaction>>(jsonString);
+                }
+                catch
+                {
+                    //what should it do if the json cant be read?
+                    var info = new FileInfo(transactionsJsonPath);
+                    if (!(info.Length == 0)) //if file is not empty (if it's empty nothing needs to happen, the program can continue as normal)
+                    {
+                        //!!do something with the unreadable info
+                        Trace.WriteLine("could not deserialize"); //DEBUG
+                    }
+                }
+                foreach (Transaction i in unsyncedTransactions) //DEBUG
+                {
+                    Trace.WriteLine("deserialized-> studentID: " + i.StudentID + " studentName: " + i.StudentName + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID);
+                }
+                txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString();
+            }
+        }
 
 
         private async Task GetDataAsync() 
@@ -332,6 +387,8 @@ An invalid request URI was provided. The request URI must either be an absolute 
             List<string> syncedTransactionIDs = new List<string>(); //stores the IDs of the transactions that have been synced
             //List<Transaction> syncedTransactions = new List<Transaction>();
             bool successfullySynced = true;
+
+            //add loading bar, the main window should not be able to be interacted with while syncing
 
             foreach (Transaction i in unsyncedTransactions)
             {
