@@ -89,8 +89,10 @@
         <Label HorizontalAlignment="Left" Margin="5,382,0,0" Content="Description:" VerticalAlignment="Top" Foreground="LightGray"/>
         <TextBlock x:Name="txtSelectedFoodDescription" HorizontalAlignment="Left" Height="132" Margin="78,388,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="164" Foreground="White" FontSize="11"
                    ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-        <Button x:Name="buttonUndoTransaction" Content="Undo last transaction" HorizontalAlignment="Left" Margin="400,10,0,0" VerticalAlignment="Top" Width="120" Click="Click_buttonUndoTransaction"/>
-        <Button x:Name="buttonSync" Content="Press when lunch is over" HorizontalAlignment="Left" Margin="577,10,0,0" VerticalAlignment="Top" Click="Click_buttonSync" BorderBrush="Coral" FontSize="14"/>
+        <Button x:Name="buttonUndoTransaction" Content="Undo last transaction" HorizontalAlignment="Left" Margin="305,10,0,0" VerticalAlignment="Top" Width="120" Click="Click_buttonUndoTransaction"/>
+        <Button x:Name="buttonSync" Content="Press when lunch is over" HorizontalAlignment="Left" Margin="475,7,0,0" VerticalAlignment="Top" Click="Click_buttonSync" BorderBrush="Coral" FontSize="14"/>
+        <TextBlock x:Name="txtUnsyncedTransactionsCount" Text="" HorizontalAlignment="Left" Margin="793,11,0,0" VerticalAlignment="Top" Foreground="LightGray" FontWeight="Bold"/>
+        <Label Content="Transactions:" HorizontalAlignment="Left" Margin="713,6,0,0" VerticalAlignment="Top" Width="80" Foreground="LightGray"/>
 
     </Grid>
 </Window>

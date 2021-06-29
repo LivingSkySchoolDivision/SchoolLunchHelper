@@ -26,7 +26,7 @@ using System.Net.Http;
 //debug:
 using System.Diagnostics;
 using System.Collections.ObjectModel;
-
+using System.Timers;
 
 namespace CardScannerUI
 {
@@ -40,11 +40,13 @@ namespace CardScannerUI
         private ObservableCollection<Transaction> guiTransactions;
         private ObservableCollection<Transaction> unsyncedTransactions; //this gets the transactions from the JSON that did not sync, don't want them on the GUI so keep them separate
         private List<Student> students;
-        private HttpClient client;
+        private HttpClient client; //the application shares one http client
 
         private Transaction lastTransaction;
         private string transactionsJsonPath = "TransactionsLog.json"; //this path will need to change
         //may need to add isProgramBusy field, maybe there's a built-in method
+
+        private Stopwatch lastTransactionStopwatch; //keeps track of time since the last transaction
 
         private static School _ThisSchool = new School("school1", "1");
         public static School ThisSchool { get { return _ThisSchool; } }
@@ -62,6 +64,8 @@ namespace CardScannerUI
             ApiHelper.Init(); //initializes settings for the HttpClient
             client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
             unsyncedTransactions = new();
+            //transactionsTimer = new();
+            lastTransactionStopwatch = new();
 
             if (!File.Exists(transactionsJsonPath))
             {
@@ -90,6 +94,7 @@ namespace CardScannerUI
                 {
                     Trace.WriteLine("deserialized-> studentID: " + i.StudentID + " studentName: " + i.StudentName + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID);
                 }
+                txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
             }
             
 
@@ -138,6 +143,11 @@ namespace CardScannerUI
             {
                 e.Cancel = true;
             }
+
+            //!! this doesnt work yet
+            //ProgressBar pb = new();
+            //pb.IsIndeterminate = true;
+
             var syncTask = SyncTransactionsAsync(); 
             syncTask.Wait(); //waits for data to be synced before closing
             //!!need to test and make sure this actually waits for the data to be synced
@@ -250,7 +260,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
          * </summary>
          */
         private void GenerateTransaction(string StudentID, string FoodID, string foodName, decimal cost)
-        { //if this needs to be async the json stuff will (likely) need to change
+        {
             Student student = GetStudentByID(StudentID);
             if (student == null)
             {
@@ -258,6 +268,19 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 return;
             }
             lastTransaction = new Transaction(StudentID, FoodID, foodName, cost, student.Name, ThisSchool.ID, ThisSchool.Name); //sets last transaction so it can be undone
+
+            //!!async code
+            //if transactions havent been synced in a while, try to sync them
+            if (unsyncedTransactions.Count >= 15)
+            {
+                var syncTask = SyncTransactionsAsync();
+                syncTask.Wait();
+            }
+            if (!File.Exists(transactionsJsonPath))
+            {
+                File.Create(transactionsJsonPath);
+            }
+            //end of async code
 
             //add new transaction to the GUI list and the JSON list
             guiTransactions.Add(lastTransaction);
@@ -268,6 +291,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
             File.WriteAllText(transactionsJsonPath, SerializeJsonString); //don't need to worry about overwriting on this line, unsyncedTransactions has all the old transactions in it already
             Trace.WriteLine(File.ReadAllText(transactionsJsonPath)); //DEBUG
 
+            txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
             buttonUndoTransaction.IsEnabled = true; //enable the undo button
         }
 
@@ -285,6 +309,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 string SerializeJsonString = JsonSerializer.Serialize(unsyncedTransactions);
                 File.WriteAllText(transactionsJsonPath, SerializeJsonString); //overwrites the JSON with the updated list of transactions
                 lastTransaction = null;
+                txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
                 foreach (Transaction i in guiTransactions) //DEBUG
                 {
                     Trace.WriteLine("remaining transaction->  name: " + i.StudentName + " ID: " + i.StudentID + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID); //DEBUG
@@ -313,14 +338,12 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 try
                 {
                     //if successfully synced, add to list of synced transactions
-                    //var response = await client.PostAsync<Transaction>("Transactions", i,); //need MediaTypeFormatter as 3rd argument
                     string jsonString = JsonSerializer.Serialize(i);
                     var httpContent = new StringContent(jsonString);
                     var response = await client.PostAsync("Transactions", httpContent); //!!controller's PostTransaction() method takes a Transaction object as an argument, this is sending a json-serialized string of the Transaction, this may cause problems but need to test it
                     if (response.IsSuccessStatusCode)
                     {
                         syncedTransactionIDs.Add(i.ID);
-                        //syncedTransactions.Add(i);
                     }
                     else
                     {
@@ -339,26 +362,32 @@ An invalid request URI was provided. The request URI must either be an absolute 
             {
                 File.Delete(transactionsJsonPath);
 
+                /*
                 MessageBox.Show(
                 "Syncing is complete, the program will now be closed",
                 "Syncing complete",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information); //this dialog box may not be necessary
+                */
             }
             else
             {
                 //remove the transactions that were synced from the unsynced transactions list (compare by ID to avoid potential bugs)
                 int testInt = unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactionIDs.Any(y => y.Equals(x.ID))); //testInt is for DEBUG
-                Trace.WriteLine(testInt); //DEBUG
+                Trace.WriteLine("num transactions removed: " + testInt); //DEBUG
                 //unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactions.Any(y => y.ID.Equals(x.ID)));
                 string SerializeJsonString = JsonSerializer.Serialize(unsyncedTransactions);
                 File.WriteAllText(transactionsJsonPath, SerializeJsonString); //overwrites the JSON with the updated list of unsynced transactions
+                /*
                 MessageBox.Show(
                         "Syncing failed and will be completed later. The program will now be closed",
                         "Syncing failed",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
+                */
             }
+            txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
+            
         }
 
 
@@ -373,7 +402,8 @@ An invalid request URI was provided. The request URI must either be an absolute 
             }
             else
             {
-                //if the selected item ends up being null the program probably loaded incorrectly, restart the program?
+                //if the selected item ends up being null the program probably loaded incorrectly, restart the program
+                Close();
             }
         }
 
@@ -388,13 +418,20 @@ An invalid request URI was provided. The request URI must either be an absolute 
         private void OnEnterKeyDownHandler_StudentNum(object sender, KeyEventArgs e)
         {
             //might need to check if the program is busy before attempting to make a new transaction
-            //there should be something that prevents scanning things within a few hundred miliseconds of eachother
-
             if ((e.Key == Key.Return) || (e.Key == Key.Enter))
             {
+                lastTransactionStopwatch.Stop();
+                if ((lastTransaction != null) && (lastTransactionStopwatch.ElapsedMilliseconds < 200)) //helps prevent accidental duplicate scanning
+                {
+                    txtEnterStudentNum.Text = ""; //clears the textbox
+                    Trace.WriteLine("it has been less than 200ms since the last transaction");
+                    lastTransactionStopwatch.Start();
+                    return;
+                }
+
                 Trace.WriteLine("you entered: " + txtEnterStudentNum.Text); //DEBUG
                 string studentID = txtEnterStudentNum.Text;
-                txtEnterStudentNum.Text = "";
+                txtEnterStudentNum.Text = ""; //clears the textbox
                 FoodItem selectedItem = dataGridFoodItems.SelectedItem as FoodItem;
                 if (selectedItem != null)
                 {
@@ -409,9 +446,11 @@ An invalid request URI was provided. The request URI must either be an absolute 
                         string medicalInfo = student.MedicalInfo;
                         txtMedicalInfo.Text = medicalInfo;
                     }
+                    lastTransactionStopwatch.Restart(); 
                 }
                 else
                 {
+                    txtEnterStudentNum.Text = ""; //clears the textbox
                     MessageBox.Show("No item is selected, please select an item in the box on the left before entering a student number.", "No selected item", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
 

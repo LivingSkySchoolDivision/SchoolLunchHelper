@@ -52,7 +52,7 @@ namespace LunchAPI.Controllers
         // Modifies existing transactions 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTransaction(string id, Transaction transaction)
-        {//!!in progress
+        {
             if (id != transaction.ID)
             {
                 return BadRequest();
@@ -65,7 +65,7 @@ namespace LunchAPI.Controllers
                 return NotFound();
             }
             else if (repoTransaction.StudentID != transaction.StudentID) //if the transaction is changed to belong to a different student
-            {//!!if the student ID changes, the student name (and in some cases school ID and name) will also need to change
+            {//if the student ID changes, the student name (and in some cases school ID and name) in the transaction will also need to change (probably better to handle in the program itself)
                 await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
                 await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
             }
@@ -73,7 +73,6 @@ namespace LunchAPI.Controllers
             {
                 await balanceCalculator.UpdateBalanceModifiedTransactionCost(transaction, repoTransaction.Cost);
             }
-            
 
             repo.ModifiedEntityState(transaction);
 
