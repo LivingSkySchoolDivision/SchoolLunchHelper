@@ -21,6 +21,7 @@ namespace LunchAPI.Controllers
         public FoodItemsController()
         {
             repo = new FoodItemsRepository();
+            
         }
 
         // GET: api/FoodItems

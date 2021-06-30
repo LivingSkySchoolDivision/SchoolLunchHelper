@@ -17,6 +17,8 @@ namespace lunch_project.Classes
         public DbSet<Transaction> Transactions { get; set; }
         public DbSet<School> Schools { get; set; }
 
+        private string connectionString;
+
 
         public DataDbContext(DbContextOptions<DataDbContext> options) : base(options)
         {
@@ -24,6 +26,11 @@ namespace lunch_project.Classes
 
         public DataDbContext() 
         {  
+        }
+
+        public DataDbContext(string connectionString)
+        {
+            this.connectionString = connectionString;
         }
 
         /**<summary>Configures connection to the database, automatically called for each instance</summary>
@@ -45,7 +52,7 @@ namespace lunch_project.Classes
         {
             modelBuilder.Entity<Student>()
                 .Property(x => x.Balance)
-                .HasComputedColumnSql("");//!!need to get it to find transactions with a certain student number
+                .HasComputedColumnSql("");//this is handled by the balance calculator
         }
         */
 

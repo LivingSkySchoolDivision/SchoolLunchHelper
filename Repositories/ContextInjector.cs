@@ -10,9 +10,23 @@ namespace Repositories
 {
     public static class ContextInjector
     {
-        private static DataDbContext context = new DataDbContext(); 
+        //private static DataDbContext context = new DataDbContext(); 
+        private static DataDbContext context;
         public static DataDbContext Context { get { return context; } }
 
+
+        public static void Init(string connectionString)
+        {
+            context = new DataDbContext(connectionString);
+        }
+
+
+        /*
+        private static async DataDbContext GetDataContext()
+        {
+            return await 
+        }
+        */
 
     }
 }
