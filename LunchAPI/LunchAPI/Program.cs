@@ -23,6 +23,8 @@ namespace LunchAPI
 
         private static string GetKeyVaultEndpoint() => Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
         private static KeyVaultClient kvc;
+        private static DataDbContext context;
+
 
         public static void Main(string[] args)
         {
@@ -49,22 +51,25 @@ namespace LunchAPI
                                 azureServiceTokenProvider.KeyVaultTokenCallback));
                         builder.AddAzureKeyVault(keyVaultEndpoint, keyVaultClient, new DefaultKeyVaultSecretManager());
 
-                        kvc = keyVaultClient; 
+                        kvc = keyVaultClient;
+                        //CreateDataContext().Wait();
+                        MakeDbContext().Wait(); //blocks the thread until the data context is initialized, if anything happens before this is done there will be errors
                         printSecrets_DEBUG().Wait(); //DEBUG
                     }
                 });
 
-        /*
-        private async Task<DataDbContext> CreateDataContext()
+
+        //makes a new datadbcontext and returns it
+        private static async Task<DataDbContext> CreateDataContext()
         {
             var keyVaultEndpoint = GetKeyVaultEndpoint();
-            var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "");
+            var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
             string connectionString = connectionStringResponse.Value;
             return new DataDbContext(connectionString);
         }
-        */
 
 
+        //makes a new datadbcontext using the contextInjector
         private static async Task MakeDbContext()
         {
             var keyVaultEndpoint = GetKeyVaultEndpoint();
@@ -72,6 +77,7 @@ namespace LunchAPI
             string connectionString = connectionStringResponse.Value;
             ContextInjector.Init(connectionString);
         }
+
         
 
 

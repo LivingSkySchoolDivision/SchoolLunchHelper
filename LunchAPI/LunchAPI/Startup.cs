@@ -31,7 +31,28 @@ namespace LunchAPI
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            //services.AddDbContext<DataDbContext>(opt => opt.UseSqlServer("LunchAPI")); //!!
+            /*
+            services.AddDbContext<DataDbContext>(opt =>
+            {
+                opt.UseSqlServer("LunchAPI"); 
+            }); //!!
+            */
+            
+
+            /*
+            services.AddDbContext<DataDbContext>(options =>
+            {
+                options.UseSqlServer(Program.GetConnectionString());
+            });
+            */
+
+            /*
+            services.AddDbContext<DataDbContext>(options => 
+            { 
+                options.UseSqlServer(Configuration.GetConnectionString("LunchAPI")); 
+            });
+            */
+
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

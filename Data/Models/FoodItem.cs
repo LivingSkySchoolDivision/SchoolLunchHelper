@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace Data.Models
 {
@@ -32,7 +33,8 @@ namespace Data.Models
         [Required(AllowEmptyStrings = true)]
         public string Description { get { return _Description; } private set { _Description = value; } }
 
-        //deserialization constructor
+
+        [JsonConstructor]
         private FoodItem(string Name, string SchoolID, string ID, decimal Cost, string Description)
         {
             _Name = Name;

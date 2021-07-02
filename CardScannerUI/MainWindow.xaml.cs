@@ -19,7 +19,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
 using Data.Models;
-using LunchAPI;
 using System.Net.Http.Formatting;
 using System.Net.Http;
 
@@ -42,6 +41,7 @@ namespace CardScannerUI
         private ObservableCollection<Transaction> unsyncedTransactions; //this gets the transactions from the JSON that did not sync, don't want them on the GUI so keep them separate
         private List<Student> students;
         private HttpClient client; //the application shares one http client
+        private String apiUri;
 
         private Transaction lastTransaction;
         private string transactionsJsonPath = "TransactionsLog.json"; //this path will need to change
@@ -125,7 +125,7 @@ namespace CardScannerUI
             //var apiUri = configFile.ConnectionStrings.ConnectionStrings["test"].ConnectionString;
 
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            var apiUri = configFile.AppSettings.Settings["test"].Value.ToString();
+            apiUri = configFile.AppSettings.Settings["test"].Value.ToString();
             MessageBox.Show(apiUri); //DEBUG
             Trace.WriteLine(apiUri); //DEBUG
 
@@ -138,10 +138,9 @@ namespace CardScannerUI
             //var task = GetStudentsAsync();
             //task.Wait();
 
-            /*!! commented out for testing
+            //!!freezes the program if it can't reach the database:
             var getDataTask = GetDataAsync();
             getDataTask.Wait(); //waits for students, schools, and foodItems collections to get data from the database
-            */
 
             //set up the data binding
             dataGridTransactions.DataContext = guiTransactions;
@@ -215,8 +214,8 @@ namespace CardScannerUI
 An exception of type 'System.InvalidOperationException' occurred in System.Net.Http.dll but was not handled in user code
 An invalid request URI was provided. The request URI must either be an absolute URI or BaseAddress must be set."
           */
-            try
-            {
+            //try
+            //{ !!commented out try and catch to see the exceptions for debugging
                 var responseStudents = await client.GetAsync("Students");
                 students = await responseStudents.Content.ReadAsAsync<List<Student>>();
                 foreach (Student i in students) //DEBUG
@@ -237,11 +236,11 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 {
                     Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
                 }
-            }
-            catch
-            {
-                MessageBox.Show("Failed to connect to the database", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            //}
+            //catch
+            //{
+                //MessageBox.Show("Failed to connect to the database", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            //}
 
         }
 
@@ -265,6 +264,50 @@ An invalid request URI was provided. The request URI must either be an absolute 
         }
         #endregion
 
+        public async Task AddTestDataToDatabase()
+        {
+            Student student1 = new Student("1", "Student1", "1", 10.00M, "test medical info");
+            Student student2 = new Student("2", "Student2", "1", 20.00M, "");
+            School school1 = new School("School1", "1");
+            FoodItem food1 = new FoodItem("Pancake", 2.00M, "1");
+            FoodItem food2 = new FoodItem("Apple", 1.00M, "1");
+
+            string jsonStringStudent1 = JsonSerializer.Serialize(student1);
+            var httpContentStudent1 = new StringContent(jsonStringStudent1);
+            var response = await client.PostAsync("/Students", httpContentStudent1);
+
+            string jsonStringStudent2 = JsonSerializer.Serialize(student2);
+            var httpContentStudent2 = new StringContent(jsonStringStudent2);
+            var response2 = await client.PostAsync("/Students", httpContentStudent2);
+
+            string jsonStringSchool1 = JsonSerializer.Serialize(school1);
+            var httpContentSchool1 = new StringContent(jsonStringSchool1);
+            var response3 = await client.PostAsync("/Schools", httpContentSchool1);
+
+            string jsonStringFood1 = JsonSerializer.Serialize(food1);
+            var httpContentFood1 = new StringContent(jsonStringFood1);
+            var response4 = await client.PostAsync("/FoodItems", httpContentFood1);
+
+            string jsonStringFood2 = JsonSerializer.Serialize(food2);
+            var httpContentFood2 = new StringContent(jsonStringFood2);
+            var response5 = await client.PostAsync("/FoodItems", httpContentFood2);
+
+
+            if (response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
+            {
+                Trace.WriteLine("successfully added all test data to the database");
+            }
+            else
+            {
+                Trace.WriteLine("failed to add to the database. responses:");
+                Trace.WriteLine("student1: " + response);
+                Trace.WriteLine("student2: " + response2);
+                Trace.WriteLine("school1: " + response3);
+                Trace.WriteLine("food1: " + response4);
+                Trace.WriteLine("food2: " + response5);
+                
+            }
+        }
 
         public bool ValidStudentID(string studentID)
         {

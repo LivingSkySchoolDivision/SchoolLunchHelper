@@ -20,14 +20,22 @@ namespace lunch_project.Classes
         private string connectionString;
 
 
+        /**<remarks>This is only meant to be used by ef core's designer, do not use this constructor manually</remarks>
+         */
+        public DataDbContext() //this is necessary, see https://go.microsoft.com/fwlink/?linkid=851728
+        {
+            //need to call a method to get the connection string here because the ef core designer doesn't use the API's main
+            //program that gives the context injector the connection string
+        }
+
         public DataDbContext(DbContextOptions<DataDbContext> options) : base(options)
         {
         }
 
-        public DataDbContext() 
-        {  
-        }
 
+        
+        /**<remarks>This is the constructor that should be used</remarks>
+         */
         public DataDbContext(string connectionString)
         {
             this.connectionString = connectionString;
@@ -35,17 +43,32 @@ namespace lunch_project.Classes
 
         /**<summary>Configures connection to the database, automatically called for each instance</summary>
          */
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseInMemoryDatabase("testDb");
+            optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("LunchAPI"));
+            if (connectionString != null)
+            {
+                optionsBuilder.UseSqlServer(connectionString);
+                
+            }
+            else //if the connection string is null, configure the options for the designer to make migrations
+            {
+                optionsBuilder.UseSqlServer();
+            }
+            
+            //optionsBuilder.UseInMemoryDatabase("testDb");
 
+            /*
             if (!optionsBuilder.IsConfigured)
             {
-                //optionsBuilder.UseSqlServer(connectionString)
+                //optionsBuilder.UseSqlServer(connectionString);
                 //base.OnConfiguring(optionsBuilder);
 
             }
+            */
         }
+
+
 
         /*
         protected override void OnModelCreating(ModelBuilder modelBuilder)
