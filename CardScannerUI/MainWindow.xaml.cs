@@ -50,12 +50,12 @@ namespace CardScannerUI
         private Stopwatch lastTransactionStopwatch; //keeps track of time since the last transaction
 
         private static School _ThisSchool = new School("school1", "1");
-        public static School ThisSchool { get { return _ThisSchool; } }
+        public static School ThisSchool { get { return _ThisSchool; } set { _ThisSchool = value; } }
 
 
         public MainWindow()
         {
-            InitializeComponent(); //this has to happen before anything to do with the GUI
+            InitializeComponent();
 
             schools = new();
             foodItems = new();
@@ -63,49 +63,15 @@ namespace CardScannerUI
             students = new();
             unsyncedTransactions = new();
             lastTransactionStopwatch = new();
-
-            //moved http client code to Window_Loaded
-            //ApiHelper.Init(); //initializes settings for the HttpClient
-            //client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
-
-
-            /*
-            if (!File.Exists(transactionsJsonPath))
-            {
-                File.Create(transactionsJsonPath);
-                Trace.WriteLine("nothing to deserialize"); //DEBUG
-            }
-            else
-            {
-                //read the objects into unsyncedTransactions
-                string jsonString = File.ReadAllText(transactionsJsonPath);
-                try
-                {
-                    unsyncedTransactions = JsonSerializer.Deserialize<ObservableCollection<Transaction>>(jsonString);
-                }
-                catch
-                {
-                    //what should it do if the json cant be read?
-                    var info = new FileInfo(transactionsJsonPath);
-                    if (!(info.Length == 0)) //if file is not empty (if it's empty nothing needs to happen, the program can continue as normal)
-                    {
-                        //!!do something with the unreadable info
-                        Trace.WriteLine("could not deserialize"); //DEBUG
-                    }
-                }
-                foreach (Transaction i in unsyncedTransactions) //DEBUG
-                {
-                    Trace.WriteLine("deserialized-> studentID: " + i.StudentID + " studentName: " + i.StudentName + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID);
-                }
-                txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
-            }
-            this is now the LoadTransactionsFromJson() method and it is called in Window_Loaded*/
-
         }
 
 
-        private void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            txtEnterStudentNum.IsEnabled = false;
+            buttonUndoTransaction.IsEnabled = false;
+            buttonSync.IsEnabled = false;
+
             //DEBUG START 
             foodItems.Add(new FoodItem("pizza", 1.11M, "test description test description test description test description test description test description test description test description test description", "school1"));
             foodItems.Add(new FoodItem("soup", 2.22M, ""));
@@ -126,8 +92,10 @@ namespace CardScannerUI
 
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             apiUri = configFile.AppSettings.Settings["test"].Value.ToString();
-            MessageBox.Show(apiUri); //DEBUG
-            Trace.WriteLine(apiUri); //DEBUG
+            string thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
+            //MessageBox.Show(apiUri); //DEBUG
+            Trace.WriteLine("ApiUri: " + apiUri); //DEBUG
+            Trace.WriteLine("schoolID: " + thisSchoolID); //DEBUG
 
             ApiHelper.Init(apiUri); //initializes settings for the HttpClient
             client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
@@ -139,20 +107,30 @@ namespace CardScannerUI
             //task.Wait();
 
             //!!freezes the program if it can't reach the database:
-            var getDataTask = GetDataAsync();
-            getDataTask.Wait(); //waits for students, schools, and foodItems collections to get data from the database
-
+            //var getDataTask = GetDataAsync();
+            //getDataTask.Wait(); //waits for students, schools, and foodItems collections to get data from the database
+            try
+            {
+                await GetDataAsync();
+            }
+            catch
+            {
+                MessageBox.Show("Failed to connect to the database", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                //!!may want some code here to load locally saved objects from the last time the program connected to the database
+            }
+            
             //set up the data binding
             dataGridTransactions.DataContext = guiTransactions;
             dataGridTransactions.ItemsSource = guiTransactions;
             dataGridFoodItems.DataContext = foodItems;
             dataGridFoodItems.ItemsSource = foodItems;
-
-            buttonUndoTransaction.IsEnabled = false;
+            
+            txtEnterStudentNum.IsEnabled = true;
+            buttonSync.IsEnabled = true;
         }
 
 
-        private void Window_Closing(object sender, CancelEventArgs e)
+        private async void Window_Closing(object sender, CancelEventArgs e)
         {
             MessageBoxResult result =
                   MessageBox.Show(
@@ -169,9 +147,12 @@ namespace CardScannerUI
             //ProgressBar pb = new();
             //pb.IsIndeterminate = true;
 
-            var syncTask = SyncTransactionsAsync(); 
-            syncTask.Wait(); //waits for data to be synced before closing
+            await SyncTransactionsAsync();
+            //var syncTask = SyncTransactionsAsync(); 
+            //syncTask.Wait(); //waits for data to be synced before closing
             //!!need to test and make sure this actually waits for the data to be synced
+
+            ApiHelper.ApiClient.Dispose(); 
         }
 
 
@@ -357,7 +338,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
         /**<summary>Generates a new transaction and adds it to the transactions collection
          * </summary>
          */
-        private void GenerateTransaction(string StudentID, string FoodID, string foodName, decimal cost)
+        private async Task GenerateTransaction(string StudentID, string FoodID, string foodName, decimal cost)
         {
             Student student = GetStudentByID(StudentID);
             if (student == null)
@@ -371,8 +352,9 @@ An invalid request URI was provided. The request URI must either be an absolute 
             //if transactions havent been synced in a while, try to sync them
             if (unsyncedTransactions.Count >= 15)
             {
-                var syncTask = SyncTransactionsAsync();
-                syncTask.Wait();
+                //var syncTask = SyncTransactionsAsync();
+                //syncTask.Wait();
+                await SyncTransactionsAsync();
             }
             if (!File.Exists(transactionsJsonPath))
             {
@@ -515,7 +497,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
         }
 
 
-        private void OnEnterKeyDownHandler_StudentNum(object sender, KeyEventArgs e)
+        private async void OnEnterKeyDownHandler_StudentNum(object sender, KeyEventArgs e)
         {
             //might need to check if the program is busy before attempting to make a new transaction
             if ((e.Key == Key.Return) || (e.Key == Key.Enter))
@@ -540,7 +522,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
                     decimal cost = selectedItem.Cost;
                     Student student = GetStudentByID(studentID);
                     //Trace.WriteLine(foodID); //DEBUG
-                    GenerateTransaction(studentID, foodID, foodName, cost); //this automatically updates lastTransaction
+                    await GenerateTransaction(studentID, foodID, foodName, cost); //this automatically updates lastTransaction
                     if (student != null)
                     {
                         string medicalInfo = student.MedicalInfo;

@@ -7,11 +7,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using lunch_project.Classes;
 
-namespace Data.Migrations
+namespace LunchAPI.Migrations
 {
     [DbContext(typeof(DataDbContext))]
-    [Migration("20210702171529_firstMigration")]
-    partial class firstMigration
+    [Migration("20210705211126_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

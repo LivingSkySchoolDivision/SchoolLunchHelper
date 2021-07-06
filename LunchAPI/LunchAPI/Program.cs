@@ -11,6 +11,7 @@ using Repositories;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,19 +19,34 @@ using System.Threading.Tasks;
 
 namespace LunchAPI
 {
-    public class Program
+    public static class Program
     {
-
         private static string GetKeyVaultEndpoint() => Environment.GetEnvironmentVariable("KEYVAULT_ENDPOINT");
         private static KeyVaultClient kvc;
-        private static DataDbContext context;
+        
+        //fields for EF Core's designer
+        private static string kve; //temporarily holds the keyvaultEndpoint for the designer
+        private static string ConnectionString; //temporarily holds the connection string for the designer
+        private static bool inDesignerMode = false; //set to true if the program should run in designer mode - since the program doesn't start normally in designer mode, methods have to run differently
+        private static IHost programHost; 
 
 
-        public static void Main(string[] args)
+        public static void Main(string[] args) 
         {
-            CreateHostBuilder(args).Build().Run();
-            printSecrets_DEBUG().Wait(); //DEBUG - this doesnt print when called here
-            //MakeDbContext().Wait(); 
+            //CreateHostBuilder(args).Build().Run();
+            if (!inDesignerMode)
+            {
+                Console.WriteLine("not in designer mode - Main()");
+                programHost = CreateHostBuilder(args).Build(); //initialize the host. CreateHostBuilder has to initialize the fields for the other methods to use
+            }
+            else //DEBUG
+            {
+                Console.WriteLine("in designer mode - Main()");
+            }
+            
+            //MakeDbContext().Wait(); //blocks the thread until the data context is initialized, if anything happens before this is done there will be errors
+            printSecrets_DEBUG().Wait(); //DEBUG
+            programHost.Run(); //after the other methods are finished, run the host builder. Blocks the main thread until shutdown
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
@@ -41,7 +57,17 @@ namespace LunchAPI
                 })
                 .ConfigureAppConfiguration((ctx, builder) =>
                 {
-                    var keyVaultEndpoint = GetKeyVaultEndpoint();
+                    string keyVaultEndpoint;
+                    if (inDesignerMode)
+                    {
+                        keyVaultEndpoint = kve;
+                        kve = null;
+                    }
+                    else
+                    {
+                        keyVaultEndpoint = GetKeyVaultEndpoint();
+                    }
+                    
                     if (!string.IsNullOrEmpty(keyVaultEndpoint))
                     {
                         Console.WriteLine("Retrieving configuration from Azure Key Vault (" + GetKeyVaultEndpoint() + ")");
@@ -52,11 +78,48 @@ namespace LunchAPI
                         builder.AddAzureKeyVault(keyVaultEndpoint, keyVaultClient, new DefaultKeyVaultSecretManager());
 
                         kvc = keyVaultClient;
-                        //CreateDataContext().Wait();
-                        MakeDbContext().Wait(); //blocks the thread until the data context is initialized, if anything happens before this is done there will be errors
-                        printSecrets_DEBUG().Wait(); //DEBUG
+                        Console.WriteLine("test"); //DEBUG
+                        
                     }
+
                 });
+
+
+        #region EF Core designer methods
+        /**<remarks>This is only to be used in DataDbContextFactory for EF Core's designer. Call SaveConnectionString() first</remarks>
+         */
+        public static string GetConnectionString()
+        {
+            string connectionString = ConnectionString;
+            ConnectionString = null; //the connection string isn't needed anymore
+            return connectionString;
+        }
+
+
+        public static async Task SaveConnectionStringAsync(string keyVaultEndpoint)
+        {
+            inDesignerMode = true;
+            kve = keyVaultEndpoint;
+            programHost = CreateHostBuilder(null).Build();
+            //var keyVaultEndpoint = GetKeyVaultEndpoint(); //this returns null because env vars haven't been loaded from launchSettings.json - ef core's designer won't initialize settings with launchSettings.json
+            Console.WriteLine("test2"); //DEBUG
+            var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
+            Console.WriteLine("test3"); //DEBUG
+            string connectionString = connectionStringResponse.Value; 
+            Console.WriteLine("test4"); //DEBUG
+            ConnectionString = connectionString;
+        }
+        #endregion
+
+
+        //makes a new datadbcontext using the contextInjector
+        private static async Task MakeDbContext()
+        {
+            var keyVaultEndpoint = GetKeyVaultEndpoint();
+            var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
+            string connectionString = connectionStringResponse.Value;
+            ContextInjector.Init(connectionString);
+        }
 
 
         //makes a new datadbcontext and returns it
@@ -69,16 +132,6 @@ namespace LunchAPI
         }
 
 
-        //makes a new datadbcontext using the contextInjector
-        private static async Task MakeDbContext()
-        {
-            var keyVaultEndpoint = GetKeyVaultEndpoint();
-            var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
-            string connectionString = connectionStringResponse.Value;
-            ContextInjector.Init(connectionString);
-        }
-
-        
 
 
         public static async Task printSecrets_DEBUG() //DEBUG
@@ -101,6 +154,7 @@ namespace LunchAPI
             Trace.WriteLine("UriSecret1: " + UriSecret);
             Trace.WriteLine("UriSecret2: " + UriSecret2);
             Trace.WriteLine("UriSecret3: " + UriSecret3);
+            Trace.WriteLine("key vault endpoint: " + GetKeyVaultEndpoint());
 
         }
     }

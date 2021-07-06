@@ -19,14 +19,14 @@ namespace lunch_project.Classes
 
         private string connectionString;
 
-
+        
         /**<remarks>This is only meant to be used by ef core's designer, do not use this constructor manually</remarks>
          */
-        public DataDbContext() //this is necessary, see https://go.microsoft.com/fwlink/?linkid=851728
+        /*
+        public DataDbContext() //see https://go.microsoft.com/fwlink/?linkid=851728
         {
-            //need to call a method to get the connection string here because the ef core designer doesn't use the API's main
-            //program that gives the context injector the connection string
         }
+        */
 
         public DataDbContext(DbContextOptions<DataDbContext> options) : base(options)
         {
@@ -37,7 +37,7 @@ namespace lunch_project.Classes
         /**<remarks>This is the constructor that should be used</remarks>
          */
         public DataDbContext(string connectionString)
-        {
+        {//this saves the connection string in a field for OnConfiguring to use
             this.connectionString = connectionString;
         }
 
@@ -45,15 +45,20 @@ namespace lunch_project.Classes
          */
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("LunchAPI"));
-            if (connectionString != null)
+            if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer(connectionString);
-                
-            }
-            else //if the connection string is null, configure the options for the designer to make migrations
-            {
-                optionsBuilder.UseSqlServer();
+                if (connectionString != null)
+                {
+                    //optionsBuilder.UseSqlServer(connectionString);
+                    optionsBuilder.UseSqlServer(connectionString, b => b.MigrationsAssembly("LunchAPI"));
+                    connectionString = null; //the connection string isn't needed as a field anymore
+
+                }
+                else //if the connection string is null, configure the options for the designer to make migrations
+                {
+                    optionsBuilder.UseSqlServer(b => b.MigrationsAssembly("LunchAPI"));
+                    //optionsBuilder.UseSqlServer();
+                }
             }
             
             //optionsBuilder.UseInMemoryDatabase("testDb");
