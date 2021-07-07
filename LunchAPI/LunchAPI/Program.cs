@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Repositories;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -25,7 +26,7 @@ namespace LunchAPI
         private static KeyVaultClient kvc;
         
         //fields for EF Core's designer
-        private static string kve; //temporarily holds the keyvaultEndpoint for the designer
+        private static string kve; //temporarily holds the keyvaultEndpoint for the designer, also use for running the API in the cmd for testing
         private static string ConnectionString; //temporarily holds the connection string for the designer
         private static bool inDesignerMode = false; //set to true if the program should run in designer mode - since the program doesn't start normally in designer mode, methods have to run differently
         private static IHost programHost; 
@@ -38,6 +39,7 @@ namespace LunchAPI
             {
                 Console.WriteLine("not in designer mode - Main()");
                 programHost = CreateHostBuilder(args).Build(); //initialize the host. CreateHostBuilder has to initialize the fields for the other methods to use
+                MakeDbContext().Wait();
             }
             else //DEBUG
             {
@@ -45,7 +47,7 @@ namespace LunchAPI
             }
             
             //MakeDbContext().Wait(); //blocks the thread until the data context is initialized, if anything happens before this is done there will be errors
-            printSecrets_DEBUG().Wait(); //DEBUG
+            //printSecrets_DEBUG().Wait(); //DEBUG
             programHost.Run(); //after the other methods are finished, run the host builder. Blocks the main thread until shutdown
         }
 
@@ -67,7 +69,16 @@ namespace LunchAPI
                     {
                         keyVaultEndpoint = GetKeyVaultEndpoint();
                     }
-                    
+                    if (keyVaultEndpoint == null) //DEBUG - this is here so the API can run from the cmd (not in debug mode so it can't read from launchSettings.json)
+                    {
+                        ExeConfigurationFileMap customConfigFileMap = new ExeConfigurationFileMap();
+                        customConfigFileMap.ExeConfigFilename = "EfCoreDesignerSettings.config";
+                        Configuration customConfig = ConfigurationManager.OpenMappedExeConfiguration(customConfigFileMap, ConfigurationUserLevel.None);
+                        AppSettingsSection appSettings = (customConfig.GetSection("appSettings") as AppSettingsSection);
+                        keyVaultEndpoint = appSettings.Settings["keyvaultEndpoint"].Value;
+                        kve = keyVaultEndpoint;
+                    }
+
                     if (!string.IsNullOrEmpty(keyVaultEndpoint))
                     {
                         Console.WriteLine("Retrieving configuration from Azure Key Vault (" + GetKeyVaultEndpoint() + ")");
@@ -116,6 +127,10 @@ namespace LunchAPI
         private static async Task MakeDbContext()
         {
             var keyVaultEndpoint = GetKeyVaultEndpoint();
+            if (keyVaultEndpoint == null)
+            {
+                keyVaultEndpoint = kve; //when not in debug mode, the program can't read launchSettings.json to get the environment variables
+            }
             var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
             string connectionString = connectionStringResponse.Value;
             ContextInjector.Init(connectionString);

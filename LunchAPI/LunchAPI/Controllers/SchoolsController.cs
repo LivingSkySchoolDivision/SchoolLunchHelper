@@ -80,7 +80,7 @@ namespace LunchAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<School>> PostSchool(School school)
         {
-            repo.Add(school);
+            repo.Add(school); 
             try
             {
                 await repo.SaveChangesAsync();

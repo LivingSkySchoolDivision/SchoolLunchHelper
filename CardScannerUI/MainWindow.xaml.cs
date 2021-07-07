@@ -72,6 +72,7 @@ namespace CardScannerUI
             buttonUndoTransaction.IsEnabled = false;
             buttonSync.IsEnabled = false;
 
+            /*
             //DEBUG START 
             foodItems.Add(new FoodItem("pizza", 1.11M, "test description test description test description test description test description test description test description test description test description", "school1"));
             foodItems.Add(new FoodItem("soup", 2.22M, ""));
@@ -81,6 +82,8 @@ namespace CardScannerUI
             schools.Add(new School("school2", "2"));
             schools.Add(new School("school3", "3"));
             //DEBUG END
+            */
+            
 
             //String config = ConfigurationManager.ConnectionStrings["database"].ConnectionString;
             //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
@@ -106,7 +109,7 @@ namespace CardScannerUI
             //var task = GetStudentsAsync();
             //task.Wait();
 
-            //!!freezes the program if it can't reach the database:
+            //freezes the program if it can't reach the database:
             //var getDataTask = GetDataAsync();
             //getDataTask.Wait(); //waits for students, schools, and foodItems collections to get data from the database
             try
@@ -197,26 +200,53 @@ An invalid request URI was provided. The request URI must either be an absolute 
           */
             //try
             //{ !!commented out try and catch to see the exceptions for debugging
-                var responseStudents = await client.GetAsync("Students");
+                var responseStudents = await client.GetAsync("api/Students");
                 students = await responseStudents.Content.ReadAsAsync<List<Student>>();
-                foreach (Student i in students) //DEBUG
+                Trace.WriteLine("get students response status: " + responseStudents.StatusCode); //DEBUG
+            if (this.students != null) //DEBUG
+            {
+                foreach (Student i in students)
                 {
                     Trace.WriteLine("Name: " + i.Name + " StudentID: " + i.StudentID + " SchoolID: " + i.SchoolID + " Balance: " + i.Balance + " MedicalInfo: " + i.MedicalInfo);
                 }
+            }
+            else
+            {
+                Trace.WriteLine("Students is null");
+            }
+                
 
-                var responseSchools = await client.GetAsync("Schools");
+                var responseSchools = await client.GetAsync("api/Schools");
                 schools = await responseSchools.Content.ReadAsAsync<List<School>>();
-                foreach (School i in schools) //DEBUG
+                Trace.WriteLine("get schools response status: " + responseSchools.StatusCode); //DEBUG
+            if (this.schools != null) //DEBUG
+            {
+                foreach (School i in schools)
                 {
                     Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID);
                 }
+            }
+            else
+            {
+                Trace.WriteLine("Schools is null");
+            }
+            
                     
-                var responseFood = await client.GetAsync("FoodItems");
+                var responseFood = await client.GetAsync("api/FoodItems");
                 foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
-                foreach (FoodItem i in foodItems) //DEBUG
+                Trace.WriteLine("get food response status: " + responseFood.StatusCode); //DEBUG
+            if (this.foodItems != null) //DEBUG
+            {
+                foreach (FoodItem i in foodItems)
                 {
                     Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
                 }
+            }
+            else
+            {
+                Trace.WriteLine("FoodItems is null");
+            }
+            
             //}
             //catch
             //{
@@ -254,24 +284,24 @@ An invalid request URI was provided. The request URI must either be an absolute 
             FoodItem food2 = new FoodItem("Apple", 1.00M, "1");
 
             string jsonStringStudent1 = JsonSerializer.Serialize(student1);
-            var httpContentStudent1 = new StringContent(jsonStringStudent1);
-            var response = await client.PostAsync("/Students", httpContentStudent1);
+            var httpContentStudent1 = new StringContent(jsonStringStudent1, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("api/Students", httpContentStudent1); 
 
             string jsonStringStudent2 = JsonSerializer.Serialize(student2);
-            var httpContentStudent2 = new StringContent(jsonStringStudent2);
-            var response2 = await client.PostAsync("/Students", httpContentStudent2);
+            var httpContentStudent2 = new StringContent(jsonStringStudent2, Encoding.UTF8, "application/json");
+            var response2 = await client.PostAsync("api/Students", httpContentStudent2);
 
             string jsonStringSchool1 = JsonSerializer.Serialize(school1);
-            var httpContentSchool1 = new StringContent(jsonStringSchool1);
-            var response3 = await client.PostAsync("/Schools", httpContentSchool1);
+            var httpContentSchool1 = new StringContent(jsonStringSchool1, Encoding.UTF8, "application/json");
+            var response3 = await client.PostAsync("api/Schools", httpContentSchool1);
 
             string jsonStringFood1 = JsonSerializer.Serialize(food1);
-            var httpContentFood1 = new StringContent(jsonStringFood1);
-            var response4 = await client.PostAsync("/FoodItems", httpContentFood1);
+            var httpContentFood1 = new StringContent(jsonStringFood1, Encoding.UTF8, "application/json");
+            var response4 = await client.PostAsync("api/FoodItems", httpContentFood1);
 
             string jsonStringFood2 = JsonSerializer.Serialize(food2);
-            var httpContentFood2 = new StringContent(jsonStringFood2);
-            var response5 = await client.PostAsync("/FoodItems", httpContentFood2);
+            var httpContentFood2 = new StringContent(jsonStringFood2, Encoding.UTF8, "application/json");
+            var response5 = await client.PostAsync("api/FoodItems", httpContentFood2);
 
 
             if (response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
@@ -421,8 +451,8 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 {
                     //if successfully synced, add to list of synced transactions
                     string jsonString = JsonSerializer.Serialize(i);
-                    var httpContent = new StringContent(jsonString);
-                    var response = await client.PostAsync("Transactions", httpContent); //!!controller's PostTransaction() method takes a Transaction object as an argument, this is sending a json-serialized string of the Transaction, this may cause problems but need to test it
+                    var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                    var response = await client.PostAsync("api/Transactions", httpContent); //!!controller's PostTransaction() method takes a Transaction object as an argument, this is sending a json-serialized string of the Transaction, this may cause problems but need to test it
                     if (response.IsSuccessStatusCode)
                     {
                         syncedTransactionIDs.Add(i.ID);

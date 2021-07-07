@@ -34,8 +34,8 @@ namespace Data.Models
         public string Description { get { return _Description; } private set { _Description = value; } }
 
 
-        [JsonConstructor]
-        private FoodItem(string Name, string SchoolID, string ID, decimal Cost, string Description)
+        [JsonConstructor] 
+        public FoodItem(string Name, string SchoolID, string ID, decimal Cost, string Description)
         {
             _Name = Name;
             _SchoolID = SchoolID;
