@@ -21,8 +21,6 @@ using System.IO;
 using Data.Models;
 using System.Net.Http.Formatting;
 using System.Net.Http;
-
-//debug:
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Timers;
@@ -83,7 +81,6 @@ namespace CardScannerUI
             schools.Add(new School("school3", "3"));
             //DEBUG END
             */
-            
 
             //String config = ConfigurationManager.ConnectionStrings["database"].ConnectionString;
             //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
@@ -112,15 +109,16 @@ namespace CardScannerUI
             //freezes the program if it can't reach the database:
             //var getDataTask = GetDataAsync();
             //getDataTask.Wait(); //waits for students, schools, and foodItems collections to get data from the database
-            try
-            {
-                await GetDataAsync();
-            }
-            catch
-            {
-                MessageBox.Show("Failed to connect to the database", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+            //try
+            //{
+            //await ClearDbTransactionsAsync(); //DEBUG - deletes all transactions in the database
+            await GetDataAsync();
+            //}
+            //catch
+            //{
+                //MessageBox.Show("Failed to connect to the database", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 //!!may want some code here to load locally saved objects from the last time the program connected to the database
-            }
+            //}
             
             //set up the data binding
             dataGridTransactions.DataContext = guiTransactions;
@@ -133,29 +131,53 @@ namespace CardScannerUI
         }
 
 
-        private async void Window_Closing(object sender, CancelEventArgs e)
+        private async void Window_Closing(object sender, CancelEventArgs e) //!! IN PROGRESS
         {
-            MessageBoxResult result =
+            if (unsyncedTransactions.Count != 0 ) 
+            {
+                MessageBoxResult result =
                   MessageBox.Show(
                     "Send all transactions and exit the program?",
                     "Lunch Helper",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
-            if (result == MessageBoxResult.No)
-            {
-                e.Cancel = true;
+                if (result == MessageBoxResult.No)
+                {
+                    e.Cancel = true;
+                    Trace.WriteLine("the window closing method does not return when the e.cancel is set to true");
+                    return;
+                }
+                else
+                {
+                    await SyncTransactionsAsync(); //!!this isn't being waited for and it's causing all the Ef Core exceptions with syncing
+                    //var syncTask = SyncTransactionsAsync(); 
+                    //syncTask.Wait(); //waits for data to be synced before closing
+                    //!!need to test and make sure this actually waits for the data to be synced
+                }
             }
 
             //!! this doesnt work yet
             //ProgressBar pb = new();
             //pb.IsIndeterminate = true;
-
-            await SyncTransactionsAsync();
-            //var syncTask = SyncTransactionsAsync(); 
-            //syncTask.Wait(); //waits for data to be synced before closing
-            //!!need to test and make sure this actually waits for the data to be synced
+            
+            Trace.WriteLine("closing the program..."); 
 
             ApiHelper.ApiClient.Dispose(); 
+        }
+
+
+        private async Task ClearDbTransactionsAsync() //DEBUG
+        {
+            var responseTransactions = await client.GetAsync("api/Transactions");
+            var transactions = await responseTransactions.Content.ReadAsAsync<List<Transaction>>();
+            Trace.WriteLine("get transactions response status: " + responseTransactions.StatusCode); 
+            foreach (Transaction i in transactions)
+            {
+                var responseDelete = await client.DeleteAsync("api/Transactions/" + i.ID);
+                Trace.WriteLine("api/Transaction/" + i.ID);
+                Trace.WriteLine("get transactions response status: " + responseDelete.StatusCode);
+                
+            }
         }
 
 
@@ -165,6 +187,7 @@ namespace CardScannerUI
             {
                 File.Create(transactionsJsonPath);
                 Trace.WriteLine("nothing to deserialize"); //DEBUG
+                txtUnsyncedTransactionsCount.Text = "0";
             }
             else
             {
@@ -214,7 +237,6 @@ An invalid request URI was provided. The request URI must either be an absolute 
             {
                 Trace.WriteLine("Students is null");
             }
-                
 
                 var responseSchools = await client.GetAsync("api/Schools");
                 schools = await responseSchools.Content.ReadAsAsync<List<School>>();
@@ -233,9 +255,10 @@ An invalid request URI was provided. The request URI must either be an absolute 
             
                     
                 var responseFood = await client.GetAsync("api/FoodItems");
-                foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+            foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+            //List<FoodItem> foodItems = await responseFood.Content.ReadAsAsync<List<FoodItem>>(); //DEBUG
                 Trace.WriteLine("get food response status: " + responseFood.StatusCode); //DEBUG
-            if (this.foodItems != null) //DEBUG
+            if (foodItems != null) //DEBUG
             {
                 foreach (FoodItem i in foodItems)
                 {
@@ -376,11 +399,10 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 MessageBox.Show("Student not found, please ensure the student number was entered correctly.", "Unknown student", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            lastTransaction = new Transaction(StudentID, FoodID, foodName, cost, student.Name, ThisSchool.ID, ThisSchool.Name); //sets last transaction so it can be undone
 
             //!!async code
-            //if transactions havent been synced in a while, try to sync them
-            if (unsyncedTransactions.Count >= 15)
+            //if transactions haven't been synced in a while, try to sync them
+            if (unsyncedTransactions.Count >= 1) //DEBUG - !!this is set to a low number for debugging
             {
                 //var syncTask = SyncTransactionsAsync();
                 //syncTask.Wait();
@@ -391,6 +413,8 @@ An invalid request URI was provided. The request URI must either be an absolute 
                 File.Create(transactionsJsonPath);
             }
             //end of async code
+
+            lastTransaction = new Transaction(StudentID, FoodID, foodName, cost, student.Name, ThisSchool.ID, ThisSchool.Name); //sets last transaction so it can be undone
 
             //add new transaction to the GUI list and the JSON list
             guiTransactions.Add(lastTransaction);
@@ -403,8 +427,9 @@ An invalid request URI was provided. The request URI must either be an absolute 
 
             txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
             buttonUndoTransaction.IsEnabled = true; //enable the undo button
-        }
 
+            
+        }
 
 
         /**<summary>Undoes the last transaction. Once a transaction is undone, 
@@ -434,12 +459,20 @@ An invalid request URI was provided. The request URI must either be an absolute 
         private void Click_buttonSync(object sender, RoutedEventArgs e)
         {
             this.Close(); //the window_close event handles syncing and exiting
-
+            //await SyncTransactionsAsync(); //DEBUG
         }
 
         private async Task SyncTransactionsAsync()
         {
+            //!! 20210708092602651 is duplicate primary key
+            //   20210708095115301 is the actual ID, EF Core claims its ID is 20210708092602651
+            //   actual: 20210708111341192  duplicate: 20210708095115301
+
             List<string> syncedTransactionIDs = new List<string>(); //stores the IDs of the transactions that have been synced
+            foreach (Transaction i in unsyncedTransactions) //DEBUG
+            {
+                Trace.WriteLine("unsyned transaction-> ID: " + i.ID + " name: " + i.StudentName + " studentID: " + i.StudentID + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID); //DEBUG
+            }
             //List<Transaction> syncedTransactions = new List<Transaction>();
             bool successfullySynced = true;
 
@@ -449,10 +482,13 @@ An invalid request URI was provided. The request URI must either be an absolute 
             {
                 try
                 {
+                    Trace.WriteLine("trying to sync a transaction with ID: " + i.ID); //DEBUG
                     //if successfully synced, add to list of synced transactions
                     string jsonString = JsonSerializer.Serialize(i);
                     var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
-                    var response = await client.PostAsync("api/Transactions", httpContent); //!!controller's PostTransaction() method takes a Transaction object as an argument, this is sending a json-serialized string of the Transaction, this may cause problems but need to test it
+                    var response = await client.PostAsync("api/Transactions", httpContent); //status code 500 - EF Core duplicate key exception (unless API is restarted after each transaction and this method was called from Window_Closing)
+                    Trace.WriteLine("Transaction sync response: " + response); //DEBUG
+                    Trace.WriteLine("IsSuccessStatusCode: " + response.IsSuccessStatusCode); //DEBUG
                     if (response.IsSuccessStatusCode)
                     {
                         syncedTransactionIDs.Add(i.ID);
@@ -468,7 +504,13 @@ An invalid request URI was provided. The request URI must either be an absolute 
                     successfullySynced = false;
                 }
             }
-            
+
+            Trace.WriteLine("successfullySynced: " + successfullySynced); //DEBUG
+            Trace.WriteLine("num synced transactions: " + syncedTransactionIDs.Count); //DEBUG
+            foreach (string i in syncedTransactionIDs)
+            {
+                Trace.WriteLine("ID of successfully synced transaction: " + i);
+            }
             //make sure synced and unsynced transactions lists match, if not, remove synced from unsynced 
             if (successfullySynced)
             {
@@ -486,7 +528,11 @@ An invalid request URI was provided. The request URI must either be an absolute 
             {
                 //remove the transactions that were synced from the unsynced transactions list (compare by ID to avoid potential bugs)
                 int testInt = unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactionIDs.Any(y => y.Equals(x.ID))); //testInt is for DEBUG
-                Trace.WriteLine("num transactions removed: " + testInt); //DEBUG
+                Trace.WriteLine("num transactions removed: " + testInt); //DEBUG - says 1 was removed when 0 were actually removed
+                foreach (Transaction i in unsyncedTransactions) //DEBUG
+                {
+                    Trace.WriteLine("transaction not removed-> ID: " + i.ID + " name: " + i.StudentName + " studentID: " + i.StudentID + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID); //DEBUG
+                }
                 //unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactions.Any(y => y.ID.Equals(x.ID)));
                 string SerializeJsonString = JsonSerializer.Serialize(unsyncedTransactions);
                 File.WriteAllText(transactionsJsonPath, SerializeJsonString); //overwrites the JSON with the updated list of unsynced transactions
@@ -497,6 +543,7 @@ An invalid request URI was provided. The request URI must either be an absolute 
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
                 */
+                
             }
             txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
             
