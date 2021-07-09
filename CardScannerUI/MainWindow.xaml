@@ -10,7 +10,8 @@
         Background="#FF3F3F46"
         Loaded="Window_Loaded"
         Closing="Window_Closing"
-        VerticalAlignment="Stretch">
+        VerticalAlignment="Stretch"
+        WindowStartupLocation="CenterScreen">
 
     <Grid Margin="0,0,0,-6">
 
@@ -54,7 +55,8 @@
 
         <TextBox x:Name="txtEnterStudentNum" HorizontalAlignment="Left" Margin="68,12,0,0" 
                  Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"
-                 KeyDown="OnEnterKeyDownHandler_StudentNum"/>
+                 KeyDown="OnEnterKeyDownHandler_StudentNum"
+                 LostKeyboardFocus="txtEnterStudentNum_LostKeyboardFocus"/>
 
 
         <DataGrid x:Name="dataGridFoodItems" Margin="10,143,608,199"

@@ -50,7 +50,7 @@ namespace Data.Models
         public string ID { get { return _ID; } set { _ID = value; } }
 
         //deserialization constructor
-        private Transaction()
+        public Transaction()
         {
 
         }
