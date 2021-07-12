@@ -55,8 +55,7 @@
 
         <TextBox x:Name="txtEnterStudentNum" HorizontalAlignment="Left" Margin="68,12,0,0" 
                  Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"
-                 KeyDown="OnEnterKeyDownHandler_StudentNum"
-                 LostKeyboardFocus="txtEnterStudentNum_LostKeyboardFocus"/>
+                 KeyDown="OnEnterKeyDownHandler_StudentNum"/>
 
 
         <DataGrid x:Name="dataGridFoodItems" Margin="10,143,608,199"

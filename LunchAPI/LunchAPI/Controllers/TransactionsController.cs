@@ -120,7 +120,7 @@ namespace LunchAPI.Controllers
                     throw;
                 }
             }
-
+            //return Conflict(); //DEBUG - testing error handling
             return CreatedAtAction("GetTransaction", new { id = transaction.ID }, transaction);
         }
 
