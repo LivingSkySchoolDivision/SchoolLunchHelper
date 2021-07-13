@@ -35,6 +35,14 @@ namespace Repositories
         }
         */
 
+        /*
+        public async Task<ActionResult<IEnumerable<FoodItem>>> GetFoodItemFromCategory(string category)
+        {
+            //var foodItems = _context.FoodItems.Where(s => s.SchoolID.Equals(category));
+            return new ActionResult<IEnumerable<FoodItem>>(foodItems);
+        }
+        */
+
         public async Task<FoodItem> FindAsync(string id)
         {
             return await _context.FoodItems.FindAsync(id);

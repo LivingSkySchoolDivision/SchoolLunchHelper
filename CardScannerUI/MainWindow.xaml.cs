@@ -33,7 +33,7 @@ namespace CardScannerUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private List<School> schools;
+        //private List<School> schools; 
         private ObservableCollection<FoodItem> foodItems;
         private ObservableCollection<Transaction> guiTransactions;
         private ObservableCollection<Transaction> unsyncedTransactions; //this gets the transactions from the JSON that did not sync, don't want them on the GUI so keep them separate
@@ -47,10 +47,9 @@ namespace CardScannerUI
         //may need to add isProgramBusy field, maybe there's a built-in method
 
         private Stopwatch lastTransactionStopwatch; //keeps track of time since the last transaction
-        private bool lastSyncFailed = false;
         private bool shutdown = false;
 
-        private static School _ThisSchool = new School("school1", "1");
+        private static School _ThisSchool;
         public static School ThisSchool { get { return _ThisSchool; } set { _ThisSchool = value; } }
 
 
@@ -58,7 +57,7 @@ namespace CardScannerUI
         {
             InitializeComponent();
 
-            schools = new();
+            //schools = new();
             foodItems = new();
             guiTransactions = new();
             students = new();
@@ -82,9 +81,9 @@ namespace CardScannerUI
             foodItems.Add(new FoodItem("soup", 2.22M, ""));
             students.Add(new Student("1111", "student1", "1", 11, "no medical info (1)"));
             students.Add(new Student("2222", "student2", "2", 22, "no medical info (2)"));
-            schools.Add(new School("school1", "1"));
-            schools.Add(new School("school2", "2"));
-            schools.Add(new School("school3", "3"));
+            //schools.Add(new School("school1", "1"));
+            //schools.Add(new School("school2", "2"));
+            //schools.Add(new School("school3", "3"));
             //DEBUG END
 
             //String config = ConfigurationManager.ConnectionStrings["database"].ConnectionString;
@@ -96,7 +95,7 @@ namespace CardScannerUI
             //var apiUri = configFile.ConnectionStrings.ConnectionStrings["test"].ConnectionString;
 
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            apiUri = configFile.AppSettings.Settings["test"].Value.ToString();
+            apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
             string thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
             //MessageBox.Show(apiUri); //DEBUG
             Trace.WriteLine("ApiUri: " + apiUri); //DEBUG
@@ -105,11 +104,15 @@ namespace CardScannerUI
             ApiHelper.Init(apiUri); //initializes settings for the HttpClient
             client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
 
+            //await AddTestDataToDatabase(); //DEBUG
             //await ClearDbTransactionsAsync(); //DEBUG
             //throw new Exception(); //DEBUG - end the program when the transactions have been cleared
 
             //LoadTransactionsFromJson();
             await LoadTransactionsFromJsonAsync();
+
+            await GetThisSchoolFromIdAsync(thisSchoolID);
+            //Trace.WriteLine("school name: " + ThisSchool.Name + " school ID: " + ThisSchool.ID); //DEBUG
 
             await GetDataAsync();
             Trace.WriteLine("2"); //DEBUG
@@ -130,6 +133,17 @@ namespace CardScannerUI
             Trace.WriteLine("4"); //DEBUG
             IsEnabled = true;
             Trace.WriteLine("5"); //DEBUG
+        }
+
+
+        /**<summary>Loads the school object from the database given the school's ID.</summary>
+         * <param name="thisSchoolID">string, the ID of the requested school.</param>
+         */
+        private async Task GetThisSchoolFromIdAsync(string thisSchoolID)
+        {
+            var response = await client.GetAsync("api/Schools/" + thisSchoolID);
+            ThisSchool = await response.Content.ReadAsAsync<School>();
+            Trace.WriteLine("get this school from ID response status: " + response.StatusCode); //DEBUG
         }
 
 
@@ -164,7 +178,9 @@ namespace CardScannerUI
             Trace.WriteLine("Closing the program...");
         }
 
-
+        /**<summary>Deletes all transactions from the database, student balances are updated automatically. 
+         * This method is for testing purposes.</summary>
+         */
         private async Task ClearDbTransactionsAsync() //DEBUG
         {
             var responseTransactions = await client.GetAsync("api/Transactions");
@@ -272,6 +288,7 @@ namespace CardScannerUI
             { 
                 var responseStudents = await client.GetAsync("api/Students");
                 students = await responseStudents.Content.ReadAsAsync<List<Student>>();
+                
                 Trace.WriteLine("get students response status: " + responseStudents.StatusCode); //DEBUG
                 if (this.students != null) //DEBUG
                 {
@@ -284,6 +301,8 @@ namespace CardScannerUI
                 {
                     Trace.WriteLine("Students is null");
                 }
+
+                /*
                 var responseSchools = await client.GetAsync("api/Schools");
                 schools = await responseSchools.Content.ReadAsAsync<List<School>>();
                 Trace.WriteLine("get schools response status: " + responseSchools.StatusCode); //DEBUG
@@ -298,10 +317,15 @@ namespace CardScannerUI
                 {
                     Trace.WriteLine("Schools is null");
                 }
-                    
-                var responseFood = await client.GetAsync("api/FoodItems");
+                */
+
+                //var responseFood = await client.GetAsync("api/FoodItems");
+                //foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+                var responseFood = await client.GetAsync("api/FoodItems?category=" + ThisSchool.ID);
+                Trace.WriteLine(ThisSchool.ID); //DEBUG
                 foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
-                //List<FoodItem> foodItems = await responseFood.Content.ReadAsAsync<List<FoodItem>>(); //DEBUG
+                Trace.WriteLine("response: " + responseFood); //DEBUG
+
                 Trace.WriteLine("get food response status: " + responseFood.StatusCode); //DEBUG
                 if (foodItems != null) //DEBUG
                 {
@@ -314,8 +338,9 @@ namespace CardScannerUI
                 {
                     Trace.WriteLine("FoodItems is null");
                 }
+
             }
-            catch
+            catch (HttpRequestException)
             {
                 shutdown = true;
                 MessageBox.Show("Failed to connect to the database, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -346,12 +371,19 @@ namespace CardScannerUI
 
         public async Task AddTestDataToDatabase()
         {
-            Student student1 = new Student("1", "Student1", "1", 10.00M, "test medical info");
-            Student student2 = new Student("2", "Student2", "1", 20.00M, "");
-            School school1 = new School("School1", "1");
-            FoodItem food1 = new FoodItem("Pancake", 2.00M, "1");
-            FoodItem food2 = new FoodItem("Apple", 1.00M, "1");
+            //Student student1 = new Student("1", "Student1", "1", 10.00M, "test medical info");
+            //Student student2 = new Student("2", "Student2", "1", 20.00M, "");
+            //School school1 = new School("School1", "1");
+            //FoodItem food1 = new FoodItem("Pancake", 2.00M, "1");
+            //FoodItem food2 = new FoodItem("Apple", 1.00M, "1");
 
+            //Student student1 = new Student("3", "Student", "2", 15.00M, "studentID = 3");
+            //Student student2 = new Student("4", "Student", "2", 25.00M, "studentID = 4");
+            //School school1 = new School("School2", "2");
+            FoodItem food1 = new FoodItem("Pizza", 2.00M, "1"); //food IDs are assigned based on time, creating one object immediately after the other that belongs to the same school may result in duplicate key exceptions
+            
+
+            /*
             string jsonStringStudent1 = JsonSerializer.Serialize(student1);
             var httpContentStudent1 = new StringContent(jsonStringStudent1, Encoding.UTF8, "application/json");
             var response = await client.PostAsync("api/Students", httpContentStudent1); 
@@ -363,26 +395,28 @@ namespace CardScannerUI
             string jsonStringSchool1 = JsonSerializer.Serialize(school1);
             var httpContentSchool1 = new StringContent(jsonStringSchool1, Encoding.UTF8, "application/json");
             var response3 = await client.PostAsync("api/Schools", httpContentSchool1);
+            */
 
             string jsonStringFood1 = JsonSerializer.Serialize(food1);
             var httpContentFood1 = new StringContent(jsonStringFood1, Encoding.UTF8, "application/json");
             var response4 = await client.PostAsync("api/FoodItems", httpContentFood1);
 
+            FoodItem food2 = new FoodItem("Soup", 2.00M, "2");
             string jsonStringFood2 = JsonSerializer.Serialize(food2);
             var httpContentFood2 = new StringContent(jsonStringFood2, Encoding.UTF8, "application/json");
             var response5 = await client.PostAsync("api/FoodItems", httpContentFood2);
 
 
-            if (response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
+            if (/*response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && */response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
             {
                 Trace.WriteLine("successfully added all test data to the database");
             }
             else
             {
                 Trace.WriteLine("failed to add to the database. responses:");
-                Trace.WriteLine("student1: " + response);
-                Trace.WriteLine("student2: " + response2);
-                Trace.WriteLine("school1: " + response3);
+                //Trace.WriteLine("student1: " + response);
+                //Trace.WriteLine("student2: " + response2);
+                //Trace.WriteLine("school1: " + response3);
                 Trace.WriteLine("food1: " + response4);
                 Trace.WriteLine("food2: " + response5);
                 
@@ -449,7 +483,7 @@ namespace CardScannerUI
             }
 
             //if transactions haven't been synced in a while, try to sync them
-            if (unsyncedTransactions.Count >= 50) //!!need to put a good number here
+            if (unsyncedTransactions.Count % 50 == 0) //!!need to put a good number here
             {
                 //var syncTask = SyncTransactionsAsync();
                 //syncTask.Wait();
@@ -626,8 +660,8 @@ namespace CardScannerUI
                 try
                 {
                     var response = await client.PostAsync("api/Transactions", httpContent);
-                    Trace.WriteLine("Transaction sync response: " + response); //DEBUG
-                    Trace.WriteLine("IsSuccessStatusCode: " + response.IsSuccessStatusCode); //DEBUG
+                    //Trace.WriteLine("Transaction sync response: " + response); //DEBUG
+                    //Trace.WriteLine("IsSuccessStatusCode: " + response.IsSuccessStatusCode); //DEBUG
                     if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Conflict) //if the transaction is in the database, remove it from the list
                     {
                         unsyncedTransactions.RemoveAt(i); //remove the transaction from the unsynced transactions list since it exists in the database
@@ -635,7 +669,7 @@ namespace CardScannerUI
                         File.WriteAllText(transactionsJsonPath, SerializeJsonString); //update the transactions log
                     }
                 }
-                catch (HttpRequestException) //this will not be thrown if the URI can't be found
+                catch (HttpRequestException) //this exception is not thrown if the URI can't be found
                 {
                     Trace.WriteLine("can't reach the database");
                     break; //if there is a server error, no point trying to sync any more transactions

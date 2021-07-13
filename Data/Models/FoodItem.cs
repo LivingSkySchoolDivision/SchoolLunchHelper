@@ -34,8 +34,8 @@ namespace Data.Models
         public string Description { get { return _Description; } set { _Description = value; } }
 
         
-        //deserialization constructor
-        private FoodItem()
+        
+        public FoodItem()
         {
 
         }
