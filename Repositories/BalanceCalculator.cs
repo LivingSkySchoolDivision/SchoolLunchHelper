@@ -34,9 +34,12 @@ namespace Repositories
         public async Task UpdateBalanceRemoveTransaction(Transaction transaction)
         {
             Student student = await studentsRepo.FindAsync(transaction.StudentID);
-            student.Balance += transaction.Cost;
-            studentsRepo.ModifiedEntityState(student);
-            await studentsRepo.SaveChangesAsync();
+            if (student != null)
+            {
+                student.Balance += transaction.Cost;
+                studentsRepo.ModifiedEntityState(student);
+                await studentsRepo.SaveChangesAsync();
+            }
         }
 
 

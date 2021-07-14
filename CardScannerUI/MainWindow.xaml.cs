@@ -43,8 +43,7 @@ namespace CardScannerUI
         private Window loadingWindow;
 
         private Transaction lastTransaction;
-        private string transactionsJsonPath = "TransactionsLog.json"; //this path will need to change
-        //may need to add isProgramBusy field, maybe there's a built-in method
+        private string transactionsJsonPath = "TransactionsLog.json";
 
         private Stopwatch lastTransactionStopwatch; //keeps track of time since the last transaction
         private bool shutdown = false;
@@ -113,11 +112,10 @@ namespace CardScannerUI
 
             await GetThisSchoolFromIdAsync(thisSchoolID);
             //Trace.WriteLine("school name: " + ThisSchool.Name + " school ID: " + ThisSchool.ID); //DEBUG
+            this.Title = "Lunch Helper - " + ThisSchool.Name;
 
             await GetDataAsync();
             Trace.WriteLine("2"); //DEBUG
-            //GetDataAsync().Wait();
-            //gettingData.GetAwaiter().GetResult();
             
             //set up the data binding
             dataGridTransactions.DataContext = guiTransactions;
@@ -139,11 +137,21 @@ namespace CardScannerUI
         /**<summary>Loads the school object from the database given the school's ID.</summary>
          * <param name="thisSchoolID">string, the ID of the requested school.</param>
          */
-        private async Task GetThisSchoolFromIdAsync(string thisSchoolID)
+        private async Task GetThisSchoolFromIdAsync(string thisSchoolID) 
         {
-            var response = await client.GetAsync("api/Schools/" + thisSchoolID);
-            ThisSchool = await response.Content.ReadAsAsync<School>();
-            Trace.WriteLine("get this school from ID response status: " + response.StatusCode); //DEBUG
+            try
+            {
+                var response = await client.GetAsync("api/Schools/" + thisSchoolID);
+                ThisSchool = await response.Content.ReadAsAsync<School>();
+                Trace.WriteLine("get this school from ID response status: " + response.StatusCode); //DEBUG
+            }
+            catch (HttpRequestException)
+            {
+                shutdown = true;
+                MessageBox.Show("Failed to connect to the database, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            
         }
 
 
@@ -231,7 +239,7 @@ namespace CardScannerUI
             }
         }
 
-        private async Task LoadTransactionsFromJsonAsync() //!! IN PROGRESS
+        private async Task LoadTransactionsFromJsonAsync() 
         {
             if (!File.Exists(transactionsJsonPath))
             {
@@ -285,8 +293,10 @@ namespace CardScannerUI
         private async Task GetDataAsync() 
         {
             try
-            { 
-                var responseStudents = await client.GetAsync("api/Students");
+            {
+                //var responseStudents = await client.GetAsync("api/Students");
+                //students = await responseStudents.Content.ReadAsAsync<List<Student>>();
+                var responseStudents = await client.GetAsync("api/Students/School/" + ThisSchool.ID);
                 students = await responseStudents.Content.ReadAsAsync<List<Student>>();
                 
                 Trace.WriteLine("get students response status: " + responseStudents.StatusCode); //DEBUG
@@ -321,7 +331,7 @@ namespace CardScannerUI
 
                 //var responseFood = await client.GetAsync("api/FoodItems");
                 //foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
-                var responseFood = await client.GetAsync("api/FoodItems?category=" + ThisSchool.ID);
+                var responseFood = await client.GetAsync("api/FoodItems/School/" + ThisSchool.ID);
                 Trace.WriteLine(ThisSchool.ID); //DEBUG
                 foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
                 Trace.WriteLine("response: " + responseFood); //DEBUG
@@ -338,6 +348,21 @@ namespace CardScannerUI
                 {
                     Trace.WriteLine("FoodItems is null");
                 }
+                /*
+                for (int i = foodItems.Count - 1; i >= 0; i--) //DEBUG
+                {
+                    Trace.WriteLine("ThisSchool.ID=" + ThisSchool.ID + " FoodItem.schoolID=" + foodItems[i].SchoolID);
+                    if (!(ThisSchool.ID.Equals(foodItems[i].SchoolID)))
+                    {
+                        Trace.WriteLine("Removed foodItem at " + i);
+                        foodItems.RemoveAt(i);
+                    }
+                    else
+                    {
+                        Trace.WriteLine("Did not remove foodItem at " + i);
+                    }
+                }
+                */
 
             }
             catch (HttpRequestException)
@@ -655,6 +680,7 @@ namespace CardScannerUI
             for (int i = unsyncedTransactions.Count - 1; i >= 0; i--)
             {
                 Trace.WriteLine("trying to sync a transaction with ID: " + unsyncedTransactions[i].ID); //DEBUG
+                Trace.WriteLine(unsyncedTransactions[i]); //DEBUG
                 string jsonString = JsonSerializer.Serialize(unsyncedTransactions[i]);
                 var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
                 try

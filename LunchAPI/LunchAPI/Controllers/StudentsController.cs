@@ -43,6 +43,15 @@ namespace LunchAPI.Controllers
             return student;
         }
 
+        // GET: api/Students/School/5
+        [HttpGet("School/{schoolID}")]
+        public async Task<ActionResult<IEnumerable<Student>>> GetStudentsBySchool(string schoolID)
+        {
+            var allStudents = await repo.GetStudents();
+            var requestedStudents = allStudents.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
+            return new ActionResult<IEnumerable<Student>>(requestedStudents);
+        }
+
         // PUT: api/Students/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]

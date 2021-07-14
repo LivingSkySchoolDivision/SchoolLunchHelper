@@ -45,15 +45,13 @@ namespace LunchAPI.Controllers
             return foodItem;
         }
 
-        //GET: api/FoodItems?category=category
-        [HttpGet("{category}")]
-        public async Task<ActionResult<IEnumerable<FoodItem>>> GetFoodItemsByCategory(string category)
+        // GET: api/FoodItems/School/5
+        [HttpGet("School/{schoolID}")]
+        public async Task<ActionResult<IEnumerable<FoodItem>>> GetFoodItemsBySchool(string schoolID)
         {
-            var result = await repo.GetFoodItems();
-            //var foodItems = result.Value.Where(s => s.SchoolID.Equals(category));
-            var foodItems = result.Value.Where(p => string.Equals(p.SchoolID, category, StringComparison.OrdinalIgnoreCase));
-            return new ActionResult<IEnumerable<FoodItem>>(foodItems); 
-            //return await repo.GetFoodItemFromCategory(category);
+            var allFoodItems = await repo.GetFoodItems();
+            var requestedFoodItems = allFoodItems.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
+            return new ActionResult<IEnumerable<FoodItem>>(requestedFoodItems); 
         }
 
         // PUT: api/FoodItems/5

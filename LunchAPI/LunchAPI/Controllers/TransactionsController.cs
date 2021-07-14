@@ -47,9 +47,20 @@ namespace LunchAPI.Controllers
             return transaction;
         }
 
+        // GET: api/Transactions/School/5
+        [HttpGet("School/{schoolID}")]
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetFoodItemsBySchool(string schoolID)
+        {
+            var allTransactions = await repo.GetTransactions();
+            //this is slower than directly querying EF Core, but it is less likely to cause an exception since it does not involve EF Core translating the LINQ statement to SQL
+            var requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
+            return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
+        }
+
         // PUT: api/Transactions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        // Modifies existing transactions 
+        // Modifies existing transactions. Assumes fields related to the field that was modified were updated before the put request was made.
+        // Ex. if the food ID changes, this method assumes the food name was updated as well
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTransaction(string id, Transaction transaction)
         {
@@ -65,7 +76,7 @@ namespace LunchAPI.Controllers
                 return NotFound();
             }
             else if (repoTransaction.StudentID != transaction.StudentID) //if the transaction is changed to belong to a different student
-            {//if the student ID changes, the student name (and in some cases school ID and name) in the transaction will also need to change (probably better to handle in the program itself)
+            {//NOTE: in this case the controller assumes the student's name and any other fields that need to be changed were changed before the put request was made
                 await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
                 await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
             }

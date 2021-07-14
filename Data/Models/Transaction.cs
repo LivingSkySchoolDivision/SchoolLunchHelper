@@ -82,6 +82,10 @@ namespace Data.Models
             _ID = StudentID + Time.ToString("yyyyMMddHHmmssff"); //ID is a number (stored as a string) generated from the current year, month, day, minute, second, two decimal digits of a second, and the student's student number. Hours are in 24hr time
         }
 
+        public override string ToString()
+        {
+            return "Cost = $" + Cost.ToString() + ", StudentID = " + StudentID + ", StudentName = " + StudentName + ", FoodID = " + FoodID + ", FoodName = " + FoodName + ", SchoolID = " + SchoolID + ", SchoolName = " + SchoolName + ", Time = " + Time.ToString() + ", ID = " + ID;
+        }
 
     }
 }
