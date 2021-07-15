@@ -57,6 +57,7 @@ namespace LunchAPI.Controllers
             return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
         }
 
+        
         // PUT: api/Transactions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         // Modifies existing transactions. Assumes fields related to the field that was modified were updated before the put request was made.
@@ -77,15 +78,30 @@ namespace LunchAPI.Controllers
             }
             else if (repoTransaction.StudentID != transaction.StudentID) //if the transaction is changed to belong to a different student
             {//NOTE: in this case the controller assumes the student's name and any other fields that need to be changed were changed before the put request was made
-                await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
-                await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID))) 
+                {
+                    await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
+                    await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
+                }
+                else
+                {
+                    return BadRequest();
+                }
             }
             else if (repoTransaction.Cost != transaction.Cost) //if the old and new cost are not the same, the student's balance needs to be updated
             {
-                await balanceCalculator.UpdateBalanceModifiedTransactionCost(transaction, repoTransaction.Cost);
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID)))
+                {
+                    await balanceCalculator.UpdateBalanceModifiedTransactionCost(transaction, repoTransaction.Cost);
+                }
+                else
+                {
+                    return BadRequest();
+                }
             }
 
-            repo.ModifiedEntityState(transaction);
+            //this may work if the dbcontext instance is disposed after each request: https://docs.microsoft.com/en-us/ef/core/saving/disconnected-entities
+            repo.ModifiedEntityState(transaction); //causes: System.InvalidOperationException: The instance of entity type 'Transaction' cannot be tracked because another instance with the same key value for {'ID'} is already being tracked. When attaching existing entities, ensure that only one entity instance with a given key value is attached. 
 
             try
             {
@@ -105,6 +121,142 @@ namespace LunchAPI.Controllers
 
             return NoContent();
         }
+        
+        
+        [HttpPut("/put2/{id}")]
+        public async Task<IActionResult> PutTransaction2(string id, Transaction transaction)
+        {
+            if (id != transaction.ID)
+            {
+                return BadRequest();
+            }
+
+            //finding the cost of the transaction in the database before it is modified so the student's balance can be changed accordingly
+            Transaction repoTransaction = await repo.FindAsync(id);
+            if (repoTransaction == null)
+            {
+                return NotFound();
+            }
+            else if (repoTransaction.StudentID != transaction.StudentID) //if the transaction is changed to belong to a different student
+            {//NOTE: in this case the controller assumes the student's name and any other fields that need to be changed were changed before the put request was made
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID)))
+                {
+                    await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
+                    await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            else if (repoTransaction.Cost != transaction.Cost) //if the old and new cost are not the same, the student's balance needs to be updated
+            {
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID)))
+                {
+                    await balanceCalculator.UpdateBalanceModifiedTransactionCost(transaction, repoTransaction.Cost);
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+
+            repo.Remove(repoTransaction);
+            repo.Add(transaction);
+
+
+            try
+            {
+                await repo.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!repo.TransactionExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        /*
+        // PUT: api/Transactions/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutTransaction(string id, Transaction transaction)
+        {
+            if (id != transaction.ID)
+            {
+                return BadRequest();
+            }
+
+            //finding the cost of the transaction in the database before it is modified so the student's balance can be changed accordingly
+            Transaction repoTransaction = await repo.FindAsync(id);
+            if (repoTransaction == null)
+            {
+                return NotFound();
+            }
+            else if (repoTransaction.StudentID != transaction.StudentID) //if the transaction is changed to belong to a different student
+            {//NOTE: in this case the controller assumes the student's name and any other fields that need to be changed were changed before the put request was made
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID)))
+                {
+                    await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
+                    await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            else if (repoTransaction.Cost != transaction.Cost) //if the old and new cost are not the same, the student's balance needs to be updated
+            {
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID)))
+                {
+                    await balanceCalculator.UpdateBalanceModifiedTransactionCost(transaction, repoTransaction.Cost);
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+
+            //repo.ModifiedEntityState(transaction);
+            //update the transaction entity that is tracked by EF Core
+            repoTransaction.Cost = transaction.Cost;
+            repoTransaction.FoodID = transaction.FoodID;
+            repoTransaction.FoodName = transaction.FoodName;
+            repoTransaction.ID = transaction.ID;
+            repoTransaction.SchoolID = transaction.SchoolID;
+            repoTransaction.SchoolName = transaction.SchoolName;
+            repoTransaction.StudentID = transaction.StudentID;
+            repoTransaction.StudentName = transaction.StudentName;
+            repoTransaction.Time = transaction.Time;
+            //set its state to modified
+            repo.ModifiedEntityState(repoTransaction); //causes "violation of primary key restraint" error
+
+            try
+            {
+                await repo.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!repo.TransactionExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        */
 
         // POST: api/Transactions
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754

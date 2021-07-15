@@ -23,7 +23,7 @@ namespace Repositories
 
 
         public async Task UpdateBalanceNewTransaction(Transaction transaction)
-        { //exceptions are handled by the transactions controller
+        { 
             Student student = await studentsRepo.FindAsync(transaction.StudentID); //find the student that the transaction belongs to
             student.Balance -= transaction.Cost; //subtract the cost from the student's balance
             studentsRepo.ModifiedEntityState(student); //tell EF Core that the student has been modified
@@ -53,6 +53,19 @@ namespace Repositories
 
             studentsRepo.ModifiedEntityState(student);
             await studentsRepo.SaveChangesAsync();
+        }
+
+        public async Task<bool> StudentWithIdExists(string studentID)
+        {
+            Student student = await studentsRepo.FindAsync(studentID);
+            if (student != null)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
 
