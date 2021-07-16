@@ -55,6 +55,7 @@ namespace TestAPI
             await client.DeleteAsync("api/Transactions/3");
             await client.DeleteAsync("api/Transactions/4");
             await client.DeleteAsync("api/Transactions/5");
+            await client.DeleteAsync("api/Transactions/6");
 
             await client.DeleteAsync("api/Students/test1");
             await client.DeleteAsync("api/Students/test2");
@@ -160,26 +161,72 @@ namespace TestAPI
             string jsonString = JsonSerializer.Serialize(new Transaction(5.00M, "test1", "test student 1", "test1", "food1", "test0", "test school0", new DateTime(2021, 07, 07), "1"));
             var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
             var response = await client.PutAsync("api/Transactions/1", httpContent);
-            tc.WriteLine(response.StatusCode.ToString());
             Assert.AreEqual("NoContent", response.StatusCode.ToString());
 
-            var getResponse = await client.GetAsync("api/Transaction/1");
+            //make sure the transaction was changed properly in the database
+            var getResponse = await client.GetAsync("api/Transactions/1");
             Transaction actualTransaction = await getResponse.Content.ReadAsAsync<Transaction>();
+            tc.WriteLine(getResponse.StatusCode.ToString());
             Transaction expectedTransaction = new Transaction(5.00M, "test1", "test student 1", "test1", "food1", "test0", "test school0", new DateTime(2021, 07, 07), "1");
             Assert.AreEqual(expectedTransaction.ToString(), actualTransaction.ToString());
 
-            var studentResponse = await client.GetAsync("api/Students/test5");
-            Student student5 = await studentResponse.Content.ReadAsAsync<Student>();
-            Assert.AreEqual(9.00M, student5.Balance);
+            //make sure the student's balance was updated
+            var studentResponse = await client.GetAsync("api/Students/test1");
+            Student student1 = await studentResponse.Content.ReadAsAsync<Student>();
+            Assert.AreEqual(5.00M, student1.Balance);
 
 
-            //case where the studentID changes (when the studentID changes the controller assumes the student name and school if applicable are being updated in the same put request)
+            //case where the studentID and cost changes (when the studentID changes the controller assumes the student name and school if applicable are being updated in the same put request)
+            string jsonString2 = JsonSerializer.Serialize(new Transaction(1.00M, "test3", "test student 3", "test2", "food2", "test1", "test school1", new DateTime(2021, 07, 07), "2"));
+            var httpContent2 = new StringContent(jsonString2, Encoding.UTF8, "application/json");
+            var response2 = await client.PutAsync("api/Transactions/2", httpContent2); 
+            Assert.AreEqual("NoContent", response2.StatusCode.ToString());
 
-            //case where the studentID changes but the new or original student doesn't exist
+            //make sure the transaction was changed properly in the database
+            var getResponse2 = await client.GetAsync("api/Transactions/2");
+            Transaction actualTransaction2 = await getResponse2.Content.ReadAsAsync<Transaction>();
+            tc.WriteLine(getResponse.StatusCode.ToString());
+            Transaction expectedTransaction2 = new Transaction(1.00M, "test3", "test student 3", "test2", "food2", "test1", "test school1", new DateTime(2021, 07, 07), "2");
+            Assert.AreEqual(expectedTransaction2.ToString(), actualTransaction2.ToString());
+
+            //make sure the students' balances were updated
+            var studentResponse2 = await client.GetAsync("api/Students/test2");
+            Student student2 = await studentResponse2.Content.ReadAsAsync<Student>();
+            Assert.AreEqual(10.00M, student2.Balance);
+
+            var studentResponse3 = await client.GetAsync("api/Students/test3");
+            Student student3 = await studentResponse3.Content.ReadAsAsync<Student>();
+            Assert.AreEqual(8.00M, student3.Balance);
+
+
+            //case where the studentID changes but the new student doesn't exist
+            string jsonString3 = JsonSerializer.Serialize(new Transaction(100.00M, "thisStudentDoesNotExist", "test student 4", "test2", "food8", "test1", "test school9", new DateTime(2021, 07, 07), "4"));
+            var httpContent3 = new StringContent(jsonString3, Encoding.UTF8, "application/json");
+            var response3 = await client.PutAsync("api/Transactions/4", httpContent3);
+            Assert.AreEqual("BadRequest", response3.StatusCode.ToString());
+
+            //make sure the transaction was not changed in the database
+            var getResponse3 = await client.GetAsync("api/Transactions/4");
+            Transaction actualTransaction3 = await getResponse3.Content.ReadAsAsync<Transaction>();
+            tc.WriteLine(getResponse.StatusCode.ToString());
+            Transaction expectedTransaction3 = new Transaction(2.00M, "test4", "test student 4", "test2", "food2", "test1", "test school1", new DateTime(2021, 07, 07), "4");
+            Assert.AreEqual(expectedTransaction3.ToString(), actualTransaction3.ToString());
+
 
             //case where the transaction doesn't exist
+            string jsonString5 = JsonSerializer.Serialize(new Transaction(2.00M, "test4", "test student 4", "test2", "food2", "test1", "test school1", new DateTime(2021, 07, 07), "thisTransactionDoesNotExist"));
+            var httpContent5 = new StringContent(jsonString5, Encoding.UTF8, "application/json");
+            var response5 = await client.PutAsync("api/Transactions/thisTransactionDoesNotExist", httpContent5);
+            Assert.AreEqual("NotFound", response5.StatusCode.ToString());
 
-            //case where the student doesn't exist
+            //make sure the student's balance wasn't changed
+            var studentResponse4 = await client.GetAsync("api/Students/test4");
+            Student student4 = await studentResponse4.Content.ReadAsAsync<Student>();
+            Assert.AreEqual(8.00M, student4.Balance);
+
+            //make sure the transaction was not added to the database
+            var getResponse4 = await client.GetAsync("api/Transactions/thisTransactionDoesNotExist");
+            Assert.AreEqual("NotFound", getResponse4.StatusCode.ToString());
 
 
         }
@@ -208,6 +255,21 @@ namespace TestAPI
             var response2 = await client.PostAsync("api/Transactions", httpContent2);
             //make sure the response is Conflict
             Assert.AreEqual("Conflict", response2.StatusCode.ToString());
+
+            //post a transaction with a negative cost
+            string jsonString3 = JsonSerializer.Serialize(new Transaction(-1.00M, "test1", "test student 1", "test3", "food3", "test0", "test school0", new DateTime(2021, 07, 07), "6"));
+            var httpContent3 = new StringContent(jsonString3, Encoding.UTF8, "application/json");
+            var response3 = await client.PostAsync("api/Transactions", httpContent3);
+            //make sure post returns a success response
+            Assert.IsTrue(response3.IsSuccessStatusCode);
+            //make sure the student's balance was updated correctly
+            var studentResponse3 = await client.GetAsync("api/Students/test1");
+            Student student1 = await studentResponse3.Content.ReadAsAsync<Student>();
+            Assert.AreEqual(10.00M, student1.Balance);
+            //make sure the transaction is in the database
+            var getResponse2 = await client.GetAsync("api/Transactions");
+            List<Transaction> transactions2 = await getResponse2.Content.ReadAsAsync<List<Transaction>>();
+            Assert.IsTrue(ContainsAnEqualTransaction(transactions2, new Transaction(-1.00M, "test1", "test student 1", "test3", "food3", "test0", "test school0", new DateTime(2021, 07, 07), "6")));
         }
 
         [TestMethod]
