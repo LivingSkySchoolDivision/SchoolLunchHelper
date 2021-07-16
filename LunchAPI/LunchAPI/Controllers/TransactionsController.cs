@@ -57,7 +57,7 @@ namespace LunchAPI.Controllers
             return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
         }
 
-        
+        /*
         // PUT: api/Transactions/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         // Modifies existing transactions. Assumes fields related to the field that was modified were updated before the put request was made.
@@ -121,8 +121,68 @@ namespace LunchAPI.Controllers
 
             return NoContent();
         }
-        
-        
+        */
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutTransaction(string id, Transaction transaction)
+        {
+            if (id != transaction.ID)
+            {
+                return BadRequest();
+            }
+
+            //finding the cost of the transaction in the database before it is modified so the student's balance can be changed accordingly
+            Transaction repoTransaction = await repo.FindAsync(id);
+            if (repoTransaction == null)
+            {
+                return NotFound();
+            }
+            else if (repoTransaction.StudentID != transaction.StudentID) //if the transaction is changed to belong to a different student
+            {//NOTE: in this case the controller assumes the student's name and any other fields that need to be changed were changed before the put request was made
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID)))
+                {
+                    await balanceCalculator.UpdateBalanceRemoveTransaction(repoTransaction); //the transaction is reversed on the old student's balance
+                    await balanceCalculator.UpdateBalanceNewTransaction(transaction); //the transaction is added to the new student's balance
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            else if (repoTransaction.Cost != transaction.Cost) //if the old and new cost are not the same, the student's balance needs to be updated
+            {
+                if ((await balanceCalculator.StudentWithIdExists(repoTransaction.StudentID)) && (await balanceCalculator.StudentWithIdExists(transaction.StudentID)))
+                {
+                    await balanceCalculator.UpdateBalanceModifiedTransactionCost(transaction, repoTransaction.Cost);
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+
+            await repo.UpdateTransaction(transaction);
+
+            try
+            {
+                await repo.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!repo.TransactionExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        /*
         [HttpPut("/put2/{id}")]
         public async Task<IActionResult> PutTransaction2(string id, Transaction transaction)
         {
@@ -183,6 +243,7 @@ namespace LunchAPI.Controllers
 
             return NoContent();
         }
+        */
 
         /*
         // PUT: api/Transactions/5

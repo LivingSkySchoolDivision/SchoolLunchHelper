@@ -62,7 +62,8 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
-            repo.ModifiedEntityState(student);
+            //repo.ModifiedEntityState(student);
+            await repo.UpdateStudentInfo(student);
 
             try
             {
@@ -82,6 +83,7 @@ namespace LunchAPI.Controllers
 
             return NoContent();
         }
+
 
         // POST: api/Students
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754

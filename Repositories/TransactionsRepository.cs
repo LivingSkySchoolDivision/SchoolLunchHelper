@@ -15,10 +15,12 @@ namespace Repositories
      */
     public class TransactionsRepository
     {
-        private readonly DataDbContext _context = ContextInjector.Context;
+        //private readonly DataDbContext _context = ContextInjector.Context;
+        private DataDbContext _context;
 
         public TransactionsRepository()
         {
+            _context = DbContextManager.GetNewDbContext();
         }
 
         public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions()
@@ -33,13 +35,18 @@ namespace Repositories
 
         public async Task<int> SaveChangesAsync()
         {
-            return await _context.SaveChangesAsync();
+            var saveChanges = await _context.SaveChangesAsync();
+            _context.Dispose();
+            _context = DbContextManager.GetNewDbContext();
+            return saveChanges;
         }
 
+        /*
         public void ModifiedEntityState(Transaction transaction)
         {
             _context.Entry(transaction).State = EntityState.Modified;
         }
+        */
 
         public void Add(Transaction transaction)
         {
@@ -55,5 +62,21 @@ namespace Repositories
         {
             return _context.Transactions.Any(e => e.ID == id);
         }
+
+        public async Task UpdateTransaction(Transaction newTransaction)
+        {
+            //find the entity, then change its fields, then update it
+            Transaction oldTransaction = await _context.Transactions.FindAsync(newTransaction.ID);
+            oldTransaction.Cost = newTransaction.Cost;
+            oldTransaction.FoodID = newTransaction.FoodID;
+            oldTransaction.FoodName = newTransaction.FoodName;
+            oldTransaction.SchoolID = newTransaction.SchoolID;
+            oldTransaction.SchoolName = newTransaction.SchoolName;
+            oldTransaction.StudentID = newTransaction.StudentID;
+            oldTransaction.StudentName = newTransaction.StudentName;
+            oldTransaction.Time = newTransaction.Time;
+            _context.Update(oldTransaction);
+        }
+
     }
 }

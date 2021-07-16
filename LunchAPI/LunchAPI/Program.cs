@@ -133,7 +133,8 @@ namespace LunchAPI
             }
             var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
             string connectionString = connectionStringResponse.Value;
-            ContextInjector.Init(connectionString);
+            //ContextInjector.Init(connectionString);
+            DbContextManager.Init(connectionString);
         }
 
 

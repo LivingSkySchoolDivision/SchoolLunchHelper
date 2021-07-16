@@ -13,10 +13,12 @@ namespace Repositories
 {
     public class SchoolsRepository
     {
-        private readonly DataDbContext _context = ContextInjector.Context;
+        //private readonly DataDbContext _context = ContextInjector.Context;
+        private DataDbContext _context;
 
         public SchoolsRepository()
         {
+            _context = DbContextManager.GetNewDbContext();
         }
 
         public async Task<ActionResult<IEnumerable<School>>> GetSchools()
@@ -31,7 +33,10 @@ namespace Repositories
 
         public async Task<int> SaveChangesAsync()
         {
-            return await _context.SaveChangesAsync();
+            var saveChanges = await _context.SaveChangesAsync();
+            _context.Dispose();
+            _context = DbContextManager.GetNewDbContext();
+            return saveChanges;
         }
 
         public void ModifiedEntityState(School school)
@@ -52,6 +57,14 @@ namespace Repositories
         public bool SchoolExists(string id)
         {
             return _context.Schools.Any(e => e.ID == id);
+        }
+
+        public async Task UpdateSchool(School newSchool)
+        {
+            School oldSchool = await _context.Schools.FindAsync(newSchool.ID);
+            oldSchool.Name = newSchool.Name;
+            _context.Update(oldSchool);
+
         }
     }
 }

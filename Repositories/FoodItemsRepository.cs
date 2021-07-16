@@ -15,7 +15,8 @@ namespace Repositories
      */
     public class FoodItemsRepository
     {
-        private readonly DataDbContext _context = ContextInjector.Context;
+        //private readonly DataDbContext _context = ContextInjector.Context;
+        private DataDbContext _context = DbContextManager.GetNewDbContext();
 
         public FoodItemsRepository() 
         {
@@ -42,7 +43,10 @@ namespace Repositories
 
         public async Task<int> SaveChangesAsync()
         {
-            return await _context.SaveChangesAsync();
+            var saveChanges = await _context.SaveChangesAsync();
+            _context.Dispose();
+            _context = DbContextManager.GetNewDbContext();
+            return saveChanges;
         }
 
         public void ModifiedEntityState(FoodItem foodItem)
@@ -65,5 +69,14 @@ namespace Repositories
             return _context.FoodItems.Any(e => e.ID == id);
         }
 
+        public async Task UpdateFoodItem(FoodItem newFoodItem)
+        {
+            FoodItem oldFoodItem = await _context.FoodItems.FindAsync(newFoodItem.ID);
+            oldFoodItem.Cost = newFoodItem.Cost;
+            oldFoodItem.Description = newFoodItem.Description;
+            oldFoodItem.Name = newFoodItem.Name;
+            oldFoodItem.SchoolID = newFoodItem.SchoolID;
+            _context.Update(oldFoodItem);
+        }
     }
 }

@@ -16,12 +16,11 @@ namespace Data.Models
 		private decimal _Balance;
 		private string _MedicalInfo;
 			
-		//private setter is for EF Core
 		[Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
-		public string StudentID { get { return _StudentID; } private set { _StudentID = value; } }
+		public string StudentID { get { return _StudentID; } set { _StudentID = value; } }
 
 		[Required]
-		public string Name { get { return _Name; } private set { _Name = value; } }
+		public string Name { get { return _Name; } set { _Name = value; } }
 
 		[Required]
 		public string SchoolID { get { return _SchoolID; } set { _SchoolID = value; } }

@@ -64,7 +64,8 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
-            repo.ModifiedEntityState(foodItem);
+            //repo.ModifiedEntityState(foodItem);
+            await repo.UpdateFoodItem(foodItem);
 
             try
             {
