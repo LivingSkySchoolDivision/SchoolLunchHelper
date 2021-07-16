@@ -29,7 +29,6 @@ namespace TestAPI
             var ApiUri = configFile.AppSettings.Settings["ApiUri"].Value.ToString();
             client = new HttpClient();
             client.BaseAddress = new Uri(ApiUri);
-            //client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/problem+json"));
         }
 
         [TestInitialize]
