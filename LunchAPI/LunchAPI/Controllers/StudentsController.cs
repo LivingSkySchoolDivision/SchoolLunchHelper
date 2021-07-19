@@ -62,6 +62,11 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
+            Student dbStudent = await repo.FindAsync(id);
+            if (dbStudent == null)
+            {
+                return NotFound();
+            }
             //repo.ModifiedEntityState(student);
             await repo.UpdateStudentInfo(student);
 

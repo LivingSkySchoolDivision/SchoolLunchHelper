@@ -11,6 +11,7 @@ using System.IO;
 using System.Net.Http.Formatting;
 using System.Collections.ObjectModel;
 using System.Net.Http.Headers;
+using System.Linq;
 
 namespace TestAPI
 {
@@ -98,7 +99,7 @@ namespace TestAPI
         {
             var response = await client.GetAsync("api/Transactions");
             List<Transaction> transactions = await response.Content.ReadAsAsync<List<Transaction>>();
-
+            Assert.IsTrue(response.IsSuccessStatusCode);
             Assert.IsTrue(ContainsAnEqualTransaction(transactions, new Transaction(1.00M, "test1", "test student 1", "test1", "food1", "test0", "test school0", new DateTime(2021, 07, 07), "1")));
             Assert.IsTrue(ContainsAnEqualTransaction(transactions, new Transaction(2.00M, "test2", "test student 2", "test2", "food2", "test0", "test school0", new DateTime(2021, 07, 07), "2")));
             Assert.IsTrue(ContainsAnEqualTransaction(transactions, new Transaction(1.00M, "test3", "test student 3", "test1", "food1", "test1", "test school1", new DateTime(2021, 07, 07), "3")));
@@ -116,7 +117,7 @@ namespace TestAPI
             Assert.AreEqual(new Transaction(1.00M, "test1", "test student 1", "test1", "food1", "test0", "test school0", new DateTime(2021, 07, 07), "1").ToString(), transaction1.ToString());
 
             var response2 = await client.GetAsync("api/Transactions/3");
-            Assert.IsTrue(response.IsSuccessStatusCode);
+            Assert.IsTrue(response2.IsSuccessStatusCode);
             Transaction transaction2 = await response2.Content.ReadAsAsync<Transaction>();
             Assert.AreEqual(new Transaction(1.00M, "test3", "test student 3", "test1", "food1", "test1", "test school1", new DateTime(2021, 07, 07), "3").ToString(), transaction2.ToString());
 
@@ -132,7 +133,7 @@ namespace TestAPI
             //case where the school exists
             var response = await client.GetAsync("api/Transactions/School/test0");
             List<Transaction> transactions = await response.Content.ReadAsAsync<List<Transaction>>();
-
+            Assert.IsTrue(response.IsSuccessStatusCode);
             Assert.IsTrue(ContainsAnEqualTransaction(transactions, new Transaction(1.00M, "test1", "test student 1", "test1", "food1", "test0", "test school0", new DateTime(2021, 07, 07), "1")));
             Assert.IsTrue(ContainsAnEqualTransaction(transactions, new Transaction(2.00M, "test2", "test student 2", "test2", "food2", "test0", "test school0", new DateTime(2021, 07, 07), "2")));
             Assert.IsFalse(ContainsAnEqualTransaction(transactions, new Transaction(1.00M, "test3", "test student 3", "test1", "food1", "test1", "test school1", new DateTime(2021, 07, 07), "3")));
@@ -140,17 +141,17 @@ namespace TestAPI
 
             var response2 = await client.GetAsync("api/Transactions/School/test1");
             List<Transaction> transactions2 = await response2.Content.ReadAsAsync<List<Transaction>>();
-
+            Assert.IsTrue(response2.IsSuccessStatusCode);
             Assert.IsFalse(ContainsAnEqualTransaction(transactions2, new Transaction(1.00M, "test1", "test student 1", "test1", "food1", "test0", "test school0", new DateTime(2021, 07, 07), "1")));
             Assert.IsFalse(ContainsAnEqualTransaction(transactions2, new Transaction(2.00M, "test2", "test student 2", "test2", "food2", "test0", "test school0", new DateTime(2021, 07, 07), "2")));
             Assert.IsTrue(ContainsAnEqualTransaction(transactions2, new Transaction(1.00M, "test3", "test student 3", "test1", "food1", "test1", "test school1", new DateTime(2021, 07, 07), "3")));
             Assert.IsTrue(ContainsAnEqualTransaction(transactions2, new Transaction(2.00M, "test4", "test student 4", "test2", "food2", "test1", "test school1", new DateTime(2021, 07, 07), "4")));
 
             //case where the school does not exist
-            var response3 = await client.GetAsync("api/Transaction/School/aSchoolThatDoesNotExist");
-            Assert.IsTrue(response.IsSuccessStatusCode);
+            var response3 = await client.GetAsync("api/Transactions/School/aSchoolThatDoesNotExist");
+            Assert.IsTrue(response3.IsSuccessStatusCode);
             List<Transaction> transactions3 = await response3.Content.ReadAsAsync<List<Transaction>>();
-            Assert.IsNull(transactions3);
+            Assert.IsFalse((transactions3?.Any()) == true);
         }
 
         [TestMethod]

@@ -64,6 +64,11 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
+            FoodItem dbFoodItem = await repo.FindAsync(id);
+            if (dbFoodItem == null)
+            {
+                return NotFound();
+            }
             //repo.ModifiedEntityState(foodItem);
             await repo.UpdateFoodItem(foodItem);
 

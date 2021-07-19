@@ -54,6 +54,11 @@ namespace LunchAPI.Controllers
                 return BadRequest();
             }
 
+            School dbSchool = await repo.FindAsync(id);
+            if (dbSchool == null)
+            {
+                return NotFound();
+            }
             //repo.ModifiedEntityState(school);
             await repo.UpdateSchool(school);
 
