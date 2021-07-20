@@ -13,9 +13,9 @@ namespace Data.Models
         private string _Name;
         private string _ID;
 
-        //private setters are for EF Core
+        //private setter is for EF Core
         [Required]
-        public string Name { get { return _Name; } private set { _Name = value; } }
+        public string Name { get { return _Name; } set { _Name = value; } }
 
         [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public string ID { get { return _ID; } private set { _ID = value; } }

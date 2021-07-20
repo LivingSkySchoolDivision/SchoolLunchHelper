@@ -13,27 +13,26 @@ namespace Data.Models
 		private string _StudentID;
 		private string _Name;
 		private string _SchoolID;
-		private double _Balance;
+		private decimal _Balance;
 		private string _MedicalInfo;
 			
-		//private setter is for EF Core
 		[Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
-		public string StudentID { get { return _StudentID; } private set { _StudentID = value; } }
+		public string StudentID { get { return _StudentID; } set { _StudentID = value; } }
 
 		[Required]
-		public string Name { get { return _Name; } private set { _Name = value; } }
+		public string Name { get { return _Name; } set { _Name = value; } }
 
 		[Required]
 		public string SchoolID { get { return _SchoolID; } set { _SchoolID = value; } }
 
-		[Column(TypeName = "decimal(18, 2)"), Required] //computed column - sum of student's transactions
-		public double Balance { get { return _Balance; } set { _Balance = value; } }
+		[Column(TypeName = "decimal(18, 2)"), Required] //updated by balanace calculator when transactions are sent to the API
+		public decimal Balance { get { return _Balance; } set { _Balance = value; } }
 
 		[Required(AllowEmptyStrings = true)]
 		public string MedicalInfo { get { return _MedicalInfo; } set { _MedicalInfo = value; } }
 
 
-		private Student(string StudentID, string Name, string SchoolID, double Balance, string MedicalInfo)
+		public Student(string StudentID, string Name, string SchoolID, decimal Balance, string MedicalInfo)
 		{
 			_StudentID = StudentID;
 			_Name = Name;
@@ -41,5 +40,6 @@ namespace Data.Models
 			_Balance = Balance;
 			_MedicalInfo = MedicalInfo;
 		}
+
 	}
 }
