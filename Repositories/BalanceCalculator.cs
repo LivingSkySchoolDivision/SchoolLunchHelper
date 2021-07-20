@@ -22,15 +22,20 @@ namespace Repositories
         }
 
 
+        /**<summary>Updates a student's balance with the cost of the given transaction.</summary>
+         * <param name="transaction">The transaction to be applied to a student's balance.</param>
+         */
         public async Task UpdateBalanceNewTransaction(Transaction transaction)
         { 
             Student student = await studentsRepo.FindAsync(transaction.StudentID); //find the student that the transaction belongs to
             student.Balance -= transaction.Cost; //subtract the cost from the student's balance
             studentsRepo.ModifiedEntityState(student); //tell EF Core that the student has been modified
-            await studentsRepo.SaveChangesAsync();
+            await studentsRepo.SaveChangesAsync(); //save changes to the database
         }
 
-
+        /**<summary>Refunds a transaction from the student's balance.</summary>
+         * <param name="transaction">The transaction to be undone.</param>
+         */
         public async Task UpdateBalanceRemoveTransaction(Transaction transaction)
         {
             Student student = await studentsRepo.FindAsync(transaction.StudentID);
@@ -42,7 +47,10 @@ namespace Repositories
             }
         }
 
-
+        /**<summary>Adjusts the student's balance when a transaction changes its cost.</summary>
+         * <param name="updatedTransaction">The updated transaction.</param>
+         * <param name="oldCost">The original cost of the transaction.</param>
+         */
         public async Task UpdateBalanceModifiedTransactionCost(Transaction updatedTransaction, Decimal oldCost)
         { //this needs to return before the transaction is modified in EF Core
             Student student = await studentsRepo.FindAsync(updatedTransaction.StudentID);
@@ -55,6 +63,10 @@ namespace Repositories
             await studentsRepo.SaveChangesAsync();
         }
 
+        /**<summary>Checks if a student with a certain ID exists.</summary>
+         * <param name="studentID">The ID of the student to search for.</param>
+         * <returns>True if the student exists, false if the student does not exist.</returns>
+         */
         public async Task<bool> StudentWithIdExists(string studentID)
         {
             Student student = await studentsRepo.FindAsync(studentID);

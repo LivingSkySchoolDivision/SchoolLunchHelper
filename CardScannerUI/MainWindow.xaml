@@ -25,7 +25,9 @@
                   CanUserResizeRows="False"
                   CanUserSortColumns="False" ClipboardCopyMode="None"
                   ScrollViewer.VerticalScrollBarVisibility="Auto"
-                  SelectionMode="Single" Margin="0,36,0,0">
+                  SelectionMode="Single" Margin="0,36,0,0"
+                  MinRowHeight="25" 
+                  FontSize="12">
 
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">

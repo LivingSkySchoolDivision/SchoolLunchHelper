@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Repositories
 {
-    /**<summary>Separates EF Core code from the FoodItem controller</summary>
+    /**<summary>A wrapper class to keep EF Core separate from other classes. Handles the foodItem objects.</summary>
      */
     public class FoodItemsRepository
     {

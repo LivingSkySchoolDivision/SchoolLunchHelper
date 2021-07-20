@@ -37,17 +37,10 @@ namespace LunchAPI
             //CreateHostBuilder(args).Build().Run();
             if (!inDesignerMode)
             {
-                Console.WriteLine("not in designer mode - Main()");
                 programHost = CreateHostBuilder(args).Build(); //initialize the host. CreateHostBuilder has to initialize the fields for the other methods to use
                 MakeDbContext().Wait();
             }
-            else //DEBUG
-            {
-                Console.WriteLine("in designer mode - Main()");
-            }
             
-            //MakeDbContext().Wait(); //blocks the thread until the data context is initialized, if anything happens before this is done there will be errors
-            //printSecrets_DEBUG().Wait(); //DEBUG
             programHost.Run(); //after the other methods are finished, run the host builder. Blocks the main thread until shutdown
         }
 
@@ -69,7 +62,7 @@ namespace LunchAPI
                     {
                         keyVaultEndpoint = GetKeyVaultEndpoint();
                     }
-                    if (keyVaultEndpoint == null) //DEBUG - this is here so the API can run from the cmd (not in debug mode so it can't read from launchSettings.json)
+                    if (keyVaultEndpoint == null) //this allows the API to run from the cmd (not in debug mode so it can't read from launchSettings.json)
                     {
                         ExeConfigurationFileMap customConfigFileMap = new ExeConfigurationFileMap();
                         customConfigFileMap.ExeConfigFilename = "EfCoreDesignerSettings.config";
@@ -89,7 +82,6 @@ namespace LunchAPI
                         builder.AddAzureKeyVault(keyVaultEndpoint, keyVaultClient, new DefaultKeyVaultSecretManager());
 
                         kvc = keyVaultClient;
-                        Console.WriteLine("test"); //DEBUG
                         
                     }
 
@@ -97,7 +89,9 @@ namespace LunchAPI
 
 
         #region EF Core designer methods
-        /**<remarks>This is only to be used in DataDbContextFactory for EF Core's designer. Call SaveConnectionString() first</remarks>
+        /**<remarks>This is only to be used in DataDbContextFactory for EF Core's designer. 
+         * Call SaveConnectionString() first.</remarks>
+         * <returns>The connection string.</returns>
          */
         public static string GetConnectionString()
         {
@@ -107,23 +101,24 @@ namespace LunchAPI
         }
 
 
+        /**<summary>Gets the connection string and saves it as a class attribute for MakeDbContext. 
+         * For DataDbContextFactory only.</summary>
+         */
         public static async Task SaveConnectionStringAsync(string keyVaultEndpoint)
         {
             inDesignerMode = true;
             kve = keyVaultEndpoint;
             programHost = CreateHostBuilder(null).Build();
             //var keyVaultEndpoint = GetKeyVaultEndpoint(); //this returns null because env vars haven't been loaded from launchSettings.json - ef core's designer won't initialize settings with launchSettings.json
-            Console.WriteLine("test2"); //DEBUG
             var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
-            Console.WriteLine("test3"); //DEBUG
             string connectionString = connectionStringResponse.Value; 
-            Console.WriteLine("test4"); //DEBUG
             ConnectionString = connectionString;
         }
         #endregion
 
 
-        //makes a new datadbcontext using the contextInjector
+        /**<summary>Initializes the DbContextManager with the connection string.</summary>
+         */
         private static async Task MakeDbContext()
         {
             var keyVaultEndpoint = GetKeyVaultEndpoint();
@@ -133,11 +128,10 @@ namespace LunchAPI
             }
             var connectionStringResponse = await kvc.GetSecretAsync(keyVaultEndpoint, "ConnectionStrings--InternalDatabase");
             string connectionString = connectionStringResponse.Value;
-            //ContextInjector.Init(connectionString);
             DbContextManager.Init(connectionString);
         }
 
-
+        /*
         //makes a new datadbcontext and returns it
         private static async Task<DataDbContext> CreateDataContext()
         {
@@ -146,10 +140,12 @@ namespace LunchAPI
             string connectionString = connectionStringResponse.Value;
             return new DataDbContext(connectionString);
         }
+        */
 
 
 
-
+        /**<summary>For debugging purposes only, prints secrets from the keyvault.</summary>
+         */
         public static async Task printSecrets_DEBUG() //DEBUG
         {
             //KeyVaultSecret secret = client.GetSecret("<mySecret>");

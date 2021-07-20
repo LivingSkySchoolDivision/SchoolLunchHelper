@@ -33,7 +33,6 @@ namespace CardScannerUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        //private List<School> schools; 
         private ObservableCollection<FoodItem> foodItems;
         private ObservableCollection<Transaction> guiTransactions;
         private ObservableCollection<Transaction> unsyncedTransactions; //this gets the transactions from the JSON that did not sync, don't want them on the GUI so keep them separate
@@ -56,7 +55,6 @@ namespace CardScannerUI
         {
             InitializeComponent();
 
-            //schools = new();
             foodItems = new();
             guiTransactions = new();
             students = new();
@@ -67,38 +65,16 @@ namespace CardScannerUI
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            //txtEnterStudentNum.IsEnabled = false;
-            //buttonUndoTransaction.IsEnabled = false;
-            //buttonSync.IsEnabled = false;
-
             loadingWindow = new LoadingBox(this);
             loadingWindow.Show();
             IsEnabled = false;
-            
-            //DEBUG START 
-            foodItems.Add(new FoodItem("pizza", 1.11M, "test description test description test description test description test description test description test description test description test description", "school1"));
-            foodItems.Add(new FoodItem("soup", 2.22M, ""));
-            students.Add(new Student("1111", "student1", "1", 11, "no medical info (1)"));
-            students.Add(new Student("2222", "student2", "2", 22, "no medical info (2)"));
-            //schools.Add(new School("school1", "1"));
-            //schools.Add(new School("school2", "2"));
-            //schools.Add(new School("school3", "3"));
-            //DEBUG END
-
-            //String config = ConfigurationManager.ConnectionStrings["database"].ConnectionString;
-            //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            //var connectionString = configFile.ConnectionStrings.ConnectionStrings["database"].ConnectionString;
-            //MessageBox.Show(connectionString); //DEBUG
-
-            //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            //var apiUri = configFile.ConnectionStrings.ConnectionStrings["test"].ConnectionString;
 
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
             string thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
             //MessageBox.Show(apiUri); //DEBUG
-            Trace.WriteLine("ApiUri: " + apiUri); //DEBUG
-            Trace.WriteLine("schoolID: " + thisSchoolID); //DEBUG
+            //Trace.WriteLine("ApiUri: " + apiUri); //DEBUG
+            //Trace.WriteLine("schoolID: " + thisSchoolID); //DEBUG
 
             ApiHelper.Init(apiUri); //initializes settings for the HttpClient
             client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
@@ -112,25 +88,42 @@ namespace CardScannerUI
 
             await GetThisSchoolFromIdAsync(thisSchoolID);
             //Trace.WriteLine("school name: " + ThisSchool.Name + " school ID: " + ThisSchool.ID); //DEBUG
-            this.Title = "Lunch Helper - " + ThisSchool.Name;
 
-            await GetDataAsync();
-            Trace.WriteLine("2"); //DEBUG
+            //if the request to get the school object fails, the program is closed, but this code will continue to run after
+            //it's been closed. This checks if the school is null, and if it is, the method is done and no more code will 
+            //run and cause exceptions.
+            if (ThisSchool != null)
+            {
+                this.Title = "Lunch Helper - " + ThisSchool.Name; 
+
+                await GetDataAsync();
+                Trace.WriteLine("2"); //DEBUG
+
+                //set up the data binding
+                dataGridTransactions.DataContext = guiTransactions;
+                dataGridTransactions.ItemsSource = guiTransactions;
+                dataGridFoodItems.DataContext = foodItems;
+                dataGridFoodItems.ItemsSource = foodItems;
+                txtUnsyncedTransactionsCount.DataContext = unsyncedTransactions.Count.ToString();
+
+                //makes the datagrid automatically scroll to the newest transaction if the scroll bar is visible
+                guiTransactions.CollectionChanged += new System.Collections.Specialized.NotifyCollectionChangedEventHandler(delegate (object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+                {
+                    if (guiTransactions.Count > 0)
+                    {
+                        dataGridTransactions.ScrollIntoView(guiTransactions[guiTransactions.Count - 1]);
+                    }
+                });
+
+                //txtEnterStudentNum.IsEnabled = true;
+                //buttonSync.IsEnabled = true;
+                Trace.WriteLine("3"); //DEBUG
+                loadingWindow.Hide();
+                Trace.WriteLine("4"); //DEBUG
+                IsEnabled = true;
+                Trace.WriteLine("5"); //DEBUG
+            }
             
-            //set up the data binding
-            dataGridTransactions.DataContext = guiTransactions;
-            dataGridTransactions.ItemsSource = guiTransactions;
-            dataGridFoodItems.DataContext = foodItems;
-            dataGridFoodItems.ItemsSource = foodItems;
-            txtUnsyncedTransactionsCount.DataContext = unsyncedTransactions.Count.ToString();
-
-            //txtEnterStudentNum.IsEnabled = true;
-            //buttonSync.IsEnabled = true;
-            Trace.WriteLine("3"); //DEBUG
-            loadingWindow.Hide();
-            Trace.WriteLine("4"); //DEBUG
-            IsEnabled = true;
-            Trace.WriteLine("5"); //DEBUG
         }
 
 
@@ -183,7 +176,7 @@ namespace CardScannerUI
                 }
                 
             }
-            Trace.WriteLine("Closing the program...");
+            Trace.WriteLine("Closing the program..."); //DEBUG
         }
 
         /**<summary>Deletes all transactions from the database, student balances are updated automatically. 
@@ -203,7 +196,7 @@ namespace CardScannerUI
             }
         }
 
-        /**<summary>Loads the transactions from the json file into the unsyncedTransactions collection</summary>
+        /**<summary>Synchronously loads the transactions from the json file into the unsyncedTransactions list.</summary>
          */
         private void LoadTransactionsFromJson()
         {
@@ -227,7 +220,7 @@ namespace CardScannerUI
                     var info = new FileInfo(transactionsJsonPath);
                     if (!(info.Length == 0)) //if file is not empty (if it's empty nothing needs to happen, the program can continue as normal)
                     {
-                        //!!do something with the unreadable info
+                        //need to do something with the unreadable info
                         Trace.WriteLine("could not deserialize"); //DEBUG
                     }
                 }
@@ -239,6 +232,10 @@ namespace CardScannerUI
             }
         }
 
+        /**<summary>Asynchronously gets the transactions from the json file containing the transactions that were not 
+         * previously sent to the database and adds them to the unsyncedTransactions list. Updates the unsynced transactions
+         * counter in the GUI.</summary>
+         */
         private async Task LoadTransactionsFromJsonAsync() 
         {
             if (!File.Exists(transactionsJsonPath))
@@ -253,31 +250,28 @@ namespace CardScannerUI
                 //string jsonString = File.ReadAllText(transactionsJsonPath);
                 try
                 {
-                    //unsyncedTransactions = JsonSerializer.Deserialize<ObservableCollection<Transaction>>(jsonString);
-                    //using FileStream createStream = File.Create(transactionsJsonPath);
-                    //unsyncedTransactions = await JsonSerializer.DeserializeAsync<ObservableCollection<Transaction>>(createStream);
-                    //await createStream.DisposeAsync();
-                    //string jsonString = await File.ReadAllTextAsync(transactionsJsonPath);
-                    //var contentStream = jsonString.
-                    //byte[] byteArray = Encoding.UTF8.GetBytes(jsonString);
-                    //byte[] byteArray = Encoding.ASCII.GetBytes(contents);
-                    //MemoryStream jsonStream = new MemoryStream(byteArray);
-                    //var result = await JsonSerializer.DeserializeAsync<Transaction>(jsonStream);
-                    //unsyncedTransactions.Add(result);
-                    //string jsonString = await File.ReadAllTextAsync(transactionsJsonPath);
-                    //byte[] byteArray = Encoding.UTF8.GetBytes(jsonString);
                     StreamReader sr = new StreamReader(transactionsJsonPath);
                     unsyncedTransactions = await JsonSerializer.DeserializeAsync<ObservableCollection<Transaction>>(sr.BaseStream);
                     sr.Dispose();
                 }
                 catch
                 {
-                //what should it do if the json cant be read?
-                var info = new FileInfo(transactionsJsonPath);
+                    var info = new FileInfo(transactionsJsonPath);
                     if (!(info.Length == 0)) //if file is not empty (if it's empty nothing needs to happen, the program can continue as normal)
                     {
-                        //!!do something with the unreadable info - copy the file and make a new one? delete the file?
-                        Trace.WriteLine("could not deserialize"); //DEBUG
+                        //try again
+                        try
+                        {
+                            StreamReader sr = new StreamReader(transactionsJsonPath);
+                            unsyncedTransactions = await JsonSerializer.DeserializeAsync<ObservableCollection<Transaction>>(sr.BaseStream);
+                            sr.Dispose();
+                        }
+                        catch
+                        {
+                            //!!do something with the unreadable info - copy the file and make a new one? delete the file?
+                            Trace.WriteLine("could not deserialize"); //DEBUG
+                        }
+                        
                     }
                 }
                 foreach (Transaction i in unsyncedTransactions) //DEBUG
@@ -294,8 +288,6 @@ namespace CardScannerUI
         {
             try
             {
-                //var responseStudents = await client.GetAsync("api/Students");
-                //students = await responseStudents.Content.ReadAsAsync<List<Student>>();
                 var responseStudents = await client.GetAsync("api/Students/School/" + ThisSchool.ID);
                 students = await responseStudents.Content.ReadAsAsync<List<Student>>();
                 
@@ -328,9 +320,6 @@ namespace CardScannerUI
                     Trace.WriteLine("Schools is null");
                 }
                 */
-
-                //var responseFood = await client.GetAsync("api/FoodItems");
-                //foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
                 var responseFood = await client.GetAsync("api/FoodItems/School/" + ThisSchool.ID);
                 Trace.WriteLine(ThisSchool.ID); //DEBUG
                 foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
@@ -348,22 +337,6 @@ namespace CardScannerUI
                 {
                     Trace.WriteLine("FoodItems is null");
                 }
-                /*
-                for (int i = foodItems.Count - 1; i >= 0; i--) //DEBUG
-                {
-                    Trace.WriteLine("ThisSchool.ID=" + ThisSchool.ID + " FoodItem.schoolID=" + foodItems[i].SchoolID);
-                    if (!(ThisSchool.ID.Equals(foodItems[i].SchoolID)))
-                    {
-                        Trace.WriteLine("Removed foodItem at " + i);
-                        foodItems.RemoveAt(i);
-                    }
-                    else
-                    {
-                        Trace.WriteLine("Did not remove foodItem at " + i);
-                    }
-                }
-                */
-
             }
             catch (HttpRequestException)
             {
@@ -394,7 +367,9 @@ namespace CardScannerUI
         }
         #endregion
 
-        public async Task AddTestDataToDatabase()
+        /**<summary>For debugging purposes only.</summary>
+         */
+        public async Task AddTestDataToDatabase() //DEBUG
         {
             //Student student1 = new Student("1", "Student1", "1", 10.00M, "test medical info");
             //Student student2 = new Student("2", "Student2", "1", 20.00M, "");
@@ -405,8 +380,17 @@ namespace CardScannerUI
             //Student student1 = new Student("3", "Student", "2", 15.00M, "studentID = 3");
             //Student student2 = new Student("4", "Student", "2", 25.00M, "studentID = 4");
             //School school1 = new School("School2", "2");
-            FoodItem food1 = new FoodItem("Pizza", 2.00M, "1"); //food IDs are assigned based on time, creating one object immediately after the other that belongs to the same school may result in duplicate key exceptions
-            
+            //FoodItem food1 = new FoodItem("Pizza", 2.00M, "1"); //food IDs are assigned based on time, creating one object immediately after the other that belongs to the same school may result in duplicate key exceptions
+            Student student;
+            string jsonStringStudent;
+            StringContent httpContentStudent;
+            for (int i = 5; i <= 100; i++)
+            {
+                student = new Student(i.ToString(), "Student " + i, "1", 20.00M, "medical info");
+                jsonStringStudent = JsonSerializer.Serialize(student);
+                httpContentStudent = new StringContent(jsonStringStudent, Encoding.UTF8, "application/json");
+                await client.PostAsync("api/Students", httpContentStudent);
+            }
 
             /*
             string jsonStringStudent1 = JsonSerializer.Serialize(student1);
@@ -422,6 +406,7 @@ namespace CardScannerUI
             var response3 = await client.PostAsync("api/Schools", httpContentSchool1);
             */
 
+            /*
             string jsonStringFood1 = JsonSerializer.Serialize(food1);
             var httpContentFood1 = new StringContent(jsonStringFood1, Encoding.UTF8, "application/json");
             var response4 = await client.PostAsync("api/FoodItems", httpContentFood1);
@@ -430,22 +415,22 @@ namespace CardScannerUI
             string jsonStringFood2 = JsonSerializer.Serialize(food2);
             var httpContentFood2 = new StringContent(jsonStringFood2, Encoding.UTF8, "application/json");
             var response5 = await client.PostAsync("api/FoodItems", httpContentFood2);
+            */
 
-
-            if (/*response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && */response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
-            {
-                Trace.WriteLine("successfully added all test data to the database");
-            }
-            else
-            {
-                Trace.WriteLine("failed to add to the database. responses:");
+            //if (response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
+            //{
+                //Trace.WriteLine("successfully added all test data to the database");
+            //}
+            //else
+            //{
+                //Trace.WriteLine("failed to add to the database. responses:");
                 //Trace.WriteLine("student1: " + response);
                 //Trace.WriteLine("student2: " + response2);
                 //Trace.WriteLine("school1: " + response3);
-                Trace.WriteLine("food1: " + response4);
-                Trace.WriteLine("food2: " + response5);
+                //Trace.WriteLine("food1: " + response4);
+                //Trace.WriteLine("food2: " + response5);
                 
-            }
+            //}
         }
 
 
@@ -471,7 +456,9 @@ namespace CardScannerUI
         }
         */
 
-        /**<returns>The Student object with the given studentID. Returns null if the student is not found.</returns>
+        /**<summary>Searches for a student with the given student ID and returns the student object.</summary>
+         * <param name="studentID">The ID of the student to search for.</param>
+         * <returns>The Student object with the given studentID. Returns null if the student is not found.</returns>
          */
         public Student GetStudentByID(string studentID) //not going to assume the list is sorted by ID so use linear search
         {
@@ -495,8 +482,12 @@ namespace CardScannerUI
         }
 
 
-        /**<summary>Generates a new transaction and adds it to the transactions collection
+        /**<summary>Generates a new transaction and adds it to the guiTransactions and unsyncedTransactions collections.
          * </summary>
+         * <param name="StudentID">The customer's student ID.</param>
+         * <param name="FoodID">The ID of the FoodItem to be purchased.</param>
+         * <param name="foodName">The name of the FoodItem to be purchased.</param>
+         * <param name="cost">The cost of the FoodItem to be purchased.</param>
          */
         private async Task GenerateTransaction(string StudentID, string FoodID, string foodName, decimal cost)
         {
@@ -508,19 +499,10 @@ namespace CardScannerUI
             }
 
             //if transactions haven't been synced in a while, try to sync them
-            if (unsyncedTransactions.Count % 50 == 0) //!!need to put a good number here
+            if (unsyncedTransactions.Count % 25 == 0) //!!need to put a good number here
             {
-                //var syncTask = SyncTransactionsAsync();
-                //syncTask.Wait();
-                //await SyncTransactionsAsync();
                 await SyncAllTransactionsAsync(); //automatically shows the loading dialog box and disables the main window
             }
-            /*
-            if (!File.Exists(transactionsJsonPath))
-            {
-                File.Create(transactionsJsonPath);
-            }
-            */
 
             lastTransaction = new Transaction(StudentID, FoodID, foodName, cost, student.Name, ThisSchool.ID, ThisSchool.Name); //sets last transaction so it can be undone
 
@@ -531,8 +513,6 @@ namespace CardScannerUI
             IsEnabled = false;
             loadingWindow.Show();
             //serialize and overwrite
-            //string SerializeJsonString = JsonSerializer.Serialize(unsyncedTransactions);
-            //File.WriteAllText(transactionsJsonPath, SerializeJsonString); //don't need to worry about overwriting on this line, unsyncedTransactions has all the old transactions in it already
             using FileStream createStream = File.Create(transactionsJsonPath);
             await JsonSerializer.SerializeAsync(createStream, unsyncedTransactions);
             await createStream.DisposeAsync();
@@ -583,10 +563,6 @@ namespace CardScannerUI
          */
         private async Task SyncTransactionsAsync()
         {
-            //!! 20210708092602651 is duplicate primary key
-            //   20210708095115301 is the actual ID, EF Core claims its ID is 20210708092602651
-            //   actual: 20210708111341192  duplicate: 20210708095115301
-
             loadingWindow.Show();
             IsEnabled = false;
 
@@ -774,11 +750,5 @@ namespace CardScannerUI
             }
         }
 
-        /*
-        private void txtEnterStudentNum_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            Keyboard.Focus(txtEnterStudentNum);
-        }
-        */
     }
 }

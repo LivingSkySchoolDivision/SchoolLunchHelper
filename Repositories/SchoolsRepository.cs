@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Repositories
 {
+    /**<summary>A wrapper class to keep EF Core separate from other classes. Handles the school objects.</summary>
+     */
     public class SchoolsRepository
     {
         //private readonly DataDbContext _context = ContextInjector.Context;
