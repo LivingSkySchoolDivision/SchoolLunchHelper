@@ -1,0 +1,58 @@
+﻿<Window x:Class="LunchManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LunchManager"
+        mc:Ignorable="d"
+        Title="Lunch Manager" Height="450" Width="800"
+        Loaded="Window_Loaded">
+    <Grid>
+        <TabControl SelectionChanged="TabControl_SelectionChanged">
+            <TabItem Header="Manage Transactions">
+                <Grid Background="#FFE5E5E5">
+                    <Label Content="Label" HorizontalAlignment="Left" Margin="60,91,0,0" VerticalAlignment="Top"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Manage Students">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+
+            <TabItem Header="Manage Food Types">
+                <Grid Background="#FFE5E5E5">
+                    <DataGrid x:Name="dataGridFoodTypes"
+                              Margin="79,21,79,43"
+                              AlternatingRowBackground="LightGray"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              AutoGenerateColumns="True"
+                              CanUserDeleteRows="True"
+                              CanUserResizeRows="True"
+                              CanUserSortColumns="False"
+                              CanUserAddRows="True"
+                              SelectionChanged="dataGridFoodTypes_SelectionChanged">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay}"
+                                    Header="Name" 
+                                    Width="170"
+                                    IsReadOnly="True"
+                                    x:Name="dgcolStudentName"/>
+                            <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}, Mode=TwoWay}" 
+                                    Header="Cost"
+                                    Width="100"
+                                    IsReadOnly="True"/>
+                            <DataGridTextColumn Binding="{Binding Path=Description, Mode=TwoWay}" 
+                                    Header="Description" 
+                                    Width="*"
+                                    IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Button x:Name="btnEditFoodItem" Click="btnEditFoodItem_Click" Content="Edit" HorizontalAlignment="Center" Margin="0,368,0,0" VerticalAlignment="Top" Width="54" />
+
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+    </Grid>
+</Window>

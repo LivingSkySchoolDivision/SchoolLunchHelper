@@ -69,9 +69,26 @@ namespace CardScannerUI
             loadingWindow.Show();
             IsEnabled = false;
 
+            //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            //apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
+            //string thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
-            string thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
+            string thisSchoolID = "";
+            try
+            {
+                apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
+                thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
+            }
+            catch
+            {
+                MessageBox.Show("There was an error reading from the configuration file, closing the program.", "Missing configuration file", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            if (string.IsNullOrEmpty(thisSchoolID) || string.IsNullOrEmpty(apiUri))
+            {
+                MessageBox.Show("There was an error reading from the configuration file, closing the program.", "Missing configuration file", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
             //MessageBox.Show(apiUri); //DEBUG
             //Trace.WriteLine("ApiUri: " + apiUri); //DEBUG
             //Trace.WriteLine("schoolID: " + thisSchoolID); //DEBUG
@@ -282,7 +299,7 @@ namespace CardScannerUI
             }
         }
 
-        /**<summary>Loads the students, schools, and food items into the main window's lists.</summary>
+        /**<summary>Loads the students and food items into the main window's lists.</summary>
          */
         private async Task GetDataAsync() 
         {
