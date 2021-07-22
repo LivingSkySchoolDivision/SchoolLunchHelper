@@ -28,11 +28,15 @@ namespace LunchManager
     public partial class MainWindow : Window
     {
         private HttpClient client; //the application shares one http client
-        private ObservableCollection<Transaction> transactions;
-        private ObservableCollection<Student> students;
-        private ObservableCollection<FoodItem> foodItems;
+        private ObservableCollection<Transaction> _transactions;
+        private ObservableCollection<Student> _students;
+        private ObservableCollection<FoodItem> _foodItems;
         private School thisSchool;
         private Window loadingWindow;
+
+        public ObservableCollection<FoodItem> foodItems { get { return _foodItems; } set { _foodItems = value; } }
+        public ObservableCollection<Transaction> transactions { get { return _transactions; } set { _transactions = value; } }
+        public ObservableCollection<Student> students { get { return _students; } set { _students = value; } }
 
         public MainWindow()
         {
@@ -49,7 +53,6 @@ namespace LunchManager
             loadingWindow.Show();
             IsEnabled = false;
 
-            MessageBox.Show("test"); //DEBUG
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string apiUri = "";
             string thisSchoolID = "";
@@ -83,8 +86,10 @@ namespace LunchManager
             await GetDataAsync();
 
             //set up data binding
-            dataGridFoodTypes.DataContext = foodItems;
+            //dataGridFoodTypes.DataContext = foodItems;
             dataGridFoodTypes.ItemsSource = foodItems;
+
+            //dataGridFoodTypes.DataContext = this;
 
             loadingWindow.Hide();
             IsEnabled = true;
@@ -114,8 +119,10 @@ namespace LunchManager
          */
         private async Task GetDataAsync()
         {
+            
             try
             {
+                /*
                 var responseStudents = await client.GetAsync("api/Students/School/" + thisSchool.ID);
                 students = await responseStudents.Content.ReadAsAsync<ObservableCollection<Student>>();
 
@@ -131,7 +138,7 @@ namespace LunchManager
                 {
                     Trace.WriteLine("Students is null");
                 }
-                
+                */
 
                 var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.ID);
                 foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
@@ -150,7 +157,7 @@ namespace LunchManager
                     Trace.WriteLine("FoodItems is null");
                 }
 
-                
+                /*
                 var responseTransactions = await client.GetAsync("api/Transactions/School/" + thisSchool.ID);
                 Trace.WriteLine(thisSchool.ID); //DEBUG
                 transactions = await responseTransactions.Content.ReadAsAsync<ObservableCollection<Transaction>>();
@@ -168,6 +175,7 @@ namespace LunchManager
                 {
                     Trace.WriteLine("Transactions is null");
                 }
+                */
                 
             }
             catch (HttpRequestException)
@@ -179,7 +187,17 @@ namespace LunchManager
 
         private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            dataGridFoodTypes.BeginEdit();
+            if (tabManageFoodTypes.IsSelected)
+            {
+                //dataGridView1.Focus();
+                dataGridFoodTypes.Focus();
+            }
+        }
+
+
+        #region Manage Food Types Tab
+        private void dataGridFoodTypes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
             if (dataGridFoodTypes.SelectedItem != null)
             {
                 Trace.WriteLine("You selected: " + dataGridFoodTypes.SelectedItem.ToString()); //DEBUG
@@ -187,14 +205,79 @@ namespace LunchManager
             
         }
 
-        private void dataGridFoodTypes_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-
         private void btnEditFoodItem_Click(object sender, RoutedEventArgs e)
         {
-            dataGridFoodTypes.BeginEdit();
+            
         }
+
+        private void dataGridFoodTypes_BeginningEdit(object sender, DataGridBeginningEditEventArgs e) 
+        {
+            Trace.WriteLine("beginning edit"); //DEBUG
+        }
+
+        private void btnDeleteFoodItem_Click(object sender, RoutedEventArgs e) //the delete key is set to not delete entries
+        {
+            Trace.WriteLine("pressed delete button"); //DEBUG
+            if (dataGridFoodTypes.SelectedItem == null || foodItems.Count == 0)
+            {
+                return;
+            }
+            foodItems.Remove((FoodItem)dataGridFoodTypes.SelectedItem);
+            foreach (FoodItem i in foodItems)
+            {
+                Trace.WriteLine("Remaining foodItem in list ->  Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
+            }
+        }
+
+        private void dataGridFoodTypes_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
+        { //An unhandled exception of type 'System.StackOverflowException' occurred in Unknown Module.
+            dataGridFoodTypes.Focus(); 
+            //dataGridFoodTypes.CommitEdit(); //causes infinite loop - stackOverflowException (see https://docs.microsoft.com/en-us/troubleshoot/dotnet/framework/stackoverflowexception-datagridview-tablet)
+            //make sure the input is valid, then make an object for it
+            Trace.WriteLine("index of edited row: " + e.Row.GetIndex()); //DEBUG
+            //FoodItem newRowItem = (FoodItem)(e.Row.Item);
+            if (e.Row.GetIndex() > foodItems.Count() - 1 && e.Row.GetIndex() > 0)
+            {
+                Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
+                return;
+            }
+            FoodItem newRowItem = foodItems[e.Row.GetIndex()];
+            if ((string.IsNullOrWhiteSpace(newRowItem.Name)) && (newRowItem.Cost == 0.00M) && (string.IsNullOrWhiteSpace(newRowItem.Description)))
+            {
+                //if the row has all of the default column values when editing ends, delete it
+                //dataGridFoodTypes.Items.Remove(newRowItem); //don't do this, edit the observable collection's items instead
+                Trace.WriteLine("removing new row with no data entered"); //DEBUG
+                Trace.WriteLine("name: " + newRowItem.Name + ", cost: " + newRowItem.Cost + ", description: " + newRowItem.Description);
+                foodItems.Remove(newRowItem);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(newRowItem.Name)) 
+            {
+                MessageBox.Show("The \"Name\" field cannot be empty. Please enter a name for the food type.", "Required field", MessageBoxButton.OK, MessageBoxImage.Warning);
+                //force the cell into edit mode (!!doesn't work yet)
+                //e.Row.Focus();
+                //dataGridFoodTypes.BeginEdit();
+                dataGridFoodTypes.SelectedItem = e.Row; //this doesn't do anything
+
+                return;
+            }
+            
+            
+        }
+
+        private void dataGridFoodTypes_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            /*
+            if (string.Equals(e.Column.Header.ToString(), "Name"))
+            {
+                if (string.IsNullOrEmpty(((FoodItem)dataGridFoodTypes.SelectedItem).Name))
+                {
+
+                }
+            }
+            */
+        }
+        #endregion
+
     }
 }

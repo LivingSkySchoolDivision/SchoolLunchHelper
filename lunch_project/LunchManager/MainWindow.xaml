@@ -19,37 +19,43 @@
                 <Grid Background="#FFE5E5E5"/>
             </TabItem>
 
-            <TabItem Header="Manage Food Types">
+            <TabItem Header="Manage Food Types" x:Name="tabManageFoodTypes">
                 <Grid Background="#FFE5E5E5">
                     <DataGrid x:Name="dataGridFoodTypes"
                               Margin="79,21,79,43"
                               AlternatingRowBackground="LightGray"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
-                              AutoGenerateColumns="True"
-                              CanUserDeleteRows="True"
+                              AutoGenerateColumns="False"
+                              CanUserDeleteRows="False"
                               CanUserResizeRows="True"
                               CanUserSortColumns="False"
                               CanUserAddRows="True"
-                              SelectionChanged="dataGridFoodTypes_SelectionChanged">
+                              SelectionChanged="dataGridFoodTypes_SelectionChanged"
+                              ItemsSource="{Binding foodItems, Mode=TwoWay}"
+                              BeginningEdit="dataGridFoodTypes_BeginningEdit"
+                              CellEditEnding="dataGridFoodTypes_CellEditEnding"
+                              RowEditEnding="dataGridFoodTypes_RowEditEnding"
+                              >
                         <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay}"
+                            <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     Header="Name" 
                                     Width="170"
-                                    IsReadOnly="True"
-                                    x:Name="dgcolStudentName"/>
-                            <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}, Mode=TwoWay}" 
+                                    IsReadOnly="False"/>
+                            <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                     Header="Cost"
                                     Width="100"
-                                    IsReadOnly="True"/>
-                            <DataGridTextColumn Binding="{Binding Path=Description, Mode=TwoWay}" 
+                                    IsReadOnly="False"/>
+                            <DataGridTextColumn Binding="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                     Header="Description" 
                                     Width="*"
-                                    IsReadOnly="True"/>
+                                    IsReadOnly="False"/>
                         </DataGrid.Columns>
                     </DataGrid>
+                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Center" Margin="0,368,0,0" VerticalAlignment="Bottom" Width="54" />
 
+                    <!--
                     <Button x:Name="btnEditFoodItem" Click="btnEditFoodItem_Click" Content="Edit" HorizontalAlignment="Center" Margin="0,368,0,0" VerticalAlignment="Top" Width="54" />
-
+                    -->
                 </Grid>
             </TabItem>
         </TabControl>
