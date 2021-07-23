@@ -9,7 +9,12 @@
         Loaded="Window_Loaded">
     <Grid>
         <TabControl SelectionChanged="TabControl_SelectionChanged">
-            <TabItem Header="Manage Transactions">
+            <TabItem Header="Overview">
+                <Grid Background="#FFE5E5E5">
+
+                </Grid>
+            </TabItem>
+            <TabItem Header="View Transactions">
                 <Grid Background="#FFE5E5E5">
                     <Label Content="Label" HorizontalAlignment="Left" Margin="60,91,0,0" VerticalAlignment="Top"/>
                 </Grid>
@@ -22,19 +27,20 @@
             <TabItem Header="Manage Food Types" x:Name="tabManageFoodTypes">
                 <Grid Background="#FFE5E5E5">
                     <DataGrid x:Name="dataGridFoodTypes"
-                              Margin="79,21,79,43"
+                              Margin="148,48,10,16"
                               AlternatingRowBackground="LightGray"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               AutoGenerateColumns="False"
                               CanUserDeleteRows="False"
                               CanUserResizeRows="True"
                               CanUserSortColumns="False"
-                              CanUserAddRows="True"
+                              CanUserAddRows="False"
                               SelectionChanged="dataGridFoodTypes_SelectionChanged"
                               ItemsSource="{Binding foodItems, Mode=TwoWay}"
                               BeginningEdit="dataGridFoodTypes_BeginningEdit"
                               CellEditEnding="dataGridFoodTypes_CellEditEnding"
                               RowEditEnding="dataGridFoodTypes_RowEditEnding"
+                              AddingNewItem="dataGridFoodTypes_AddingNewItem"
                               >
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -51,7 +57,9 @@
                                     IsReadOnly="False"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Center" Margin="0,368,0,0" VerticalAlignment="Bottom" Width="54" />
+                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="10,0,0,338" VerticalAlignment="Bottom" Width="54" />
+                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="10,73,0,0" VerticalAlignment="Top"/>
+                    <Label Content="Manage Food Types" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
 
                     <!--
                     <Button x:Name="btnEditFoodItem" Click="btnEditFoodItem_Click" Content="Edit" HorizontalAlignment="Center" Margin="0,368,0,0" VerticalAlignment="Top" Width="54" />

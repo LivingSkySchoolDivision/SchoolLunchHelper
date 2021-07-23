@@ -33,6 +33,7 @@ namespace LunchManager
         private ObservableCollection<FoodItem> _foodItems;
         private School thisSchool;
         private Window loadingWindow;
+        private AddNewFoodItemHelper addNewFoodItemWindow;
 
         public ObservableCollection<FoodItem> foodItems { get { return _foodItems; } set { _foodItems = value; } }
         public ObservableCollection<Transaction> transactions { get { return _transactions; } set { _transactions = value; } }
@@ -50,6 +51,7 @@ namespace LunchManager
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             loadingWindow = new LoadingBox(this);
+            addNewFoodItemWindow = new AddNewFoodItemHelper(this);
             loadingWindow.Show();
             IsEnabled = false;
 
@@ -189,7 +191,6 @@ namespace LunchManager
         {
             if (tabManageFoodTypes.IsSelected)
             {
-                //dataGridView1.Focus();
                 dataGridFoodTypes.Focus();
             }
         }
@@ -231,16 +232,18 @@ namespace LunchManager
 
         private void dataGridFoodTypes_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
         { //An unhandled exception of type 'System.StackOverflowException' occurred in Unknown Module.
-            dataGridFoodTypes.Focus(); 
+            dataGridFoodTypes.Focus();
             //dataGridFoodTypes.CommitEdit(); //causes infinite loop - stackOverflowException (see https://docs.microsoft.com/en-us/troubleshoot/dotnet/framework/stackoverflowexception-datagridview-tablet)
             //make sure the input is valid, then make an object for it
-            Trace.WriteLine("index of edited row: " + e.Row.GetIndex()); //DEBUG
+            int editedRowIndex = e.Row.GetIndex();
+            Trace.WriteLine("index of edited row: " + editedRowIndex); //DEBUG
             //FoodItem newRowItem = (FoodItem)(e.Row.Item);
-            if (e.Row.GetIndex() > foodItems.Count() - 1 && e.Row.GetIndex() > 0)
+            if (editedRowIndex > foodItems.Count - 1 && editedRowIndex > 0)
             {
                 Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
                 return;
             }
+            /*
             FoodItem newRowItem = foodItems[e.Row.GetIndex()];
             if ((string.IsNullOrWhiteSpace(newRowItem.Name)) && (newRowItem.Cost == 0.00M) && (string.IsNullOrWhiteSpace(newRowItem.Description)))
             {
@@ -253,14 +256,21 @@ namespace LunchManager
             }
             if (string.IsNullOrWhiteSpace(newRowItem.Name)) 
             {
+                //if the food item was not given a name, delete the row and display a message saying the row could not be added because it does not have a name
                 MessageBox.Show("The \"Name\" field cannot be empty. Please enter a name for the food type.", "Required field", MessageBoxButton.OK, MessageBoxImage.Warning);
-                //force the cell into edit mode (!!doesn't work yet)
+                //force the cell into edit mode (doesn't work yet)
                 //e.Row.Focus();
                 //dataGridFoodTypes.BeginEdit();
-                dataGridFoodTypes.SelectedItem = e.Row; //this doesn't do anything
-
+                //dataGridFoodTypes.SelectedItem = e.Row; //this doesn't do anything
+                //dataGridFoodTypes.CurrentCell = new DataGridCellInfo(dataGridFoodTypes.Items[editedRowIndex], dataGridFoodTypes.Columns[0]);
+                //dataGridFoodTypes.BeginEdit();
+                //e.Cancel = true;
+                Trace.WriteLine("removing new row with no data entered"); //DEBUG
+                Trace.WriteLine("name: " + newRowItem.Name + ", cost: " + newRowItem.Cost + ", description: " + newRowItem.Description);
+                foodItems.Remove(newRowItem);
                 return;
             }
+            */
             
             
         }
@@ -277,7 +287,27 @@ namespace LunchManager
             }
             */
         }
-        #endregion
 
+        private void btnAddNewFoodType_Click(object sender, RoutedEventArgs e)
+        {
+            addNewFoodItemWindow.Show();
+        }
+        
+
+        private void dataGridFoodTypes_AddingNewItem(object sender, AddingNewItemEventArgs e)
+        {
+            
+        }
+
+        /**<summary>Takes a food item created with the default food item constructor and makes a new one with the proper constructor.
+         * The datagrid needs to use the default constructor to create a new row - this method converts it into a proper food item.</summary>
+         * <remarks>Assumes the data</remarks>
+         */
+        private FoodItem ReconstructFoodItem(FoodItem foodItem)
+        {
+            FoodItem newFoodItem = new FoodItem(foodItem.Name, foodItem.Cost, foodItem.Description, thisSchool.ID);
+            return newFoodItem;
+        }
+        #endregion
     }
 }
