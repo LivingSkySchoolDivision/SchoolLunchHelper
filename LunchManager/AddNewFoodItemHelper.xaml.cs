@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Data.Models;
 
 namespace LunchManager
 {
@@ -19,10 +20,13 @@ namespace LunchManager
     /// </summary>
     public partial class AddNewFoodItemHelper : Window
     {
-        public AddNewFoodItemHelper(Window owner)
+        private School thisSchool;
+
+        public AddNewFoodItemHelper(Window owner, School thisSchool)
         {
             InitializeComponent();
             Owner = owner;
+            this.thisSchool = thisSchool;
         }
 
         private void btnCreateNewFoodType_Click(object sender, RoutedEventArgs e)
@@ -40,14 +44,33 @@ namespace LunchManager
                 txtPriceInvalid.Visibility = Visibility.Visible;
                 return;
             }
-            else if (!Decimal.TryParse(txtFoodCost.Text, out cost))
+            else if ((!Decimal.TryParse(txtFoodCost.Text, out cost)) || (cost < 0M))
             {
                 txtFoodCost.Focus();
                 txtFoodCost.BorderBrush = Brushes.Red;
                 txtPriceInvalid.Visibility = Visibility.Visible;
                 return;
             }
-            //after making the food object remember to clear the text boxes since the window hides not closes
+            FoodItem newFoodItem;
+            if (txtFoodDescription.Text != null) 
+            {
+                newFoodItem = new FoodItem(txtFoodName.Text, cost, txtFoodDescription.Text, thisSchool.ID);
+            }
+            else
+            {
+                newFoodItem = new FoodItem(txtFoodName.Text, cost, "", thisSchool.ID);
+            }
+            
+            MainWindow.unsyncedFoodItems.Add(newFoodItem);
+            MainWindow.foodItems.Add(newFoodItem);
+            this.Close();
+            txtFoodCost.Clear();
+            txtFoodName.Clear();
+            txtFoodDescription.Clear();
+            txtFoodName.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
+            txtFoodCost.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
+            txtPriceInvalid.Visibility = Visibility.Hidden;
+
         }
 
         private void txtFoodName_TextChanged(object sender, TextChangedEventArgs e)
@@ -82,7 +105,7 @@ namespace LunchManager
                 txtPriceInvalid.Visibility = Visibility.Visible;
                 return;
             }
-            else if (!Decimal.TryParse(txtFoodCost.Text, out cost))
+            else if ((!Decimal.TryParse(txtFoodCost.Text, out cost)) || (cost < 0M))
             {
                 txtFoodCost.Focus();
                 txtFoodCost.BorderBrush = Brushes.Red;

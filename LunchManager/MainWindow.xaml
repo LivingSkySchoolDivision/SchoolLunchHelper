@@ -31,34 +31,39 @@
                               AlternatingRowBackground="LightGray"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               AutoGenerateColumns="False"
-                              CanUserDeleteRows="False"
+                              CanUserDeleteRows="True"
                               CanUserResizeRows="True"
                               CanUserSortColumns="False"
-                              CanUserAddRows="False"
+                              CanUserAddRows="True"
                               SelectionChanged="dataGridFoodTypes_SelectionChanged"
                               ItemsSource="{Binding foodItems, Mode=TwoWay}"
                               BeginningEdit="dataGridFoodTypes_BeginningEdit"
                               CellEditEnding="dataGridFoodTypes_CellEditEnding"
                               RowEditEnding="dataGridFoodTypes_RowEditEnding"
                               AddingNewItem="dataGridFoodTypes_AddingNewItem"
+                              PreviewKeyDown="dataGridFoodTypes_PreviewKeyDown"
                               >
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     Header="Name" 
                                     Width="170"
-                                    IsReadOnly="False"/>
+                                    MinWidth="100"
+                                    IsReadOnly="False"
+                                    />
                             <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                     Header="Cost"
                                     Width="100"
+                                    MinWidth="50"
                                     IsReadOnly="False"/>
                             <DataGridTextColumn Binding="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                     Header="Description" 
                                     Width="*"
+                                    MinWidth="100"
                                     IsReadOnly="False"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="10,0,0,338" VerticalAlignment="Bottom" Width="54" />
-                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="10,73,0,0" VerticalAlignment="Top"/>
+                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="10,103,0,0" VerticalAlignment="Top" Width="54" Height="25" />
+                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="10,140,0,0" VerticalAlignment="Top" Height="25"/>
                     <Label Content="Manage Food Types" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
 
                     <!--
