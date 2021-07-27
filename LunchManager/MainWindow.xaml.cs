@@ -102,6 +102,7 @@ namespace LunchManager
             dataGridFoodTypes.ItemsSource = foodItems;
 
             //dataGridFoodTypes.DataContext = this;
+            btnDeleteFoodItem.IsEnabled = false;
 
             loadingWindow.Hide();
             IsEnabled = true;
@@ -121,7 +122,7 @@ namespace LunchManager
             }
             catch (HttpRequestException)
             {
-                MessageBox.Show("Failed to connect to the database, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Failed to connect to the server, please check your internet connection and try again. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
 
@@ -129,8 +130,25 @@ namespace LunchManager
 
         private async Task<ObservableCollection<FoodItem>> GetFoodItemsAsync()
         {
-            var responseFood = await client.GetAsync("api/FoodItem/School/" + thisSchool.ID);
-            return await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+            //HttpResponseMessage responseFood;
+            ObservableCollection<FoodItem> newFoodItemsCollection = new();
+            try
+            {
+                //responseFood = await client.GetAsync("api/FoodItem/School/" + thisSchool.ID);
+                //newFoodItemsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>(); //is null
+                var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.ID);
+                newFoodItemsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+                if (newFoodItemsCollection == null) //DEBUG
+                {
+                    Trace.WriteLine("newFoodItemsCollection is null - GetFoodItemsAsync");
+                }
+            }
+            catch (HttpRequestException)
+            {
+                MessageBox.Show("Failed to connect to the server, please check your internet connection and try again. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            return newFoodItemsCollection;
         }
 
         /**<summary>Loads the students, schools, and food items into the main window's lists.</summary>
@@ -198,7 +216,7 @@ namespace LunchManager
             }
             catch (HttpRequestException)
             {
-                MessageBox.Show("Failed to connect to the database, please check you internet connection. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Failed to connect to the server, please check you internet connection. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
         }
@@ -217,7 +235,7 @@ namespace LunchManager
         {
             var editableCollection = (IEditableCollectionView)dataGridFoodTypes.Items;
             var pos = editableCollection.NewItemPlaceholderPosition;
-            if ((dataGridFoodTypes.SelectedItem != null) /*&& (dataGridFoodTypes.SelectedItem != newitemplaceholder)*/)
+            if ((dataGridFoodTypes.SelectedItem != null) && (!dataGridFoodTypes.SelectedItem.Equals(CollectionView.NewItemPlaceholder)))
             {
                 Trace.WriteLine("You selected: " + dataGridFoodTypes.SelectedItem.ToString()); //DEBUG
                 btnDeleteFoodItem.IsEnabled = true;
@@ -260,28 +278,64 @@ namespace LunchManager
                 foodItems.Remove(editedRowItem);
                 return;
             }
+
             if (string.IsNullOrWhiteSpace(editedRowItem.Name)) 
             {
-                //if the food item was not given a name, put it in validation error mode and don't add it to unsynced transactions
+                //has invalid entries, put it in validation error mode and don't add it to unsynced transactions
                 MessageBox.Show("The \"Name\" field cannot be empty. Please enter a name for the food type.", "Required field", MessageBoxButton.OK, MessageBoxImage.Warning);
-                //dataGridFoodTypes
+                //dataGridFoodTypes.CanUserAddRows = false; 
+                e.Row.Background = Brushes.Coral;
                 Trace.WriteLine("row " + editedRowIndex + " has an invalid name field"); //DEBUG
                 Trace.WriteLine("name: " + editedRowItem.Name + ", cost: " + editedRowItem.Cost + ", description: " + editedRowItem.Description); //DEBUG
-                //foodItems.Remove(newRowItem);
                 return;
             }
+            if (editedRowItem.Cost < 0M)
+            {
+                MessageBox.Show("The \"Price\" field cannot contain a negative value.", "Required field", MessageBoxButton.OK, MessageBoxImage.Warning);
+                e.Row.Background = Brushes.Coral;
+                Trace.WriteLine("row " + editedRowIndex + " has an invalid name field"); //DEBUG
+                Trace.WriteLine("name: " + editedRowItem.Name + ", cost: " + editedRowItem.Cost + ", description: " + editedRowItem.Description); //DEBUG
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(editedRowItem.ID)) //new items added by the datagrid do not have IDs, modified ones do
             {
                 //modifying a datagrid row will change the corresponding foodItem
+                if (e.Row.Background == Brushes.Coral) //if the item was invalid before, change the row color back to normal
+                {
+                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0)
+                    {
+                        e.Row.Background = Brushes.White;
+                    }
+                    else
+                    {
+                        e.Row.Background = Brushes.LightGray;
+                    }
+                }
                 Trace.WriteLine("food item exists, modify instead of adding"); //DEBUG
                 string jsonString = JsonSerializer.Serialize(editedRowItem);
                 var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
                 var response = await client.PutAsync("api/FoodItems/" + editedRowItem.ID, httpContent);
                 Trace.WriteLine("put request status code: " + response.StatusCode);
-                //!!do something if the response is not success
+                if (!response.IsSuccessStatusCode)
+                {
+                    foodItems.Remove(editedRowItem);
+                    MessageBox.Show("Cannot save changes because the server could not be reached, please check you internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             else
             {
+                if (e.Row.Background == Brushes.Coral) //if the item was invalid before, change the row color back to normal
+                {
+                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0)
+                    {
+                        e.Row.Background = Brushes.White;
+                    }
+                    else
+                    {
+                        e.Row.Background = Brushes.LightGray;
+                    }
+                }
                 //if the food item is valid enough to reconstruct and does not already exist, add the reconstructed item to the unsyncedFoodItems collection
                 FoodItem reconstructedNewFoodItem = ReconstructFoodItem(editedRowItem);
                 unsyncedFoodItems.Add(reconstructedNewFoodItem);
@@ -292,7 +346,6 @@ namespace LunchManager
                 await SaveUnsyncedFoodItemsAsync();
             }
             
-
         }
 
         private async Task SaveUnsyncedFoodItemsAsync()
@@ -313,13 +366,13 @@ namespace LunchManager
                     if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Conflict) //if the foodItems is in the database, remove it from the list
                     {
                         unsyncedFoodItems.RemoveAt(i); 
-                        //string SerializeJsonString = JsonSerializer.Serialize(unsyncedFoodItems);
-                        //File.WriteAllText(foodItemsJsonPath, SerializeJsonString);
                     }
                 }
                 catch (HttpRequestException) //this exception is not thrown if the URI can't be found
                 {
                     Trace.WriteLine("can't reach the database");
+                    MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Close();
                     break; //if there is a server error, no point trying to sync any more entries
                 }
             }
@@ -345,17 +398,9 @@ namespace LunchManager
         {
             addNewFoodItemWindow.ShowDialog();
             //if an item was added, try to sync
-            await SaveUnsyncedFoodItemsAsync(); //!! onRowEditEnding event might do this, need to test
+            await SaveUnsyncedFoodItemsAsync(); 
 
         }
-
-        /*
-        private Task ShowFoodItemHelperWindow()
-        {
-            addNewFoodItemWindow.Show();
-
-        }
-        */
 
         private void dataGridFoodTypes_AddingNewItem(object sender, AddingNewItemEventArgs e)
         {
@@ -369,6 +414,7 @@ namespace LunchManager
         private FoodItem ReconstructFoodItem(FoodItem foodItem)
         {
             FoodItem newFoodItem;
+            foodItem.Cost = decimal.Round(foodItem.Cost, 2);
             if (foodItem.Description != null)
             {
                 newFoodItem = new FoodItem(foodItem.Name, foodItem.Cost, foodItem.Description, thisSchool.ID);
@@ -383,20 +429,27 @@ namespace LunchManager
 
         private async Task DeleteSelectedFoodItems()
         {
-            if (dataGridFoodTypes.SelectedItem == null || foodItems.Count == 0 /*|| dataGridFoodTypes.SelectedItem.GetType == NewItemPlaceholder*/)
+            if (dataGridFoodTypes.SelectedItem == null || foodItems.Count == 0 || dataGridFoodTypes.SelectedItem.Equals(CollectionView.NewItemPlaceholder))
             {
                 return;
             }
             else
             {
                 string messageBoxMessage = "Are you sure you want to delete: ";
-                //var grid = (DataGrid)sender;
                 var grid = dataGridFoodTypes;
                 Trace.WriteLine("1"); //DEBUG
+                FoodItem deletedFoodItem;
                 foreach (var row in grid.SelectedItems)
                 {
-                    FoodItem deletedFoodItem = (FoodItem)row;
-                    messageBoxMessage += deletedFoodItem.Name + ", ";
+                    try
+                    {
+                        deletedFoodItem = (FoodItem)row;
+                        messageBoxMessage += deletedFoodItem.Name + ", ";
+                    }
+                    catch (InvalidCastException)
+                    {
+                    }
+                    
                 }
                 Trace.WriteLine("2"); //DEBUG
                 messageBoxMessage = messageBoxMessage.Remove(messageBoxMessage.Length - 2);
@@ -410,12 +463,17 @@ namespace LunchManager
                         Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
                         if (grid.SelectedItems.Contains(foodItems[i]))
                         {
-                            Trace.WriteLine("index: " + i); //DEBUG
-                            Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
-                            await client.DeleteAsync("api/FoodItems/" + foodItems[i].ID); 
-                            Trace.WriteLine("."); //DEBUG
-                            Trace.WriteLine("index: " + i); //DEBUG
-                            Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
+                            if (!string.IsNullOrWhiteSpace(foodItems[i].ID)) 
+                            {
+                                Trace.WriteLine("index: " + i); //DEBUG
+                                Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
+                                var response = await client.DeleteAsync("api/FoodItems/" + foodItems[i].ID);
+                                Trace.WriteLine(response.StatusCode.ToString()); //DEBUG
+                                Trace.WriteLine("."); //DEBUG
+                                Trace.WriteLine("index: " + i); //DEBUG
+                                Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
+                            }
+                            
                             //lastDeletedFoodItems.Add(foodItems[i]); //fails here
                             Trace.WriteLine(".."); //DEBUG
                             foodItems.RemoveAt(i);
@@ -425,8 +483,7 @@ namespace LunchManager
                     Trace.WriteLine("4"); //DEBUG
                 }
                 else
-                { //!!the item still deletes cause this is called in deletekeydown
-                    foodItems = await GetFoodItemsAsync();
+                { 
                     Trace.WriteLine("5"); //DEBUG
                 }
 
@@ -463,6 +520,24 @@ namespace LunchManager
                 
             }
         }
+
+        private async void btnRefreshFoodItems_Click(object sender, RoutedEventArgs e)
+        {
+            
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            foodItems = await GetFoodItemsAsync();
+
+            dataGridFoodTypes.ItemsSource = null;
+            dataGridFoodTypes.ItemsSource = foodItems;
+
+            loadingWindow.Hide();
+            IsEnabled = true;
+
+            
+        }
+
         #endregion
 
 

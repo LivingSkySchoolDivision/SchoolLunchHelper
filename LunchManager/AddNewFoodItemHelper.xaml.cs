@@ -28,13 +28,15 @@ namespace LunchManager
             Owner = owner;
             this.thisSchool = thisSchool;
         }
-
+        
         private void btnCreateNewFoodType_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtFoodName.Text))
             {
                 txtFoodName.Focus();
                 txtFoodName.BorderBrush = Brushes.Red;
+                txtNameInvalid.Visibility = Visibility.Visible;
+                
             }
             Decimal cost;
             if (string.IsNullOrWhiteSpace(txtFoodCost.Text))
@@ -51,25 +53,25 @@ namespace LunchManager
                 txtPriceInvalid.Visibility = Visibility.Visible;
                 return;
             }
-            FoodItem newFoodItem;
-            if (txtFoodDescription.Text != null) 
+            else if (!string.IsNullOrWhiteSpace(txtFoodName.Text))
             {
-                newFoodItem = new FoodItem(txtFoodName.Text, cost, txtFoodDescription.Text, thisSchool.ID);
-            }
-            else
-            {
-                newFoodItem = new FoodItem(txtFoodName.Text, cost, "", thisSchool.ID);
+                FoodItem newFoodItem;
+                cost = decimal.Round(cost, 2);
+                if (txtFoodDescription.Text != null)
+                {
+                    newFoodItem = new FoodItem(txtFoodName.Text, cost, txtFoodDescription.Text, thisSchool.ID);
+                }
+                else
+                {
+                    newFoodItem = new FoodItem(txtFoodName.Text, cost, "", thisSchool.ID);
+                }
+
+                MainWindow.unsyncedFoodItems.Add(newFoodItem);
+                MainWindow.foodItems.Add(newFoodItem);
+                this.Close();
             }
             
-            MainWindow.unsyncedFoodItems.Add(newFoodItem);
-            MainWindow.foodItems.Add(newFoodItem);
-            this.Close();
-            txtFoodCost.Clear();
-            txtFoodName.Clear();
-            txtFoodDescription.Clear();
-            txtFoodName.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
-            txtFoodCost.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
-            txtPriceInvalid.Visibility = Visibility.Hidden;
+            
 
         }
 
@@ -78,10 +80,12 @@ namespace LunchManager
             if (string.IsNullOrWhiteSpace(txtFoodName.Text))
             {
                 txtFoodName.BorderBrush = Brushes.Red;
+                txtNameInvalid.Visibility = Visibility.Visible;
             }
             else
             {
                 txtFoodName.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
+                txtNameInvalid.Visibility = Visibility.Hidden;
             }
         }
 
@@ -122,6 +126,13 @@ namespace LunchManager
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
+            txtFoodCost.Clear();
+            txtFoodName.Clear();
+            txtFoodDescription.Clear();
+            txtFoodName.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
+            txtFoodCost.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
+            txtPriceInvalid.Visibility = Visibility.Hidden;
+            txtNameInvalid.Visibility = Visibility.Hidden;
             Hide();
             return;
         }

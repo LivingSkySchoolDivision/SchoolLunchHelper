@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:LunchManager"
         mc:Ignorable="d"
         Title="Lunch Manager" Height="450" Width="800"
-        Loaded="Window_Loaded">
+        Loaded="Window_Loaded" WindowState="Maximized"
+        >
     <Grid>
         <TabControl SelectionChanged="TabControl_SelectionChanged">
             <TabItem Header="Overview">
@@ -26,6 +27,8 @@
 
             <TabItem Header="Manage Food Types" x:Name="tabManageFoodTypes">
                 <Grid Background="#FFE5E5E5">
+                    <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
+                    <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
                     <DataGrid x:Name="dataGridFoodTypes"
                               Margin="148,48,10,16"
                               AlternatingRowBackground="LightGray"
@@ -46,13 +49,13 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     Header="Name" 
-                                    Width="170"
+                                    Width="250"
                                     MinWidth="100"
                                     IsReadOnly="False"
                                     />
-                            <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                    Header="Cost"
-                                    Width="100"
+                            <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                    Header="Price"
+                                    Width="150"
                                     MinWidth="50"
                                     IsReadOnly="False"/>
                             <DataGridTextColumn Binding="{Binding Path=Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -62,9 +65,11 @@
                                     IsReadOnly="False"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="10,103,0,0" VerticalAlignment="Top" Width="54" Height="25" />
-                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="10,140,0,0" VerticalAlignment="Top" Height="25"/>
+                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="10,95,0,0" VerticalAlignment="Top" Width="54" Height="25" />
+                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="10,132,0,0" VerticalAlignment="Top" Height="25"/>
                     <Label Content="Manage Food Types" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
+                    <Rectangle Height="7" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Fill="#FF007ACC" Margin="0,398,-6,0"/>
+                    <Button x:Name="btnRefreshFoodItems" Content="⟳" HorizontalAlignment="Left" Margin="10,58,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" Foreground="#FF007ACC" Background="#FFFBFBFB" BorderBrush="#FF007ACC" Click="btnRefreshFoodItems_Click" FontFamily="Bahnschrift"/>
 
                     <!--
                     <Button x:Name="btnEditFoodItem" Click="btnEditFoodItem_Click" Content="Edit" HorizontalAlignment="Center" Margin="0,368,0,0" VerticalAlignment="Top" Width="54" />

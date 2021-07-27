@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LunchManager"
         mc:Ignorable="d"
-        Title="AddNewFoodItemHelper" Height="325" Width="600" WindowStyle="ToolWindow"
+        Title="Add a New Food Type" Height="325" Width="600" WindowStyle="ToolWindow"
         ResizeMode="NoResize"
         Topmost="True"
         WindowStartupLocation="CenterOwner" 
@@ -27,6 +27,7 @@
         <Label Content="Description:" HorizontalAlignment="Left" Margin="44,149,0,0" VerticalAlignment="Top" FontWeight="Bold" FontSize="12"/>
         <Button x:Name="btnCreateNewFoodType" Click="btnCreateNewFoodType_Click" Content="Create new food type" HorizontalAlignment="Center" Margin="0,237,0,0" VerticalAlignment="Top" FontFamily="Segoe UI" FontWeight="Bold" Background="#FFDDDDDD" BorderBrush="#FF007ACC" Foreground="Black" Width="144" Height="27" BorderThickness="2"/>
         <TextBlock x:Name="txtPriceInvalid" HorizontalAlignment="Left" Margin="247,125,0,0" Text="Please enter a positive number. Example: 1.25" TextWrapping="Wrap" VerticalAlignment="Top" Width="228" FontSize="11" FontStyle="Italic" Foreground="Red" Height="17" Visibility="Hidden"/>
+        <TextBlock x:Name="txtNameInvalid" HorizontalAlignment="Left" Margin="247,91,0,0" Text="This is a required field." TextWrapping="Wrap" VerticalAlignment="Top" Width="228" FontSize="11" FontStyle="Italic" Foreground="Red" Height="17" Visibility="Hidden"/>
         <Rectangle Height="7" VerticalAlignment="Top" Width="600" Fill="#FF007ACC" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>
                 <TransformGroup>
