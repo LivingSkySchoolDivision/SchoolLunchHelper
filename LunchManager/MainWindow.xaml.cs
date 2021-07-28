@@ -35,15 +35,17 @@ namespace LunchManager
         private static ObservableCollection<FoodItem> _foodItems;
         private static ObservableCollection<FoodItem> _unsyncedFoodItems; 
         private School thisSchool;
-        private Window loadingWindow;
+        private LoadingBox loadingWindow;
         private AddNewFoodItemHelper addNewFoodItemWindow;
         private List<FoodItem> lastDeletedFoodItems;
+        private ObservableCollection<Student> _displayedStudents;
         //private string foodItemsJsonPath = "unsyncedFoodItems.json";
 
         public static ObservableCollection<FoodItem> foodItems { get { return _foodItems; } set { _foodItems = value; } }
         public static ObservableCollection<FoodItem> unsyncedFoodItems { get { return _unsyncedFoodItems; } set { _unsyncedFoodItems = value; } }
         public ObservableCollection<Transaction> transactions { get { return _transactions; } set { _transactions = value; } }
         public ObservableCollection<Student> students { get { return _students; } set { _students = value; } }
+        public ObservableCollection<Student> displayedStudents { get { return _displayedStudents; } set { _displayedStudents = value; } }
 
         public MainWindow()
         {
@@ -97,12 +99,15 @@ namespace LunchManager
 
             await GetDataAsync();
 
+            displayedStudents = students;
             //set up data binding
             //dataGridFoodTypes.DataContext = foodItems;
             dataGridFoodTypes.ItemsSource = foodItems;
+            dataGridStudents.ItemsSource = displayedStudents;
 
             //dataGridFoodTypes.DataContext = this;
             btnDeleteFoodItem.IsEnabled = false;
+            txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
 
             loadingWindow.Hide();
             IsEnabled = true;
@@ -151,6 +156,29 @@ namespace LunchManager
             return newFoodItemsCollection;
         }
 
+        private async Task<ObservableCollection<Student>> GetStudentsAsync()
+        {
+            //HttpResponseMessage responseFood;
+            ObservableCollection<Student> newStudentsCollection = new();
+            try
+            {
+                //responseFood = await client.GetAsync("api/FoodItem/School/" + thisSchool.ID);
+                //newFoodItemsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>(); //is null
+                var responseFood = await client.GetAsync("api/Students/School/" + thisSchool.ID);
+                newStudentsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<Student>>();
+                if (newStudentsCollection == null) //DEBUG
+                {
+                    Trace.WriteLine("newStudentsCollection is null - GetStudentsAsync");
+                }
+            }
+            catch (HttpRequestException)
+            {
+                MessageBox.Show("Failed to connect to the server, please check your internet connection and try again. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            return newStudentsCollection;
+        }
+
         /**<summary>Loads the students, schools, and food items into the main window's lists.</summary>
          */
         private async Task GetDataAsync()
@@ -158,7 +186,6 @@ namespace LunchManager
             
             try
             {
-                /*
                 var responseStudents = await client.GetAsync("api/Students/School/" + thisSchool.ID);
                 students = await responseStudents.Content.ReadAsAsync<ObservableCollection<Student>>();
 
@@ -174,7 +201,7 @@ namespace LunchManager
                 {
                     Trace.WriteLine("Students is null");
                 }
-                */
+                
 
                 var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.ID);
                 foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
@@ -313,6 +340,7 @@ namespace LunchManager
                     }
                 }
                 Trace.WriteLine("food item exists, modify instead of adding"); //DEBUG
+                editedRowItem.Cost = decimal.Round(editedRowItem.Cost, 2);
                 string jsonString = JsonSerializer.Serialize(editedRowItem);
                 var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
                 var response = await client.PutAsync("api/FoodItems/" + editedRowItem.ID, httpContent);
@@ -474,7 +502,7 @@ namespace LunchManager
                                 Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
                             }
                             
-                            //lastDeletedFoodItems.Add(foodItems[i]); //fails here
+                            lastDeletedFoodItems.Add(foodItems[i]); //fails here
                             Trace.WriteLine(".."); //DEBUG
                             foodItems.RemoveAt(i);
                         }
@@ -537,9 +565,168 @@ namespace LunchManager
 
             
         }
+        #endregion Manage Food Types Tab
 
-        #endregion
+
+        #region Manage Students Tab
+        private void txtStudentsSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if ((e.Key == Key.Return) || (e.Key == Key.Enter))
+            {
+                loadingWindow.SetMessage("Searching...");
+                loadingWindow.Show();
+                IsEnabled = false;
+                if (int.TryParse(txtStudentsSearch.Text, out int num)) //if the text entered is a number, search by student number
+                {
+                    displayedStudents = new ObservableCollection<Student>();
+                    foreach (Student i in students)
+                    {
+                        if (i.StudentID.Contains(txtStudentsSearch.Text))
+                        {
+                            displayedStudents.Add(i);
+                        }
+                    }
+                }
+                else //if the text cannot be parsed as an int, search by name
+                {
+                    displayedStudents = new ObservableCollection<Student>();
+                    foreach (Student i in students)
+                    {
+                        if (i.Name.Contains(txtStudentsSearch.Text, StringComparison.OrdinalIgnoreCase))
+                        {
+                            displayedStudents.Add(i);
+                        }
+                    }
+                }
+                dataGridStudents.ItemsSource = null;
+                dataGridStudents.ItemsSource = displayedStudents;
+                txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
+
+                loadingWindow.Hide();
+                IsEnabled = true;
+                loadingWindow.SetMessage(LoadingBox.defaultMessage);
+            }
+
+        }
+
+        private void btnShowAllStudents_Click(object sender, RoutedEventArgs e)
+        {
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            displayedStudents = students;
+
+            dataGridStudents.ItemsSource = null;
+            dataGridStudents.ItemsSource = displayedStudents;
+            txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
+            txtStudentsSearch.Text = "Search";
+            txtStudentsSearch.Foreground = Brushes.DarkGray;
+
+            loadingWindow.Hide();
+            IsEnabled = true;
+        }
+
+        private void btnShowOwingStudents_Click(object sender, RoutedEventArgs e)
+        {
+            loadingWindow.SetMessage("Searching...");
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            displayedStudents = new ObservableCollection<Student>();
+            foreach (Student i in students)
+            {
+                if (i.Balance < 0)
+                {
+                    displayedStudents.Add(i);
+                }
+            }
+            
+            dataGridStudents.ItemsSource = null;
+            dataGridStudents.ItemsSource = displayedStudents;
+            txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
+
+            loadingWindow.Hide();
+            IsEnabled = true;
+            loadingWindow.SetMessage(LoadingBox.defaultMessage);
+        }
+
+        private void txtStudentsSearch_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (txtStudentsSearch.Text.Equals("Search"))
+            {
+                txtStudentsSearch.Text = "";
+                txtStudentsSearch.Foreground = Brushes.Black;
+            }
+
+        }
+
+        private void txtStudentsSearch_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtStudentsSearch.Text))
+            {
+                txtStudentsSearch.Text = "Search";
+                txtStudentsSearch.Foreground = Brushes.DarkGray;
+            }
+        }
+
+        private void dataGridStudents_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
+        {
+            //round balance, sync to database
+        }
+
+        private async Task SaveModifiedStudentAsync(Student student)
+        {
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            Trace.WriteLine("trying to sync a student with ID: " + student.StudentID); //DEBUG
+            string jsonString = JsonSerializer.Serialize(student);
+            var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            try
+            {
+                var response = await client.PutAsync("api/Students/" + student.StudentID, httpContent);
+                Trace.WriteLine(jsonString); //DEBUG
+                Trace.WriteLine("sync new row response: " + response); //DEBUG
+                if (!response.IsSuccessStatusCode && !(response.StatusCode == System.Net.HttpStatusCode.Conflict)) 
+                {
+                    Trace.WriteLine("can't reach the database");
+                    MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Close();
+                }
+            }
+            catch (HttpRequestException) //this exception is not thrown if the URI can't be found
+            {
+                Trace.WriteLine("can't reach the database");
+                MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            
+            loadingWindow.Hide();
+            IsEnabled = true;
+
+        }
+
+        private async void btnRefreshStudents_Click(object sender, RoutedEventArgs e)
+        {
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            students = await GetStudentsAsync();
+            displayedStudents = students;
+
+            dataGridStudents.ItemsSource = null;
+            dataGridStudents.ItemsSource = displayedStudents;
+
+            loadingWindow.Hide();
+            IsEnabled = true;
+        }
 
 
+        #endregion Manage Students Tab
+
+        private void btnExportStudents_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

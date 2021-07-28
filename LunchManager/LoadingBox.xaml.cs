@@ -19,6 +19,7 @@ namespace LunchManager
     /// </summary>
     public partial class LoadingBox : Window
     {
+        public static readonly string defaultMessage = "Loading, please wait";
         public LoadingBox(Window owner)
         {
             InitializeComponent();
