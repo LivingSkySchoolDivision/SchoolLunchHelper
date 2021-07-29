@@ -49,11 +49,36 @@ namespace LunchAPI.Controllers
 
         // GET: api/Transactions/School/5
         [HttpGet("School/{schoolID}")]
-        public async Task<ActionResult<IEnumerable<Transaction>>> GetFoodItemsBySchool(string schoolID)
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactionsBySchool(string schoolID)
         {
             var allTransactions = await repo.GetTransactions();
             //this is slower than directly querying EF Core, but it is less likely to cause an exception since it does not involve EF Core translating the LINQ statement to SQL
             var requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
+            return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
+        }
+
+        /*
+        // GET: api/Transactions/Recent/5/5
+        [HttpGet("Recent/{schoolID}/{amount}")]
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactions(string schoolID, int amount)
+        {//!!in progress
+            var allTransactions = await repo.GetTransactions();
+            var requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
+            requestedTransactions = requestedTransactions.Where()
+            return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
+        }
+        */
+
+        // GET: api/Transactions/Recent/5/5/5
+        [HttpGet("Recent/{schoolID}/{amount}/{since}")]
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactionsSince(string schoolID, int amount, DateTime since)
+        {//!!in progress
+            var allTransactions = await repo.GetTransactions();
+            var requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
+            while (requestedTransactions.Count() <= 100)
+            {
+
+            }
             return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
         }
 

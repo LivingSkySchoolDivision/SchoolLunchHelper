@@ -22,9 +22,66 @@
             <TabItem Header="View Transactions">
                 <Grid Background="#FFE5E5E5">
                     <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
+                    <Rectangle HorizontalAlignment="Left" Height="165" Margin="21,354,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+
                     <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
                     <Rectangle Height="7" VerticalAlignment="Top" Fill="#FF007ACC" Margin="0,48,-6,0"/>
                     <Label Content="View Transactions" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
+                    <DataGrid x:Name="dataGridTransactions"
+                              Margin="253,54,10,16"
+                              AlternatingRowBackground="LightGray"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              AutoGenerateColumns="False"
+                              CanUserDeleteRows="True"
+                              CanUserResizeRows="True"
+                              CanUserSortColumns="False"
+                              CanUserAddRows="False"
+                              SelectionChanged="dataGridFoodTypes_SelectionChanged"
+                              ItemsSource="{Binding transactions, Mode=TwoWay}"
+                              BeginningEdit="dataGridFoodTypes_BeginningEdit"
+                              CellEditEnding="dataGridFoodTypes_CellEditEnding"
+                              RowEditEnding="dataGridFoodTypes_RowEditEnding"
+                              AddingNewItem="dataGridFoodTypes_AddingNewItem"
+                              PreviewKeyDown="dataGridFoodTypes_PreviewKeyDown"
+                              >
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Binding="{Binding Path=StudentName}"
+                                    Header="Student" 
+                                    Width="*"
+                                    IsReadOnly="True"
+                                    x:Name="dgcolStudentName" FontSize="12.5"/>
+                            <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}}" 
+                                    Header="Cost"
+                                    Width="75"
+                                    IsReadOnly="True" FontSize="12.5"/>
+                            <DataGridTextColumn Binding="{Binding Path=FoodName}" 
+                                    Header="Item" 
+                                    Width="*"
+                                    IsReadOnly="True" FontSize="12.5"/>
+                            <DataGridTextColumn Binding="{Binding Path=Time}" 
+                                    Header="Date and Time"
+                                    Width="150"
+                                    IsReadOnly="True" FontSize="12.5"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Rectangle HorizontalAlignment="Left" Height="100" Margin="21,101,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <Button x:Name="btnRefreshTransactions" Content="⟳" HorizontalAlignment="Left" Margin="21,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
+                        Foreground="#FF007ACC" Background="White" BorderBrush="#FF007ACC" Click="btnRefreshTransactions_Click" FontFamily="Bahnschrift" ToolTip="Refresh" />
+                    <Rectangle HorizontalAlignment="Left" Height="126" Margin="21,214,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    
+                    <TextBox x:Name="txtTransactionsSearch" KeyDown="txtTransactionsSearch_KeyDown" 
+                             GotKeyboardFocus="txtTransactionsSearch_GotKeyboardFocus" 
+                             LostKeyboardFocus="txtTransactionsSearch_LostKeyboardFocus" HorizontalAlignment="Left" 
+                             Margin="34,147,0,0" Text="Search" TextWrapping="Wrap" Foreground="DarkGray" VerticalAlignment="Top" 
+                             Width="161" Height="23" FontSize="14"/>
+                    <TextBlock Text="Enter a name or student number to search:" HorizontalAlignment="Left" Margin="34,107,0,0" 
+                               VerticalAlignment="Top" Width="154" Height="36" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
+                    <TextBlock x:Name="txtNumTransactionsShown" HorizontalAlignment="Left" Margin="34,174,0,0" VerticalAlignment="Top"
+                               Width="187" Height="18" FontStyle="Italic" Foreground="#FF464646"/>
+                    <Button x:Name="btnClearTransactionsSearch" Click="btnClearTransactionsSearch_Click" Content="✕" HorizontalAlignment="Left" 
+                            Margin="194,147,0,0" VerticalAlignment="Top" Height="23" Width="23" FontSize="12.5" 
+                            Background="#FFDDDDDD" FontWeight="Bold" Foreground="#FF464646" BorderBrush="#FFABADB3" 
+                            ToolTip="Clear search"/>
 
                 </Grid>
             </TabItem>
@@ -32,12 +89,12 @@
             <TabItem Header="Manage Students">
                 <Grid Background="#FFE5E5E5">
                     <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
-                    <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
+                    
                     <Rectangle Height="7" VerticalAlignment="Top" Fill="#FF007ACC" Margin="0,48,-6,0"/>
                     <Label Content="Manage Students" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
 
                     <DataGrid x:Name="dataGridStudents"
-                              Margin="231,54,10,16"
+                              Margin="253,54,10,16"
                               AlternatingRowBackground="LightGray"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               AutoGenerateColumns="False"
@@ -49,6 +106,7 @@
                               ItemsSource="{Binding displayedStudents, Mode=TwoWay}"
                               RowEditEnding="dataGridStudents_RowEditEnding"
                               ScrollViewer.CanContentScroll="True"
+                              SelectionMode="Single"
                               >
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Path=Balance, StringFormat=${0}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
@@ -70,28 +128,26 @@
 
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Rectangle HorizontalAlignment="Left" Height="100" Margin="10,101,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
-                    <TextBox x:Name="txtStudentsSearch" KeyDown="txtStudentsSearch_KeyDown" GotKeyboardFocus="txtStudentsSearch_GotKeyboardFocus" LostKeyboardFocus="txtStudentsSearch_LostKeyboardFocus" HorizontalAlignment="Left" Margin="23,147,0,0" Text="Search" TextWrapping="Wrap" Foreground="DarkGray" VerticalAlignment="Top" Width="161" Height="23" FontSize="14"/>
-                    <TextBlock Text="Enter a name or student number to search:" HorizontalAlignment="Left" Margin="23,107,0,0" VerticalAlignment="Top" Width="154" Height="36" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
-                    <TextBlock x:Name="txtNumStudentsShown" HorizontalAlignment="Left" Margin="23,174,0,0" VerticalAlignment="Top" Width="187" Height="18" FontStyle="Italic" Foreground="#FF464646">
+                    <Rectangle HorizontalAlignment="Left" Height="100" Margin="21,101,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <TextBox x:Name="txtStudentsSearch" KeyDown="txtStudentsSearch_KeyDown" GotKeyboardFocus="txtStudentsSearch_GotKeyboardFocus" LostKeyboardFocus="txtStudentsSearch_LostKeyboardFocus" HorizontalAlignment="Left" Margin="34,147,0,0" Text="Search" TextWrapping="Wrap" Foreground="DarkGray" VerticalAlignment="Top" Width="161" Height="23" FontSize="14"/>
+                    <TextBlock Text="Enter a name or student number to search:" HorizontalAlignment="Left" Margin="34,107,0,0" VerticalAlignment="Top" Width="154" Height="36" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
+                    <TextBlock x:Name="txtNumStudentsShown" HorizontalAlignment="Left" Margin="34,174,0,0" VerticalAlignment="Top" Width="187" Height="18" FontStyle="Italic" Foreground="#FF464646">
                     </TextBlock>
-
-
-                    <Button x:Name="btnClearSearch" Click="btnShowAllStudents_Click" Content="✕" HorizontalAlignment="Left" Margin="183,147,0,0" VerticalAlignment="Top" Height="23" Width="23" FontSize="12.5" Background="#FFDDDDDD" FontWeight="Bold" Foreground="#FF464646" BorderBrush="#FFABADB3" ToolTip="Clear search"/>
-                    <Button x:Name="btnRefreshStudents" Content="⟳" HorizontalAlignment="Left" Margin="10,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
+                    <Button x:Name="btnClearSearch" Click="btnShowAllStudents_Click" Content="✕" HorizontalAlignment="Left" Margin="194,147,0,0" VerticalAlignment="Top" Height="23" Width="23" FontSize="12.5" Background="#FFDDDDDD" FontWeight="Bold" Foreground="#FF464646" BorderBrush="#FFABADB3" ToolTip="Clear search"/>
+                    <Button x:Name="btnRefreshStudents" Content="⟳" HorizontalAlignment="Left" Margin="21,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
                             Foreground="#FF007ACC" Background="White" BorderBrush="#FF007ACC" Click="btnRefreshStudents_Click" FontFamily="Bahnschrift" ToolTip="Refresh" />
-                    <Rectangle HorizontalAlignment="Left" Height="126" Margin="10,214,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
-                    <Button x:Name="btnShowOwingStudents" Click="btnShowOwingStudents_Click" Content="Show owing students" HorizontalAlignment="Left" Margin="23,263,0,0" VerticalAlignment="Top" Height="28" FontSize="12.5" Width="183" ToolTip="Display students who have negative balances"/>
-                    <Button x:Name="btnShowAllStudents" Click="btnShowAllStudents_Click" Content="Show all students" HorizontalAlignment="Left" Margin="23,226,0,0" VerticalAlignment="Top" Height="28" Width="183" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Display all students"/>
-                    <Button x:Name="btnExportStudents" Click="btnExportStudents_Click" Content="Export student data" HorizontalAlignment="Left" Margin="23,300,0,0" VerticalAlignment="Top" Height="28" Width="183" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Exports a CSV file containing the most recent student balance information"/>
-                    <Rectangle HorizontalAlignment="Left" Height="165" Margin="10,354,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
-                    <TextBlock Text="Select a student on the right and enter an amount to add or remove:" HorizontalAlignment="Left" Margin="23,360,0,0" VerticalAlignment="Top" Width="183" Height="57" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
-                    <TextBox HorizontalAlignment="Left" Margin="34,418,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="172" Height="23" FontSize="14" />
-                    <Button x:Name="btnAddToStudentBalance" Content="Add" HorizontalAlignment="Left" Margin="34,440,0,0" VerticalAlignment="Top" Width="86"/>
-                    <Button x:Name="btnRemoveFromStudentBalance" Content="Remove" HorizontalAlignment="Left" Margin="119,440,0,0" VerticalAlignment="Top" Width="87"/>
-                    <TextBlock Text="Please enter a positive number" HorizontalAlignment="Left" Margin="34,460,0,0" VerticalAlignment="Top" Width="161" Height="18" TextWrapping="Wrap" FontStyle="Italic" FontSize="11.5" Foreground="Red"/>
-                    <Label Content="$" HorizontalAlignment="Left" Margin="19,414,0,0" VerticalAlignment="Top" FontSize="14"/>
-
+                    <Rectangle HorizontalAlignment="Left" Height="126" Margin="21,214,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <Button x:Name="btnShowOwingStudents" Click="btnShowOwingStudents_Click" Content="Show owing students" HorizontalAlignment="Left" Margin="34,263,0,0" VerticalAlignment="Top" Height="28" FontSize="12.5" Width="183" ToolTip="Display students who have negative balances"/>
+                    <Button x:Name="btnShowAllStudents" Click="btnShowAllStudents_Click" Content="Show all students" HorizontalAlignment="Left" Margin="34,226,0,0" VerticalAlignment="Top" Height="28" Width="183" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Display all students"/>
+                    <Button x:Name="btnExportStudents" Click="btnExportStudents_Click" Content="Export student data" HorizontalAlignment="Left" Margin="34,300,0,0" VerticalAlignment="Top" Height="28" Width="183" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Exports a CSV file containing the student balance information shown on the right"/>
+                    <Rectangle HorizontalAlignment="Left" Height="165" Margin="21,354,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <TextBlock Text="Select a student on the right and enter an amount to add or remove:" HorizontalAlignment="Left" Margin="34,360,0,0" VerticalAlignment="Top" Width="183" Height="57" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
+                    <TextBox x:Name="txtAddRemoveStudentBalanceAmount" HorizontalAlignment="Left" Margin="45,418,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="172" Height="23" FontSize="14" />
+                    <Button x:Name="btnAddToStudentBalance" Click="btnAddToStudentBalance_Click" Content="Add" HorizontalAlignment="Left" Margin="45,440,0,0" VerticalAlignment="Top" Width="86" ToolTip="Add the amount in the box above to the student selected in the table's balance"/>
+                    <Button x:Name="btnRemoveFromStudentBalance" Click="btnRemoveFromStudentBalance_Click" Content="Remove" HorizontalAlignment="Left" Margin="130,440,0,0" VerticalAlignment="Top" Width="87" ToolTip="Remove the amount in the box above from the student selected in the table's balance"/>
+                    <TextBlock x:Name="txtStudentBalanceAddRemoveError" Text="Please enter a positive number" HorizontalAlignment="Left" Margin="34,461,0,0" VerticalAlignment="Top" Width="161" Height="18" TextWrapping="Wrap" FontStyle="Italic" FontSize="11.5" Foreground="Red" Visibility="Hidden"/>
+                    <Label Content="$" HorizontalAlignment="Left" Margin="30,414,0,0" VerticalAlignment="Top" FontSize="14"/>
+                    <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
 
                 </Grid>
             </TabItem>
@@ -106,7 +162,7 @@
                     <Rectangle Height="7" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Fill="#FF007ACC" Margin="0,398,-6,0"/>
                     -->
                     <DataGrid x:Name="dataGridFoodTypes"
-                              Margin="211,54,10,16"
+                              Margin="253,54,10,16"
                               AlternatingRowBackground="LightGray"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               AutoGenerateColumns="False"
@@ -141,12 +197,12 @@
                                     IsReadOnly="False"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Rectangle HorizontalAlignment="Left" Height="90" Margin="10,102,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="190"/>
+                    <Rectangle HorizontalAlignment="Left" Height="90" Margin="21,102,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
 
-                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="21,114,0,0" VerticalAlignment="Top" Width="167" Height="28" ToolTip="Delete the selected food types" BorderThickness="1,1,1,1" Background="#FFDDDDDD" BorderBrush="#FF707070" FontSize="12.5"/>
-                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="21,150,0,0" VerticalAlignment="Top" Height="28" ToolTip="Opens a menu to add a new food type" Width="167" BorderThickness="1,1,1,1" FontSize="12.5" Background="#FFDDDDDD"/>
+                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="34,114,0,0" VerticalAlignment="Top" Width="183" Height="28" ToolTip="Delete the selected food types" BorderThickness="1,1,1,1" Background="#FFDDDDDD" BorderBrush="#FF707070" FontSize="12.5"/>
+                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="34,150,0,0" VerticalAlignment="Top" Height="28" ToolTip="Opens a menu to add a new food type" Width="183" BorderThickness="1,1,1,1" FontSize="12.5" Background="#FFDDDDDD"/>
                     <Label Content="Manage Food Types" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
-                    <Button x:Name="btnRefreshFoodItems" Content="⟳" HorizontalAlignment="Left" Margin="10,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
+                    <Button x:Name="btnRefreshFoodItems" Content="⟳" HorizontalAlignment="Left" Margin="21,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
                             Foreground="#FF007ACC" Background="White" BorderBrush="#FF007ACC" Click="btnRefreshFoodItems_Click" FontFamily="Bahnschrift" ToolTip="Refresh" />
 
                     <!--

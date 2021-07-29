@@ -21,6 +21,9 @@ using System.Text.Json;
 using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 using System.ComponentModel;
+using Microsoft.Win32;
+using CsvHelper;
+using System.Globalization;
 
 namespace LunchManager
 {
@@ -179,6 +182,27 @@ namespace LunchManager
             return newStudentsCollection;
         }
 
+        private async Task<ObservableCollection<Transaction>> GetTransactionsAsync(int numToLoad)
+        {
+            //HttpResponseMessage responseFood;
+            ObservableCollection<Transaction> newTransactionsCollection = new();
+            try
+            {
+                var responseTransactions = await client.GetAsync("api/Transactions/School/" + thisSchool.ID);
+                newTransactionsCollection = await responseTransactions.Content.ReadAsAsync<ObservableCollection<Transaction>>();
+                if (newTransactionsCollection == null) //DEBUG
+                {
+                    Trace.WriteLine("newTransactionsCollection is null - GetTransactionsAsync");
+                }
+            }
+            catch (HttpRequestException)
+            {
+                MessageBox.Show("Failed to connect to the server, please check your internet connection and try again. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            return newTransactionsCollection;
+        }
+
         /**<summary>Loads the students, schools, and food items into the main window's lists.</summary>
          */
         private async Task GetDataAsync()
@@ -289,7 +313,7 @@ namespace LunchManager
             int editedRowIndex = e.Row.GetIndex();
             Trace.WriteLine("index of edited row: " + editedRowIndex); //DEBUG
             //FoodItem newRowItem = (FoodItem)(e.Row.Item);
-            if (editedRowIndex > foodItems.Count - 1 && editedRowIndex > 0)
+            if ((editedRowIndex > foodItems.Count - 1) || (editedRowIndex < 0))
             {
                 Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
                 return;
@@ -330,7 +354,7 @@ namespace LunchManager
                 //modifying a datagrid row will change the corresponding foodItem
                 if (e.Row.Background == Brushes.Coral) //if the item was invalid before, change the row color back to normal
                 {
-                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0)
+                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0) //!!this may not work, should check the brush of the previous or next row
                     {
                         e.Row.Background = Brushes.White;
                     }
@@ -669,16 +693,86 @@ namespace LunchManager
             }
         }
 
-        private void dataGridStudents_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
+        private async void dataGridStudents_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
         {
-            //round balance, sync to database
+            if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
+            {
+                Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
+                return;
+            }
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            int editedRowIndex = e.Row.GetIndex();
+            Trace.WriteLine("index of edited row: " + editedRowIndex); //DEBUG
+            Student editedRowItem = displayedStudents[e.Row.GetIndex()];
+
+            editedRowItem.Balance = decimal.Round(editedRowItem.Balance, 2);
+            await SaveModifiedStudentAsync(editedRowItem);
+
+            loadingWindow.Hide();
+            IsEnabled = true;
+
+        }
+
+        private async void btnAddToStudentBalance_Click(object sender, RoutedEventArgs e)
+        {
+            if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
+            {
+                Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
+                return;
+            }
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            decimal amount;
+            if ((!Decimal.TryParse(txtAddRemoveStudentBalanceAmount.Text, out amount)) || (amount < 0M))
+            {
+                txtStudentBalanceAddRemoveError.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                txtStudentBalanceAddRemoveError.Visibility = Visibility.Hidden;
+                displayedStudents[dataGridStudents.SelectedIndex].Balance += decimal.Round(amount, 2);
+                await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+
+                await RefreshStudentsDataGrid();
+            }
+            txtAddRemoveStudentBalanceAmount.Text = "";
+            loadingWindow.Hide();
+            IsEnabled = true;
+        }
+
+        private async void btnRemoveFromStudentBalance_Click(object sender, RoutedEventArgs e)
+        {
+            if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
+            {
+                Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
+                return;
+            }
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            decimal amount;
+            if ((!Decimal.TryParse(txtAddRemoveStudentBalanceAmount.Text, out amount)) || (amount < 0M))
+            {
+                txtStudentBalanceAddRemoveError.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                txtStudentBalanceAddRemoveError.Visibility = Visibility.Hidden;
+                displayedStudents[dataGridStudents.SelectedIndex].Balance -= decimal.Round(amount, 2);
+                await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+
+                await RefreshStudentsDataGrid();
+            }
+            txtAddRemoveStudentBalanceAmount.Text = "";
+            loadingWindow.Hide();
+            IsEnabled = true;
         }
 
         private async Task SaveModifiedStudentAsync(Student student)
         {
-            loadingWindow.Show();
-            IsEnabled = false;
-
             Trace.WriteLine("trying to sync a student with ID: " + student.StudentID); //DEBUG
             string jsonString = JsonSerializer.Serialize(student);
             var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
@@ -700,33 +794,172 @@ namespace LunchManager
                 MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 Close();
             }
-            
-            loadingWindow.Hide();
-            IsEnabled = true;
-
         }
 
         private async void btnRefreshStudents_Click(object sender, RoutedEventArgs e)
         {
             loadingWindow.Show();
             IsEnabled = false;
+            await RefreshStudentsDataGrid();
+            loadingWindow.Hide();
+            IsEnabled = true;
+        }
 
+        private async Task RefreshStudentsDataGrid()
+        {
             students = await GetStudentsAsync();
-            displayedStudents = students;
+            //displayedStudents = students; //don't need this, displayedStudents references students
 
             dataGridStudents.ItemsSource = null;
             dataGridStudents.ItemsSource = displayedStudents;
 
+            txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
+        }
+
+
+        private void btnExportStudents_Click(object sender, RoutedEventArgs e) //!!exports only data shown with the applied filter, maybe should always export all data?
+        {
+            SaveFileDialog saveDialog = new SaveFileDialog();
+            saveDialog.Filter = "CSV (*.csv)|*.csv";
+            saveDialog.FileName = "Students-" + DateTime.Now.ToString("MM-dd-yyyy");
+            var result = saveDialog.ShowDialog();
+
+            loadingWindow.SetMessage("Exporting data...");
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            if (result == true) //save button is pressed
+            {
+                if (File.Exists(saveDialog.FileName))
+                {
+                    try
+                    {
+                        File.Delete(saveDialog.FileName);
+                    }
+                    catch (IOException)
+                    {
+                        loadingWindow.Hide();
+                        loadingWindow.SetMessage(LoadingBox.defaultMessage);
+                        IsEnabled = true;
+                        MessageBox.Show("Student data could not be exported, choose a different file location and try again.", "Could not export", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+                using (var writer = new StreamWriter(saveDialog.FileName))
+                {
+                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                    {
+                        csv.WriteRecords(displayedStudents);
+                    }
+                }
+            }
+
+            MessageBox.Show("Successfully exported student data.", "Export successful", MessageBoxButton.OK, MessageBoxImage.Information);
+
             loadingWindow.Hide();
+            loadingWindow.SetMessage(LoadingBox.defaultMessage);
             IsEnabled = true;
         }
 
 
         #endregion Manage Students Tab
 
-        private void btnExportStudents_Click(object sender, RoutedEventArgs e)
-        {
 
+        #region View Transactions Tab
+
+        private async void btnRefreshTransactions_Click(object sender, RoutedEventArgs e)
+        {
+            loadingWindow.Show();
+            IsEnabled = false;
+            await RefreshTransactionsDataGrid();
+            loadingWindow.Hide();
+            IsEnabled = true;
         }
+
+        private async Task RefreshTransactionsDataGrid()
+        {
+            transactions = await GetTransactionsAsync();
+
+            dataGridTransactions.ItemsSource = null;
+            dataGridTransactions.ItemsSource = transactions;
+
+            txtNumTransactionsShown.Text = "Showing last" + transactions.Count + "transactions";
+        }
+
+        private void txtTransactionsSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if ((e.Key == Key.Return) || (e.Key == Key.Enter))
+            {
+                loadingWindow.SetMessage("Searching...");
+                loadingWindow.Show();
+                IsEnabled = false;
+
+                var searchedTransactions = new ObservableCollection<Transaction>();
+                if (int.TryParse(txtTransactionsSearch.Text, out int num)) //if the text entered is a number, search by student number
+                {
+                    foreach (Transaction i in transactions)
+                    {
+                        if (i.StudentID.Contains(txtTransactionsSearch.Text))
+                        {
+                            searchedTransactions.Add(i);
+                        }
+                    }
+                }
+                else //if the text cannot be parsed as an int, search by name
+                {
+                    foreach (Transaction i in transactions)
+                    {
+                        if (i.StudentName.Contains(txtTransactionsSearch.Text, StringComparison.OrdinalIgnoreCase))
+                        {
+                            searchedTransactions.Add(i);
+                        }
+                    }
+                }
+                transactions = searchedTransactions;
+                dataGridTransactions.ItemsSource = null;
+                dataGridTransactions.ItemsSource = transactions;
+                txtNumTransactionsShown.Text = "Showing last" + transactions.Count + "transactions";
+
+                loadingWindow.Hide();
+                IsEnabled = true;
+                loadingWindow.SetMessage(LoadingBox.defaultMessage);
+            }
+        }
+
+        private void txtTransactionsSearch_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (txtStudentsSearch.Text.Equals("Search"))
+            {
+                txtStudentsSearch.Text = "";
+                txtStudentsSearch.Foreground = Brushes.Black;
+            }
+        }
+
+        private void txtTransactionsSearch_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtStudentsSearch.Text))
+            {
+                txtStudentsSearch.Text = "Search";
+                txtStudentsSearch.Foreground = Brushes.DarkGray;
+            }
+        }
+
+        private void btnClearTransactionsSearch_Click(object sender, RoutedEventArgs e)
+        {
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            transactions = GetTransactionsAsync((int)txtNumTransactionsToLoad.Text);
+
+            dataGridTransactions.ItemsSource = null;
+            dataGridTransactions.ItemsSource = transactions;
+            txtNumTransactionsShown.Text = "Showing last" + transactions.Count + "transactions";
+            txtStudentsSearch.Text = "Search";
+            txtStudentsSearch.Foreground = Brushes.DarkGray;
+
+            loadingWindow.Hide();
+            IsEnabled = true;
+        }
+        #endregion View Transactions Tab
     }
 }
