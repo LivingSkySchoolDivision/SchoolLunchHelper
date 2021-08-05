@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Data.Models;
+using System.Diagnostics;
 
 namespace LunchManager
 {
@@ -67,11 +68,10 @@ namespace LunchManager
                 }
 
                 MainWindow.unsyncedFoodItems.Add(newFoodItem);
-                MainWindow.foodItems.Add(newFoodItem);
+                MainWindow.displayedFoodItems.Add(newFoodItem);
                 this.Close();
             }
-            
-            
+
 
         }
 

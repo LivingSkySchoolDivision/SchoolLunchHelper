@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LunchManager"
         mc:Ignorable="d"
-        Title="Lunch Manager" Height="600" Width="900"
+        Title="Lunch Manager" Height="650" Width="900"
         Loaded="Window_Loaded" WindowState="Maximized"
         >
     <Grid>
         <TabControl SelectionChanged="TabControl_SelectionChanged">
-            <TabItem Header="Overview">
+            <TabItem Header="Overview" FontSize="14">
                 <Grid Background="#FFE5E5E5">
                     <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
                     <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
@@ -19,10 +19,9 @@
 
                 </Grid>
             </TabItem>
-            <TabItem Header="View Transactions">
+            <TabItem Header="View Transactions" FontSize="14">
                 <Grid Background="#FFE5E5E5">
                     <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
-                    <Rectangle HorizontalAlignment="Left" Height="165" Margin="21,354,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
 
                     <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
                     <Rectangle Height="7" VerticalAlignment="Top" Fill="#FF007ACC" Margin="0,48,-6,0"/>
@@ -32,17 +31,13 @@
                               AlternatingRowBackground="LightGray"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               AutoGenerateColumns="False"
-                              CanUserDeleteRows="True"
+                              CanUserDeleteRows="False"
                               CanUserResizeRows="True"
                               CanUserSortColumns="False"
                               CanUserAddRows="False"
                               SelectionChanged="dataGridFoodTypes_SelectionChanged"
-                              ItemsSource="{Binding transactions, Mode=TwoWay}"
-                              BeginningEdit="dataGridFoodTypes_BeginningEdit"
-                              CellEditEnding="dataGridFoodTypes_CellEditEnding"
-                              RowEditEnding="dataGridFoodTypes_RowEditEnding"
-                              AddingNewItem="dataGridFoodTypes_AddingNewItem"
-                              PreviewKeyDown="dataGridFoodTypes_PreviewKeyDown"
+                              ItemsSource="{Binding transactions, Mode=TwoWay, IsAsync=True}"
+                              MinRowHeight="23"
                               >
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Path=StudentName}"
@@ -50,6 +45,11 @@
                                     Width="*"
                                     IsReadOnly="True"
                                     x:Name="dgcolStudentName" FontSize="12.5"/>
+                            <DataGridTextColumn Binding="{Binding Path=StudentID, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                    Header="Student Number"
+                                    Width="200"
+                                    MinWidth="100"
+                                    IsReadOnly="True" FontSize="12.5"/>
                             <DataGridTextColumn Binding="{Binding Path=Cost, StringFormat=${0}}" 
                                     Header="Cost"
                                     Width="75"
@@ -67,8 +67,9 @@
                     <Rectangle HorizontalAlignment="Left" Height="100" Margin="21,101,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
                     <Button x:Name="btnRefreshTransactions" Content="⟳" HorizontalAlignment="Left" Margin="21,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
                         Foreground="#FF007ACC" Background="White" BorderBrush="#FF007ACC" Click="btnRefreshTransactions_Click" FontFamily="Bahnschrift" ToolTip="Refresh" />
-                    <Rectangle HorizontalAlignment="Left" Height="126" Margin="21,214,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
-                    
+                    <Rectangle HorizontalAlignment="Left" Height="43" Margin="21,214,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <Rectangle HorizontalAlignment="Left" Height="182" Margin="22,270,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+
                     <TextBox x:Name="txtTransactionsSearch" KeyDown="txtTransactionsSearch_KeyDown" 
                              GotKeyboardFocus="txtTransactionsSearch_GotKeyboardFocus" 
                              LostKeyboardFocus="txtTransactionsSearch_LostKeyboardFocus" HorizontalAlignment="Left" 
@@ -82,14 +83,33 @@
                             Margin="194,147,0,0" VerticalAlignment="Top" Height="23" Width="23" FontSize="12.5" 
                             Background="#FFDDDDDD" FontWeight="Bold" Foreground="#FF464646" BorderBrush="#FFABADB3" 
                             ToolTip="Clear search"/>
+                    <TextBlock Text="Show last" HorizontalAlignment="Left" Margin="34,226,0,0" 
+                        VerticalAlignment="Top" Width="58" Height="20" TextWrapping="Wrap" FontStyle="Normal" FontSize="12.5"/>
+                    <TextBlock Text="transactions" HorizontalAlignment="Left" Margin="157,226,0,0" 
+                        VerticalAlignment="Top" Width="74" Height="20" TextWrapping="Wrap" FontStyle="Normal" FontSize="12.5"/>
+                    <ComboBox x:Name="cbNumTransactionsToShow" HorizontalAlignment="Left" Margin="90,222,0,0" VerticalAlignment="Top"
+                              Width="63" SelectionChanged="cbNumTransactionsToShow_SelectionChanged" FontSize="12.5"/>
+                    <DatePicker x:Name="dpTransactionStart" HorizontalAlignment="Left" Margin="73,327,0,0" VerticalAlignment="Top"/>
+                    <TextBlock Text="Or show transactions within a start and end date:" HorizontalAlignment="Left" Margin="34,278,0,0" 
+                        VerticalAlignment="Top" Width="183" Height="44" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
+                    <TextBlock Text="Start:" HorizontalAlignment="Left" Margin="32,327,0,0" 
+                        VerticalAlignment="Top" Width="36" Height="24" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
+                    <TextBlock Text="End:" HorizontalAlignment="Left" Margin="32,356,0,0" 
+                        VerticalAlignment="Top" Width="36" Height="24" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
+                    <DatePicker x:Name="dpTransactionEnd" HorizontalAlignment="Left" Margin="73,356,0,0" VerticalAlignment="Top"/>
+                    <Button x:Name="btnEnterTransactionRange" Click="btnEnterTransactionRange_Click" Content="Search" HorizontalAlignment="Left" Margin="73,386,0,0" VerticalAlignment="Top" Width="113" Height="23"/>
+                    <TextBlock x:Name="txtStartEndDateError" Text="The start date cannot be later than the end date" HorizontalAlignment="Left" Margin="34,408,0,0" 
+                        VerticalAlignment="Top" Width="183" Height="35" TextWrapping="Wrap" FontStyle="Italic" Foreground="Red" Visibility="Hidden"/>
+                    <Rectangle HorizontalAlignment="Left" Height="56" Margin="22,465,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <Button x:Name="btnExportDisplayedTransactions" Click="btnExportDisplayedTransactions_Click" Content="Export displayed transactions" HorizontalAlignment="Left" Margin="34,478,0,0" VerticalAlignment="Top" Height="28" Width="184" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Exports a CSV file containing the transactions shown on the right"/>
 
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Manage Students">
+            <TabItem Header="Manage Students" FontSize="14">
                 <Grid Background="#FFE5E5E5">
                     <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
-                    
+
                     <Rectangle Height="7" VerticalAlignment="Top" Fill="#FF007ACC" Margin="0,48,-6,0"/>
                     <Label Content="Manage Students" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
 
@@ -107,24 +127,25 @@
                               RowEditEnding="dataGridStudents_RowEditEnding"
                               ScrollViewer.CanContentScroll="True"
                               SelectionMode="Single"
+                              MinRowHeight="23"
                               >
                         <DataGrid.Columns>
-                            <DataGridTextColumn Binding="{Binding Path=Balance, StringFormat=${0}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
-                                    Header="Balance" 
-                                    Width="150"
-                                    MinWidth="50"
-                                    IsReadOnly="False" FontSize="12.5"/>
+                            <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    Header="Name" 
+                                    Width="200"
+                                    MinWidth="100"
+                                    IsReadOnly="True" FontSize="12.5"
+                                    />
                             <DataGridTextColumn Binding="{Binding Path=StudentID, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
                                     Header="Student Number"
                                     Width="200"
                                     MinWidth="100"
                                     IsReadOnly="True" FontSize="12.5"/>
-                            <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    Header="Name" 
+                            <DataGridTextColumn Binding="{Binding Path=Balance, StringFormat=${0}, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                    Header="Balance" 
                                     Width="*"
-                                    MinWidth="100"
-                                    IsReadOnly="True" FontSize="12.5"
-                                    />
+                                    MinWidth="50"
+                                    IsReadOnly="False" FontSize="12.5"/>
 
                         </DataGrid.Columns>
                     </DataGrid>
@@ -139,20 +160,20 @@
                     <Rectangle HorizontalAlignment="Left" Height="126" Margin="21,214,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
                     <Button x:Name="btnShowOwingStudents" Click="btnShowOwingStudents_Click" Content="Show owing students" HorizontalAlignment="Left" Margin="34,263,0,0" VerticalAlignment="Top" Height="28" FontSize="12.5" Width="183" ToolTip="Display students who have negative balances"/>
                     <Button x:Name="btnShowAllStudents" Click="btnShowAllStudents_Click" Content="Show all students" HorizontalAlignment="Left" Margin="34,226,0,0" VerticalAlignment="Top" Height="28" Width="183" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Display all students"/>
-                    <Button x:Name="btnExportStudents" Click="btnExportStudents_Click" Content="Export student data" HorizontalAlignment="Left" Margin="34,300,0,0" VerticalAlignment="Top" Height="28" Width="183" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Exports a CSV file containing the student balance information shown on the right"/>
+                    <Button x:Name="btnExportStudents" Click="btnExportStudents_Click" Content="Export student data" HorizontalAlignment="Left" Margin="34,300,0,0" VerticalAlignment="Top" Height="28" Width="183" FontSize="12.5" Background="#FFDDDDDD" ToolTip="Exports a CSV file containing student balance information"/>
                     <Rectangle HorizontalAlignment="Left" Height="165" Margin="21,354,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
                     <TextBlock Text="Select a student on the right and enter an amount to add or remove:" HorizontalAlignment="Left" Margin="34,360,0,0" VerticalAlignment="Top" Width="183" Height="57" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
                     <TextBox x:Name="txtAddRemoveStudentBalanceAmount" HorizontalAlignment="Left" Margin="45,418,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="172" Height="23" FontSize="14" />
                     <Button x:Name="btnAddToStudentBalance" Click="btnAddToStudentBalance_Click" Content="Add" HorizontalAlignment="Left" Margin="45,440,0,0" VerticalAlignment="Top" Width="86" ToolTip="Add the amount in the box above to the student selected in the table's balance"/>
                     <Button x:Name="btnRemoveFromStudentBalance" Click="btnRemoveFromStudentBalance_Click" Content="Remove" HorizontalAlignment="Left" Margin="130,440,0,0" VerticalAlignment="Top" Width="87" ToolTip="Remove the amount in the box above from the student selected in the table's balance"/>
-                    <TextBlock x:Name="txtStudentBalanceAddRemoveError" Text="Please enter a positive number" HorizontalAlignment="Left" Margin="34,461,0,0" VerticalAlignment="Top" Width="161" Height="18" TextWrapping="Wrap" FontStyle="Italic" FontSize="11.5" Foreground="Red" Visibility="Hidden"/>
+                    <TextBlock x:Name="txtStudentBalanceAddRemoveError" Text="Please enter a positive number" HorizontalAlignment="Left" Margin="46,460,0,0" VerticalAlignment="Top" Width="162" Height="18" TextWrapping="Wrap" FontStyle="Italic" FontSize="11.5" Foreground="Red" Visibility="Hidden"/>
                     <Label Content="$" HorizontalAlignment="Left" Margin="30,414,0,0" VerticalAlignment="Top" FontSize="14"/>
                     <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
 
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Manage Food Types" x:Name="tabManageFoodTypes">
+            <TabItem Header="Manage Food Types" x:Name="tabManageFoodTypes" FontSize="14">
                 <Grid Background="#FFE5E5E5">
                     <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
                     <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
@@ -171,12 +192,13 @@
                               CanUserSortColumns="False"
                               CanUserAddRows="True"
                               SelectionChanged="dataGridFoodTypes_SelectionChanged"
-                              ItemsSource="{Binding foodItems, Mode=TwoWay}"
+                              ItemsSource="{Binding displayedFoodItems, Mode=TwoWay}"
                               BeginningEdit="dataGridFoodTypes_BeginningEdit"
                               CellEditEnding="dataGridFoodTypes_CellEditEnding"
                               RowEditEnding="dataGridFoodTypes_RowEditEnding"
                               AddingNewItem="dataGridFoodTypes_AddingNewItem"
                               PreviewKeyDown="dataGridFoodTypes_PreviewKeyDown"
+                              MinRowHeight="23"
                               >
                         <DataGrid.Columns>
                             <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -197,13 +219,20 @@
                                     IsReadOnly="False"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Rectangle HorizontalAlignment="Left" Height="90" Margin="21,102,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
-
-                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="34,114,0,0" VerticalAlignment="Top" Width="183" Height="28" ToolTip="Delete the selected food types" BorderThickness="1,1,1,1" Background="#FFDDDDDD" BorderBrush="#FF707070" FontSize="12.5"/>
-                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="34,150,0,0" VerticalAlignment="Top" Height="28" ToolTip="Opens a menu to add a new food type" Width="183" BorderThickness="1,1,1,1" FontSize="12.5" Background="#FFDDDDDD"/>
+                    <Rectangle HorizontalAlignment="Left" Height="83" Margin="21,200,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <Rectangle HorizontalAlignment="Left" Height="86" Margin="21,101,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <Button x:Name="btnDeleteFoodItem" Click="btnDeleteFoodItem_Click" Content="Delete" HorizontalAlignment="Left" Margin="34,211,0,0" VerticalAlignment="Top" Width="183" Height="28" ToolTip="Delete the selected food types" BorderThickness="1,1,1,1" Background="#FFDDDDDD" BorderBrush="#FF707070" FontSize="12.5"/>
+                    <Button x:Name="btnAddNewFoodType" Click="btnAddNewFoodType_Click" Content="Add new food type" HorizontalAlignment="Left" Margin="34,243,0,0" VerticalAlignment="Top" Height="28" ToolTip="Opens a menu to add a new food type" Width="183" BorderThickness="1,1,1,1" FontSize="12.5" Background="#FFDDDDDD"/>
                     <Label Content="Manage Food Types" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="248" Height="58" FontWeight="Bold"/>
                     <Button x:Name="btnRefreshFoodItems" Content="⟳" HorizontalAlignment="Left" Margin="21,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
                             Foreground="#FF007ACC" Background="White" BorderBrush="#FF007ACC" Click="btnRefreshFoodItems_Click" FontFamily="Bahnschrift" ToolTip="Refresh" />
+                    <TextBox x:Name="txtFoodSearch" KeyDown="txtFoodSearch_KeyDown"  GotKeyboardFocus="txtFoodSearch_GotKeyboardFocus"  LostKeyboardFocus="txtFoodSearch_LostKeyboardFocus"  HorizontalAlignment="Left" Margin="34,131,0,0" Text="Search" TextWrapping="Wrap" Foreground="DarkGray" VerticalAlignment="Top" Width="161" Height="23" FontSize="14"/>
+                    <TextBlock Text="Enter a food name to search:" HorizontalAlignment="Left" Margin="34,107,0,0" VerticalAlignment="Top" Width="183" Height="19" TextWrapping="Wrap" FontStyle="Normal" FontSize="14"/>
+                    <TextBlock x:Name="txtNumFoodTypesShown" HorizontalAlignment="Left" Margin="34,158,0,0" VerticalAlignment="Top" Width="187" Height="18" FontStyle="Italic" Foreground="#FF464646"/>
+                    <Button x:Name="btnClearSearchFoodItems" Click="btnClearSearchFoodItems_Click"  Content="✕" HorizontalAlignment="Left" Margin="194,131,0,0" VerticalAlignment="Top" Height="23" Width="23" FontSize="12.5" Background="#FFDDDDDD" FontWeight="Bold" Foreground="#FF464646" BorderBrush="#FFABADB3" ToolTip="Clear search"/>
+                    <Rectangle HorizontalAlignment="Left" Height="51" Margin="21,296,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+                    <TextBlock Text="Double click a cell in the table to edit it" HorizontalAlignment="Left" Margin="34,302,0,0" VerticalAlignment="Top" FontSize="14" Width="186" Height="45" TextWrapping="Wrap"/>
+
 
                     <!--
                     <Button x:Name="btnEditFoodItem" Click="btnEditFoodItem_Click" Content="Edit" HorizontalAlignment="Center" Margin="0,368,0,0" VerticalAlignment="Top" Width="54" />

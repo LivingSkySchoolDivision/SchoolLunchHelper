@@ -35,17 +35,16 @@ namespace LunchManager
         private HttpClient client; //the application shares one http client
         private ObservableCollection<Transaction> _transactions;
         private ObservableCollection<Student> _students;
-        private static ObservableCollection<FoodItem> _foodItems;
-        private static ObservableCollection<FoodItem> _unsyncedFoodItems; 
+        private static ObservableCollection<FoodItem> _unsyncedFoodItems;
+        private static ObservableCollection<FoodItem> _displayedFoodItems;
         private School thisSchool;
         private LoadingBox loadingWindow;
         private AddNewFoodItemHelper addNewFoodItemWindow;
         private List<FoodItem> lastDeletedFoodItems;
         private ObservableCollection<Student> _displayedStudents;
-        //private string foodItemsJsonPath = "unsyncedFoodItems.json";
 
-        public static ObservableCollection<FoodItem> foodItems { get { return _foodItems; } set { _foodItems = value; } }
         public static ObservableCollection<FoodItem> unsyncedFoodItems { get { return _unsyncedFoodItems; } set { _unsyncedFoodItems = value; } }
+        public static ObservableCollection<FoodItem> displayedFoodItems { get { return _displayedFoodItems; } set { _displayedFoodItems = value; } }
         public ObservableCollection<Transaction> transactions { get { return _transactions; } set { _transactions = value; } }
         public ObservableCollection<Student> students { get { return _students; } set { _students = value; } }
         public ObservableCollection<Student> displayedStudents { get { return _displayedStudents; } set { _displayedStudents = value; } }
@@ -58,7 +57,6 @@ namespace LunchManager
 
             transactions = new();
             students = new();
-            foodItems = new();
             unsyncedFoodItems = new();
             lastDeletedFoodItems = new();
         }
@@ -68,6 +66,32 @@ namespace LunchManager
             loadingWindow = new LoadingBox(this);
             loadingWindow.Show();
             IsEnabled = false;
+
+            //DEBUG
+            List<string> l1 = new() { "a", "b" }; //if linq is used, it makes a copy. if l1=l2 is used they reference the same objects and update when eachother update
+            List<string> l2 = l1;
+            l2.Remove("b");
+            Trace.WriteLine("l1: " + l1[0]);
+            Trace.WriteLine("l2: " + l2[0]);
+            l2[0] = "abc";
+            Trace.WriteLine("l2 changed");
+            Trace.WriteLine("l1: " + l1[0]);
+            Trace.WriteLine("l2: " + l2[0]);
+            l1[0] = "xyz";
+            Trace.WriteLine("l1 changed");
+            Trace.WriteLine("l1: " + l1[0]);
+            Trace.WriteLine("l2: " + l2[0]);
+            l1.Add("a");
+            Trace.WriteLine("l1 added an item");
+            Trace.WriteLine("l1: " + l1[1]);
+            Trace.WriteLine("l2: " + l2[1]);
+            l1.RemoveAt(0);
+            Trace.WriteLine("l1 delete item");
+            Trace.WriteLine("l1: " + l1[0]);
+            Trace.WriteLine("l2: " + l2[0]);
+            
+
+            //DEBUG END
 
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string apiUri = "";
@@ -100,17 +124,25 @@ namespace LunchManager
             this.Title = "Lunch Manager - " + thisSchool.Name;
             addNewFoodItemWindow = new AddNewFoodItemHelper(this, thisSchool);
 
-            await GetDataAsync();
+            transactions = await GetTransactionsAsync(50);
+            students = await GetStudentsAsync();
+            displayedFoodItems = await GetFoodItemsAsync();
 
             displayedStudents = students;
             //set up data binding
-            //dataGridFoodTypes.DataContext = foodItems;
-            dataGridFoodTypes.ItemsSource = foodItems;
+            dataGridFoodTypes.ItemsSource = displayedFoodItems;
             dataGridStudents.ItemsSource = displayedStudents;
+            ObservableCollection<int> numTransactionsOptions = new ObservableCollection<int> { 50, 100, 250, 500, 750, 1000 };
+            cbNumTransactionsToShow.ItemsSource = numTransactionsOptions;
+
+            cbNumTransactionsToShow.SelectedIndex = 0;
+            
 
             //dataGridFoodTypes.DataContext = this;
             btnDeleteFoodItem.IsEnabled = false;
             txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
+            txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
+            txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + displayedFoodItems.Count + " food types";
 
             loadingWindow.Hide();
             IsEnabled = true;
@@ -184,11 +216,10 @@ namespace LunchManager
 
         private async Task<ObservableCollection<Transaction>> GetTransactionsAsync(int numToLoad)
         {
-            //HttpResponseMessage responseFood;
             ObservableCollection<Transaction> newTransactionsCollection = new();
             try
             {
-                var responseTransactions = await client.GetAsync("api/Transactions/School/" + thisSchool.ID);
+                var responseTransactions = await client.GetAsync("api/Transactions/Recent/" + thisSchool.ID + "/" + numToLoad);
                 newTransactionsCollection = await responseTransactions.Content.ReadAsAsync<ObservableCollection<Transaction>>();
                 if (newTransactionsCollection == null) //DEBUG
                 {
@@ -228,13 +259,13 @@ namespace LunchManager
                 
 
                 var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.ID);
-                foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
+                displayedFoodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
                 Trace.WriteLine("response: " + responseFood); //DEBUG
 
                 Trace.WriteLine("get food response status: " + responseFood.StatusCode); //DEBUG
-                if (foodItems != null) //DEBUG
+                if (displayedFoodItems != null) //DEBUG
                 {
-                    foreach (FoodItem i in foodItems)
+                    foreach (FoodItem i in displayedFoodItems)
                     {
                         Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
                     }
@@ -298,10 +329,24 @@ namespace LunchManager
             
         }
 
+        /*
         private void btnEditFoodItem_Click(object sender, RoutedEventArgs e)
         {
-            
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            displayedFoodItems = foodItems;
+
+            dataGridFoodTypes.ItemsSource = null;
+            dataGridFoodTypes.ItemsSource = displayedFoodItems;
+            txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + foodItems.Count + " students";
+            txtStudentsSearch.Text = "Search";
+            txtStudentsSearch.Foreground = Brushes.DarkGray;
+
+            loadingWindow.Hide();
+            IsEnabled = true;
         }
+        */
 
         private void dataGridFoodTypes_BeginningEdit(object sender, DataGridBeginningEditEventArgs e) 
         {
@@ -309,28 +354,28 @@ namespace LunchManager
         }
 
         private async void dataGridFoodTypes_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e) //this fires when the user quits editing a row in the GUI, i.e. not if a row is added with the helper window
-        { 
+        {
             int editedRowIndex = e.Row.GetIndex();
             Trace.WriteLine("index of edited row: " + editedRowIndex); //DEBUG
             //FoodItem newRowItem = (FoodItem)(e.Row.Item);
-            if ((editedRowIndex > foodItems.Count - 1) || (editedRowIndex < 0))
+            if ((editedRowIndex > displayedFoodItems.Count - 1) || (editedRowIndex < 0))
             {
                 Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
                 return;
             }
-            
-            FoodItem editedRowItem = foodItems[e.Row.GetIndex()];
+
+            FoodItem editedRowItem = displayedFoodItems[e.Row.GetIndex()];
             if ((string.IsNullOrWhiteSpace(editedRowItem.Name)) && (editedRowItem.Cost == 0.00M) && (string.IsNullOrWhiteSpace(editedRowItem.Description)))
             {
                 //if the row has all of the default column values when editing ends, delete it
                 //dataGridFoodTypes.Items.Remove(newRowItem); //don't do this, edit the observable collection's items instead
                 Trace.WriteLine("removing new row with no data entered"); //DEBUG
                 Trace.WriteLine("name: " + editedRowItem.Name + ", cost: " + editedRowItem.Cost + ", description: " + editedRowItem.Description);
-                foodItems.Remove(editedRowItem);
+                displayedFoodItems.Remove(editedRowItem);
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(editedRowItem.Name)) 
+            if (string.IsNullOrWhiteSpace(editedRowItem.Name))
             {
                 //has invalid entries, put it in validation error mode and don't add it to unsynced transactions
                 MessageBox.Show("The \"Name\" field cannot be empty. Please enter a name for the food type.", "Required field", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -367,13 +412,40 @@ namespace LunchManager
                 editedRowItem.Cost = decimal.Round(editedRowItem.Cost, 2);
                 string jsonString = JsonSerializer.Serialize(editedRowItem);
                 var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
-                var response = await client.PutAsync("api/FoodItems/" + editedRowItem.ID, httpContent);
-                Trace.WriteLine("put request status code: " + response.StatusCode);
+                HttpResponseMessage response = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest); 
+                try
+                {
+                    loadingWindow.Show();
+                    IsEnabled = false;
+
+                    response = await client.PutAsync("api/FoodItems/" + editedRowItem.ID, httpContent);
+                    Trace.WriteLine("put request status code: " + response.StatusCode);
+
+                    loadingWindow.Hide();
+                    IsEnabled = true;
+                }
+                catch (HttpRequestException)
+                {
+                    loadingWindow.Hide();
+                    IsEnabled = true;
+                    MessageBox.Show("Cannot save changes because the server could not be reached, please check you internet connection and try again. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Close();
+                }
+                /*
                 if (!response.IsSuccessStatusCode)
                 {
-                    foodItems.Remove(editedRowItem);
+                    
+                    if (displayedFoodItems.Contains(editedRowItem)) //DEBUG
+                    {
+                        Trace.WriteLine("displayedfooditems still has the item removed from displayedfooditems");
+                    }
+                    else
+                    {
+                        Trace.WriteLine("displayedfooditems does not have the item removed from fooditems");
+                    }
                     MessageBox.Show("Cannot save changes because the server could not be reached, please check you internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+                */
             }
             else
             {
@@ -392,12 +464,13 @@ namespace LunchManager
                 FoodItem reconstructedNewFoodItem = ReconstructFoodItem(editedRowItem);
                 unsyncedFoodItems.Add(reconstructedNewFoodItem);
                 //replace the item in the foodItems list
-                foodItems.RemoveAt(editedRowIndex);
-                foodItems.Add(reconstructedNewFoodItem);
+                displayedFoodItems.RemoveAt(editedRowIndex);
+                displayedFoodItems.Add(reconstructedNewFoodItem);
                 Trace.WriteLine("reconstructed a food item-> name: " + reconstructedNewFoodItem.Name + ", cost: " + reconstructedNewFoodItem.Cost + ", description: " + reconstructedNewFoodItem.Description + ", ID: " + reconstructedNewFoodItem.ID + ", SchoolID: " + reconstructedNewFoodItem.SchoolID); //DEBUG
                 await SaveUnsyncedFoodItemsAsync();
+                txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + displayedFoodItems.Count + " food types";
             }
-            
+
         }
 
         private async Task SaveUnsyncedFoodItemsAsync()
@@ -415,7 +488,7 @@ namespace LunchManager
                     var response = await client.PostAsync("api/FoodItems", httpContent);
                     Trace.WriteLine(jsonString); //DEBUG
                     Trace.WriteLine("sync new row response: " + response); //DEBUG
-                    if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Conflict) //if the foodItems is in the database, remove it from the list
+                    if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Conflict) //if the foodItem is in the database, remove it from the list
                     {
                         unsyncedFoodItems.RemoveAt(i); 
                     }
@@ -450,7 +523,8 @@ namespace LunchManager
         {
             addNewFoodItemWindow.ShowDialog();
             //if an item was added, try to sync
-            await SaveUnsyncedFoodItemsAsync(); 
+            await SaveUnsyncedFoodItemsAsync();
+            txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + displayedFoodItems.Count + " food types";
 
         }
 
@@ -481,7 +555,7 @@ namespace LunchManager
 
         private async Task DeleteSelectedFoodItems()
         {
-            if (dataGridFoodTypes.SelectedItem == null || foodItems.Count == 0 || dataGridFoodTypes.SelectedItem.Equals(CollectionView.NewItemPlaceholder))
+            if (dataGridFoodTypes.SelectedItem == null || displayedFoodItems.Count == 0 || dataGridFoodTypes.SelectedItem.Equals(CollectionView.NewItemPlaceholder))
             {
                 return;
             }
@@ -501,7 +575,7 @@ namespace LunchManager
                     catch (InvalidCastException)
                     {
                     }
-                    
+
                 }
                 Trace.WriteLine("2"); //DEBUG
                 messageBoxMessage = messageBoxMessage.Remove(messageBoxMessage.Length - 2);
@@ -509,46 +583,58 @@ namespace LunchManager
                 var result = MessageBox.Show(messageBoxMessage + "?", "Delete items?", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
-                    for (int i = foodItems.Count - 1; i >= 0; i--)
+                    for (int i = displayedFoodItems.Count - 1; i >= 0; i--)
                     {
                         Trace.WriteLine("index: " + i); //DEBUG
-                        Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
-                        if (grid.SelectedItems.Contains(foodItems[i]))
+                        Trace.WriteLine("length of displayedFoodItems: " + displayedFoodItems.Count); //DEBUG
+                        if (grid.SelectedItems.Contains(displayedFoodItems[i]))
                         {
-                            if (!string.IsNullOrWhiteSpace(foodItems[i].ID)) 
+                            if (!string.IsNullOrWhiteSpace(displayedFoodItems[i].ID))
                             {
                                 Trace.WriteLine("index: " + i); //DEBUG
-                                Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
-                                var response = await client.DeleteAsync("api/FoodItems/" + foodItems[i].ID);
-                                Trace.WriteLine(response.StatusCode.ToString()); //DEBUG
+                                Trace.WriteLine("length of displayedFoodItems: " + displayedFoodItems.Count); //DEBUG
+                                try
+                                {
+                                    var response = await client.DeleteAsync("api/FoodItems/" + displayedFoodItems[i].ID);
+                                    Trace.WriteLine(response.StatusCode.ToString()); //DEBUG
+                                }
+                                catch (HttpRequestException)
+                                {
+                                    Trace.WriteLine("can't reach the database");
+                                    MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    Close();
+                                    break; //if there is a server error, no point trying to sync any more entries
+                                }
+                                
                                 Trace.WriteLine("."); //DEBUG
                                 Trace.WriteLine("index: " + i); //DEBUG
-                                Trace.WriteLine("length of foodItems: " + foodItems.Count); //DEBUG
+                                Trace.WriteLine("length of displayedFoodItems: " + displayedFoodItems.Count); //DEBUG
                             }
-                            
-                            lastDeletedFoodItems.Add(foodItems[i]); //fails here
+
+                            lastDeletedFoodItems.Add(displayedFoodItems[i]); //fails here
                             Trace.WriteLine(".."); //DEBUG
-                            foodItems.RemoveAt(i);
+                            displayedFoodItems.RemoveAt(i);
                         }
                         Trace.WriteLine("..."); //DEBUG
                     }
                     Trace.WriteLine("4"); //DEBUG
                 }
                 else
-                { 
+                {
                     Trace.WriteLine("5"); //DEBUG
                 }
-
+                txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + displayedFoodItems.Count + " food types";
             }
         }
+
 
         private async void btnDeleteFoodItem_Click(object sender, RoutedEventArgs e) //the delete key is set to not delete entries
         {
             Trace.WriteLine("pressed delete button"); //DEBUG
             await DeleteSelectedFoodItems();
-            if (foodItems != null)
+            if (displayedFoodItems != null)
             {
-                foreach (FoodItem i in foodItems)
+                foreach (FoodItem i in displayedFoodItems) //DEBUG
                 {
                     Trace.WriteLine("Remaining foodItem in list ->  Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
                 }
@@ -557,14 +643,14 @@ namespace LunchManager
 
         private async void dataGridFoodTypes_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Delete)
+            if (e.Key == Key.Delete && dataGridFoodTypes.IsKeyboardFocused)
             {
-                e.Handled = true;
+                e.Handled = true; //stops the default behavior of the delete key so that DeleteSelectedFoodItems can handle it
                 Trace.WriteLine("pressed delete key"); //DEBUG
                 await DeleteSelectedFoodItems();
-                if (foodItems != null)
+                if (displayedFoodItems != null)
                 {
-                    foreach (FoodItem i in foodItems)
+                    foreach (FoodItem i in displayedFoodItems) //DEBUG
                     {
                         Trace.WriteLine("Remaining foodItem in list ->  Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
                     }
@@ -573,21 +659,88 @@ namespace LunchManager
             }
         }
 
+        private async void txtFoodSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (((e.Key == Key.Return) || (e.Key == Key.Enter)) && txtFoodSearch.IsKeyboardFocused)
+            {
+                loadingWindow.SetMessage("Searching...");
+                loadingWindow.Show();
+                IsEnabled = false;
+
+                var allFoodItems = await GetFoodItemsAsync();
+
+                displayedFoodItems = new ObservableCollection<FoodItem>();
+                foreach (FoodItem i in allFoodItems)
+                {
+                    if (i.Name.Contains(txtFoodSearch.Text, StringComparison.OrdinalIgnoreCase))
+                    {
+                        displayedFoodItems.Add(i);
+                    }
+                }
+                dataGridFoodTypes.ItemsSource = null;
+                dataGridFoodTypes.ItemsSource = displayedFoodItems;
+
+                txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + allFoodItems.Count + " food types";
+
+                loadingWindow.Hide();
+                IsEnabled = true;
+                loadingWindow.SetMessage(LoadingBox.defaultMessage);
+            }
+
+        }
+
+
+        private void txtFoodSearch_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (txtFoodSearch.Text.Equals("Search"))
+            {
+                txtFoodSearch.Text = "";
+                txtFoodSearch.Foreground = Brushes.Black;
+            }
+        }
+
+        private void txtFoodSearch_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtFoodSearch.Text))
+            {
+                txtFoodSearch.Text = "Search";
+                txtFoodSearch.Foreground = Brushes.DarkGray;
+            }
+        }
+
+        private async void btnClearSearchFoodItems_Click(object sender, RoutedEventArgs e)
+        {
+            await RefreshFoodTypesDataGrid();
+
+            txtFoodSearch.Text = "Search";
+            txtFoodSearch.Foreground = Brushes.DarkGray;
+
+        }
+
         private async void btnRefreshFoodItems_Click(object sender, RoutedEventArgs e)
         {
             
             loadingWindow.Show();
             IsEnabled = false;
 
-            foodItems = await GetFoodItemsAsync();
+            await RefreshFoodTypesDataGrid();
 
-            dataGridFoodTypes.ItemsSource = null;
-            dataGridFoodTypes.ItemsSource = foodItems;
+            txtFoodSearch.Text = "Search";
+            txtFoodSearch.Foreground = Brushes.DarkGray;
 
             loadingWindow.Hide();
             IsEnabled = true;
 
-            
+        }
+
+        private async Task RefreshFoodTypesDataGrid()
+        {
+            displayedFoodItems = await GetFoodItemsAsync();
+
+            dataGridFoodTypes.ItemsSource = null;
+            dataGridFoodTypes.ItemsSource = displayedFoodItems;
+
+            txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of "+ displayedFoodItems.Count + " food types";
         }
         #endregion Manage Food Types Tab
 
@@ -595,7 +748,7 @@ namespace LunchManager
         #region Manage Students Tab
         private void txtStudentsSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if ((e.Key == Key.Return) || (e.Key == Key.Enter))
+            if (((e.Key == Key.Return) || (e.Key == Key.Enter)) && txtStudentsSearch.IsKeyboardFocused)
             {
                 loadingWindow.SetMessage("Searching...");
                 loadingWindow.Show();
@@ -726,7 +879,7 @@ namespace LunchManager
             IsEnabled = false;
 
             decimal amount;
-            if ((!Decimal.TryParse(txtAddRemoveStudentBalanceAmount.Text, out amount)) || (amount < 0M))
+            if ((!Decimal.TryParse(txtAddRemoveStudentBalanceAmount.Text, out amount)) || (amount <= 0M))
             {
                 txtStudentBalanceAddRemoveError.Visibility = Visibility.Visible;
             }
@@ -754,7 +907,7 @@ namespace LunchManager
             IsEnabled = false;
 
             decimal amount;
-            if ((!Decimal.TryParse(txtAddRemoveStudentBalanceAmount.Text, out amount)) || (amount < 0M))
+            if ((!Decimal.TryParse(txtAddRemoveStudentBalanceAmount.Text, out amount)) || (amount <= 0M))
             {
                 txtStudentBalanceAddRemoveError.Visibility = Visibility.Visible;
             }
@@ -800,7 +953,11 @@ namespace LunchManager
         {
             loadingWindow.Show();
             IsEnabled = false;
+
             await RefreshStudentsDataGrid();
+            txtStudentsSearch.Text = "Search";
+            txtStudentsSearch.Foreground = Brushes.DarkGray;
+
             loadingWindow.Hide();
             IsEnabled = true;
         }
@@ -817,19 +974,23 @@ namespace LunchManager
         }
 
 
-        private void btnExportStudents_Click(object sender, RoutedEventArgs e) //!!exports only data shown with the applied filter, maybe should always export all data?
+        private void btnExportStudents_Click(object sender, RoutedEventArgs e) //!!!
         {
             SaveFileDialog saveDialog = new SaveFileDialog();
             saveDialog.Filter = "CSV (*.csv)|*.csv";
             saveDialog.FileName = "Students-" + DateTime.Now.ToString("MM-dd-yyyy");
             var result = saveDialog.ShowDialog();
 
-            loadingWindow.SetMessage("Exporting data...");
-            loadingWindow.Show();
-            IsEnabled = false;
-
             if (result == true) //save button is pressed
             {
+                var exportWhatResponse = MessageBox.Show("Would you like to export all student data? Selecting \"No\" will only export data shown in the table.", "Export", MessageBoxButton.YesNoCancel);
+                if (exportWhatResponse == MessageBoxResult.Cancel)
+                {
+                    return;
+                }
+                loadingWindow.SetMessage("Exporting data...");
+                loadingWindow.Show();
+                IsEnabled = false;
                 if (File.Exists(saveDialog.FileName))
                 {
                     try
@@ -849,16 +1010,32 @@ namespace LunchManager
                 {
                     using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
                     {
-                        csv.WriteRecords(displayedStudents);
+                        try
+                        {
+                            if (exportWhatResponse == MessageBoxResult.Yes)
+                            {
+                                csv.WriteRecords(students);
+                            }
+                            else if (exportWhatResponse == MessageBoxResult.No)
+                            {
+                                csv.WriteRecords(displayedStudents);
+                            }
+                            
+                        }
+                        catch (IOException)
+                        {
+                            MessageBox.Show("Student data could not be exported, choose a different file location and try again.", "Could not export", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+
                     }
                 }
+                loadingWindow.Hide();
+                loadingWindow.SetMessage(LoadingBox.defaultMessage);
+                IsEnabled = true;
+                MessageBox.Show("Successfully exported student data.", "Export successful", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 
-            MessageBox.Show("Successfully exported student data.", "Export successful", MessageBoxButton.OK, MessageBoxImage.Information);
 
-            loadingWindow.Hide();
-            loadingWindow.SetMessage(LoadingBox.defaultMessage);
-            IsEnabled = true;
         }
 
 
@@ -871,24 +1048,28 @@ namespace LunchManager
         {
             loadingWindow.Show();
             IsEnabled = false;
+
             await RefreshTransactionsDataGrid();
+            txtTransactionsSearch.Text = "Search";
+            txtTransactionsSearch.Foreground = Brushes.DarkGray;
+
             loadingWindow.Hide();
             IsEnabled = true;
         }
 
         private async Task RefreshTransactionsDataGrid()
         {
-            transactions = await GetTransactionsAsync();
+            transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
 
             dataGridTransactions.ItemsSource = null;
             dataGridTransactions.ItemsSource = transactions;
 
-            txtNumTransactionsShown.Text = "Showing last" + transactions.Count + "transactions";
+            txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
         }
 
         private void txtTransactionsSearch_KeyDown(object sender, KeyEventArgs e)
         {
-            if ((e.Key == Key.Return) || (e.Key == Key.Enter))
+            if (((e.Key == Key.Return) || (e.Key == Key.Enter)) && txtTransactionsSearch.IsKeyboardFocused)
             {
                 loadingWindow.SetMessage("Searching...");
                 loadingWindow.Show();
@@ -918,47 +1099,181 @@ namespace LunchManager
                 transactions = searchedTransactions;
                 dataGridTransactions.ItemsSource = null;
                 dataGridTransactions.ItemsSource = transactions;
-                txtNumTransactionsShown.Text = "Showing last" + transactions.Count + "transactions";
+                txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
 
                 loadingWindow.Hide();
                 IsEnabled = true;
                 loadingWindow.SetMessage(LoadingBox.defaultMessage);
+
+                if (transactions.Count == 0)
+                {
+                    MessageBox.Show("No transactions were found in the table.", "No transactions found", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                }
             }
         }
 
         private void txtTransactionsSearch_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
-            if (txtStudentsSearch.Text.Equals("Search"))
+            if (txtTransactionsSearch.Text.Equals("Search"))
             {
-                txtStudentsSearch.Text = "";
-                txtStudentsSearch.Foreground = Brushes.Black;
+                txtTransactionsSearch.Text = "";
+                txtTransactionsSearch.Foreground = Brushes.Black;
             }
         }
 
         private void txtTransactionsSearch_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(txtStudentsSearch.Text))
+            if (string.IsNullOrWhiteSpace(txtTransactionsSearch.Text))
             {
-                txtStudentsSearch.Text = "Search";
-                txtStudentsSearch.Foreground = Brushes.DarkGray;
+                txtTransactionsSearch.Text = "Search";
+                txtTransactionsSearch.Foreground = Brushes.DarkGray;
             }
         }
 
-        private void btnClearTransactionsSearch_Click(object sender, RoutedEventArgs e)
+        private async void btnClearTransactionsSearch_Click(object sender, RoutedEventArgs e)
         {
             loadingWindow.Show();
             IsEnabled = false;
 
-            transactions = GetTransactionsAsync((int)txtNumTransactionsToLoad.Text);
+            /*
+            transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
 
             dataGridTransactions.ItemsSource = null;
             dataGridTransactions.ItemsSource = transactions;
-            txtNumTransactionsShown.Text = "Showing last" + transactions.Count + "transactions";
-            txtStudentsSearch.Text = "Search";
-            txtStudentsSearch.Foreground = Brushes.DarkGray;
+            txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
+            */
+            await RefreshTransactionsDataGrid();
+            txtTransactionsSearch.Text = "Search";
+            txtTransactionsSearch.Foreground = Brushes.DarkGray;
 
             loadingWindow.Hide();
             IsEnabled = true;
+        }
+
+        private async void cbNumTransactionsToShow_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            loadingWindow.Show();
+            IsEnabled = false;
+
+            transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
+
+            await RefreshTransactionsDataGrid();
+            //txtTransactionsSearch.Text = "Search";
+            //txtTransactionsSearch.Foreground = Brushes.DarkGray;
+
+            loadingWindow.Hide();
+            IsEnabled = true;
+        }
+
+        private async void btnEnterTransactionRange_Click(object sender, RoutedEventArgs e)
+        {
+            DateTime startDate = dpTransactionStart.SelectedDate ?? DateTime.Now;
+            DateTime endDate = dpTransactionEnd.SelectedDate ?? DateTime.Now;
+            int maxResults = 5000; //in order to prevent lag, there is a maximum number of transactions that will be loaded from the database and stored in the program at a time
+            if (startDate > endDate)
+            {
+                txtStartEndDateError.Text = "The start date cannot be later than the end date";
+                txtStartEndDateError.Visibility = Visibility.Visible;
+                return;
+            }
+            txtStartEndDateError.Visibility = Visibility.Hidden;
+            //if the start date is not null, the input is valid. If the end date was not entered it will use today's date
+            if (dpTransactionStart.SelectedDate != null) 
+            {
+                loadingWindow.Show();
+                IsEnabled = false;
+
+                transactions = await GetTransactionsBetweenAsync(startDate, endDate, maxResults);
+                dataGridTransactions.ItemsSource = null;
+                dataGridTransactions.ItemsSource = transactions;
+                txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
+
+                loadingWindow.Hide();
+                this.IsEnabled = true;
+
+                if (transactions.Count == maxResults)
+                {
+                    MessageBox.Show("The number of transactions between the two dates is greater than 5000. Only the most recent 5000 transactions will be shown. Enter dates within a smaller time period to see all results in that time period.", "Showing limited results", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            else
+            {
+                txtStartEndDateError.Text = "Please enter a start date";
+                txtStartEndDateError.Visibility = Visibility.Visible;
+            }
+            
+
+        }
+
+        private async Task<ObservableCollection<Transaction>> GetTransactionsBetweenAsync(DateTime startDate, DateTime endDate, int max)
+        {
+            ObservableCollection<Transaction> newTransactionsCollection = new();
+            try
+            {
+                Trace.WriteLine("start: " + startDate); //DEBUG
+                Trace.WriteLine("end: " + endDate); //DEBUG
+                //var responseTransactions = await client.GetAsync("api/Transactions/Between/" + thisSchool.ID + "/" + startDate + "/" + endDate);
+                //var responseTransactions = await client.GetAsync("api/Transactions/Between/1/2021-07-05T14%3A50%3A38.301Z/2021-08-05T14%3A50%3A38.301Z"); //DEBUG
+                var responseTransactions = await client.GetAsync("api/Transactions/Between/" + thisSchool.ID + "/" + startDate.ToString("yyyyMMdd") + "/" + endDate.ToString("yyyyMMdd") + "/" + max);
+                newTransactionsCollection = await responseTransactions.Content.ReadAsAsync<ObservableCollection<Transaction>>();
+                if (newTransactionsCollection == null) //DEBUG
+                {
+                    Trace.WriteLine("newTransactionsCollection is null - GetTransactionsBetweenAsync");
+                    Trace.WriteLine(responseTransactions.StatusCode);
+                }
+                if (responseTransactions.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    return transactions;
+                }
+            }
+            catch (HttpRequestException)
+            {
+                MessageBox.Show("Failed to connect to the server, please check your internet connection and try again. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            return newTransactionsCollection;
+        }
+
+        private void btnExportDisplayedTransactions_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveDialog = new SaveFileDialog();
+            saveDialog.Filter = "CSV (*.csv)|*.csv";
+            saveDialog.FileName = "Transactions-" + DateTime.Now.ToString("MM-dd-yyyy");
+            var result = saveDialog.ShowDialog();
+
+            if (result == true) //save button is pressed
+            {
+                loadingWindow.SetMessage("Exporting data...");
+                loadingWindow.Show();
+                IsEnabled = false;
+                if (File.Exists(saveDialog.FileName))
+                {
+                    try
+                    {
+                        File.Delete(saveDialog.FileName);
+                    }
+                    catch (IOException)
+                    {
+                        loadingWindow.Hide();
+                        loadingWindow.SetMessage(LoadingBox.defaultMessage);
+                        IsEnabled = true;
+                        MessageBox.Show("Transaction data could not be exported, choose a different file location and try again.", "Could not export", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+                }
+                using (var writer = new StreamWriter(saveDialog.FileName))
+                {
+                    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
+                    {
+                        csv.WriteRecords(transactions);
+                    }
+                }
+                loadingWindow.Hide();
+                loadingWindow.SetMessage(LoadingBox.defaultMessage);
+                IsEnabled = true;
+                MessageBox.Show("Successfully exported transaction data.", "Export successful", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
         #endregion View Transactions Tab
     }
