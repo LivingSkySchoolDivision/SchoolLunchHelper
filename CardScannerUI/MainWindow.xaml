@@ -55,9 +55,9 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <TextBox x:Name="txtEnterStudentNum" HorizontalAlignment="Left" Margin="68,12,0,0" 
-                 Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="120"
-                 KeyDown="OnEnterKeyDownHandler_StudentNum"/>
+        <TextBox x:Name="txtEnterStudentNum" HorizontalAlignment="Left" Margin="76,12,0,0" 
+                 Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="132" FontSize="12.5"
+                 KeyDown="OnEnterKeyDownHandler_StudentNum" Height="21"/>
 
 
         <DataGrid x:Name="dataGridFoodItems" Margin="10,143,608,199"
@@ -70,32 +70,33 @@
                   SelectionMode="Single"
                   ClipboardCopyMode="None"
                   SelectionChanged="SelectionChanged_dataGridFoodItems"
-                  GotKeyboardFocus="GotKeyboardFocus_dataGridFoodItems" RowBackground="White">
+                  GotKeyboardFocus="GotKeyboardFocus_dataGridFoodItems" RowBackground="White"
+                  MinRowHeight="21">
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Select Item" Binding="{Binding Path=Name}" Width="*" CanUserResize="False"/>
+                <DataGridTextColumn Header="Select Item" Binding="{Binding Path=Name}" Width="*" CanUserResize="False" FontSize="12.5"/>
             </DataGrid.Columns>
 
         </DataGrid>
 
 
         <Label Content="Student ID:" HorizontalAlignment="Left" Height="26" Margin="5,8,0,0" VerticalAlignment="Top" Width="79" 
-               FontSize="11" Foreground="White"/>
-        <Label Content="Medical Information:" HorizontalAlignment="Left" Height="28" Margin="5,32,0,0" VerticalAlignment="Top" Width="134" Foreground="Coral" FontWeight="Bold" RenderTransformOrigin="0.515,0.573"/>
-        <TextBlock HorizontalAlignment="Left" Height="77" Margin="11,48,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="198" 
-                   Foreground="Coral" FontSize="11" 
+               FontSize="12.5" Foreground="White"/>
+        <Label Content="Medical Information:" HorizontalAlignment="Left" Height="28" Margin="5,32,0,0" VerticalAlignment="Top" Width="155" Foreground="Coral" FontWeight="Bold" RenderTransformOrigin="0.515,0.573" FontSize="14"/>
+        <TextBlock HorizontalAlignment="Left" Height="84" Margin="10,53,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="198" 
+                   Foreground="Coral" FontSize="12.5" 
                    x:Name="txtMedicalInfo"/>
-        <Label HorizontalAlignment="Left" Margin="5,346,0,0" Content="Selected Item:" VerticalAlignment="Top" Foreground="LightGray"/>
-        <TextBlock x:Name="txtSelectedFoodName" HorizontalAlignment="Left" Height="17" Margin="90,351,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="152" Foreground="White" FontWeight="Bold"/>
-        <Label HorizontalAlignment="Left" Margin="5,364,0,0" Content="Cost:" VerticalAlignment="Top" Foreground="LightGray"/>
-        <TextBlock x:Name="txtSelectedFoodCost" HorizontalAlignment="Left" Height="17" Margin="42,369,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="200" Foreground="White" FontWeight="Bold"/>
-        <Label HorizontalAlignment="Left" Margin="5,382,0,0" Content="Description:" VerticalAlignment="Top" Foreground="LightGray"/>
-        <TextBlock x:Name="txtSelectedFoodDescription" HorizontalAlignment="Left" Height="132" Margin="78,388,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="164" Foreground="White" FontSize="11"
+        <Label HorizontalAlignment="Left" Margin="5,346,0,0" Content="Selected Item:" VerticalAlignment="Top" Foreground="LightGray" FontSize="12.5"/>
+        <TextBlock x:Name="txtSelectedFoodName" HorizontalAlignment="Left" Height="17" Margin="90,351,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="152" Foreground="White" FontWeight="DemiBold" FontSize="12.5"/>
+        <Label HorizontalAlignment="Left" Margin="5,364,0,0" Content="Cost:" VerticalAlignment="Top" Foreground="LightGray" FontSize="12.5"/>
+        <TextBlock x:Name="txtSelectedFoodCost" HorizontalAlignment="Left" Height="17" Margin="42,369,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="200" Foreground="White" FontWeight="DemiBold" FontSize="12.5"/>
+        <Label HorizontalAlignment="Left" Margin="5,382,0,0" Content="Description:" VerticalAlignment="Top" Foreground="LightGray" FontSize="12.5"/>
+        <TextBlock x:Name="txtSelectedFoodDescription" HorizontalAlignment="Left" Height="132" Margin="78,388,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="164" Foreground="White" FontSize="12.5"
                    ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-        <Button x:Name="buttonUndoTransaction" Content="Undo last transaction" HorizontalAlignment="Left" Margin="305,10,0,0" VerticalAlignment="Top" Width="120" Click="Click_buttonUndoTransaction"/>
-        <Button x:Name="buttonSync" Content="Send all transactions" HorizontalAlignment="Left" Margin="475,7,0,0" VerticalAlignment="Top" Click="Click_buttonSync" BorderBrush="Coral" FontSize="14"/>
-        <TextBlock x:Name="txtUnsyncedTransactionsCount" Text="" HorizontalAlignment="Left" Margin="793,11,0,0" VerticalAlignment="Top" Foreground="LightGray" FontWeight="Bold"/>
-        <Label Content="Unsent transactions:" HorizontalAlignment="Left" Margin="676,6,0,0" VerticalAlignment="Top" Width="117" Foreground="LightGray"/>
+        <Button x:Name="buttonUndoTransaction" Content="Undo last transaction" HorizontalAlignment="Left" Margin="362,8,0,0" VerticalAlignment="Top" Width="150" Click="Click_buttonUndoTransaction" FontSize="14"/>
+        <Button x:Name="buttonSync" Content="Send all transactions" HorizontalAlignment="Left" Margin="517,8,0,0" VerticalAlignment="Top" Click="Click_buttonSync" FontSize="14" Width="145"/>
+        <TextBlock x:Name="txtUnsyncedTransactionsCount" Text="" HorizontalAlignment="Left" Margin="793,11,0,0" VerticalAlignment="Top" Foreground="LightGray" FontWeight="DemiBold" FontSize="12.5"/>
+        <Label Content="Unsent transactions:" HorizontalAlignment="Left" Margin="667,6,0,0" VerticalAlignment="Top" Width="121" Foreground="LightGray" FontSize="12.5"/>
         <ProgressBar Margin="10,505,723,0" VerticalAlignment="Top" Width="117" Height="15" Minimum="0" Maximum="100" IsIndeterminate="True" Visibility="Hidden"/>
 
     </Grid>

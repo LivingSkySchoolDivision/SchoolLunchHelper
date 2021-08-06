@@ -77,6 +77,15 @@ namespace Repositories
             oldTransaction.Time = newTransaction.Time;
             _context.Update(oldTransaction);
         }
+        /*
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactions(int amount)
+        {
+            var transactions = await GetTransactions();
+            var requestedTransactions = 
+            for (int i = transactions.Count - 1; i < amount; )
+
+        }
+        */
 
     }
 }

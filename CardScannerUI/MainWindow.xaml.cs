@@ -42,10 +42,15 @@ namespace CardScannerUI
         private Window loadingWindow;
 
         private Transaction lastTransaction;
-        private string transactionsJsonPath = "TransactionsLog.json";
+        //if these change, remember to add them to .gitignore:
+        private readonly string transactionsJsonPath = "TransactionsLog.json";
+        private readonly string foodItemsJsonPath = "FoodItemsBackup.json";
+        private readonly string studentsJsonPath = "StudentsBackup.json";
+        private readonly string schoolJsonPath = "SchoolBackup.json";
 
         private Stopwatch lastTransactionStopwatch; //keeps track of time since the last transaction
         private bool shutdown = false;
+        private bool connectionFailed = false; 
 
         private static School _ThisSchool;
         public static School ThisSchool { get { return _ThisSchool; } set { _ThisSchool = value; } }
@@ -69,61 +74,76 @@ namespace CardScannerUI
             loadingWindow.Show();
             IsEnabled = false;
 
+            //var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            //apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
+            //string thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
-            string thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
-            //MessageBox.Show(apiUri); //DEBUG
-            //Trace.WriteLine("ApiUri: " + apiUri); //DEBUG
-            //Trace.WriteLine("schoolID: " + thisSchoolID); //DEBUG
+            string thisSchoolID = "";
+            try
+            {
+                apiUri = configFile.AppSettings.Settings["apiUri"].Value.ToString();
+                thisSchoolID = configFile.AppSettings.Settings["thisSchool"].Value;
+            }
+            catch
+            {
+                MessageBox.Show("There was an error reading from the configuration file, closing the program.", "Missing configuration file", MessageBoxButton.OK, MessageBoxImage.Error);
+                shutdown = true;
+                Close();
+            }
+            if (string.IsNullOrEmpty(thisSchoolID) || string.IsNullOrEmpty(apiUri))
+            {
+                MessageBox.Show("There was an error reading from the configuration file, closing the program.", "Missing configuration file", MessageBoxButton.OK, MessageBoxImage.Error);
+                shutdown = true;
+                Close();
+            }
+            
 
             ApiHelper.Init(apiUri); //initializes settings for the HttpClient
             client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
 
-            //await AddTestDataToDatabase(); //DEBUG
-            //await ClearDbTransactionsAsync(); //DEBUG
-            //throw new Exception(); //DEBUG - end the program when the transactions have been cleared
+            
 
             //LoadTransactionsFromJson();
             await LoadTransactionsFromJsonAsync();
 
             await GetThisSchoolFromIdAsync(thisSchoolID);
             //Trace.WriteLine("school name: " + ThisSchool.Name + " school ID: " + ThisSchool.ID); //DEBUG
-
-            //if the request to get the school object fails, the program is closed, but this code will continue to run after
-            //it's been closed. This checks if the school is null, and if it is, the method is done and no more code will 
-            //run and cause exceptions.
-            if (ThisSchool != null)
+            if (ThisSchool == null)
             {
-                this.Title = "Lunch Helper - " + ThisSchool.Name; 
+                return;
+            }
+            this.Title = "Lunch Helper - " + ThisSchool.Name;
 
-                await GetDataAsync();
-                Trace.WriteLine("2"); //DEBUG
-
-                //set up the data binding
-                dataGridTransactions.DataContext = guiTransactions;
-                dataGridTransactions.ItemsSource = guiTransactions;
-                dataGridFoodItems.DataContext = foodItems;
-                dataGridFoodItems.ItemsSource = foodItems;
-                txtUnsyncedTransactionsCount.DataContext = unsyncedTransactions.Count.ToString();
-
-                //makes the datagrid automatically scroll to the newest transaction if the scroll bar is visible
-                guiTransactions.CollectionChanged += new System.Collections.Specialized.NotifyCollectionChangedEventHandler(delegate (object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-                {
-                    if (guiTransactions.Count > 0)
-                    {
-                        dataGridTransactions.ScrollIntoView(guiTransactions[guiTransactions.Count - 1]);
-                    }
-                });
-
-                //txtEnterStudentNum.IsEnabled = true;
-                //buttonSync.IsEnabled = true;
-                Trace.WriteLine("3"); //DEBUG
-                loadingWindow.Hide();
-                Trace.WriteLine("4"); //DEBUG
-                IsEnabled = true;
-                Trace.WriteLine("5"); //DEBUG
+            await GetDataAsync();
+            //if the data was fetched from the database, update the jsons
+            if (!connectionFailed)
+            {
+                await WriteDataToBackupJsonsAsync();
             }
             
+            Trace.WriteLine("2"); //DEBUG
+
+            //set up the data binding
+            dataGridTransactions.DataContext = guiTransactions;
+            dataGridTransactions.ItemsSource = guiTransactions;
+            dataGridFoodItems.DataContext = foodItems;
+            dataGridFoodItems.ItemsSource = foodItems;
+            txtUnsyncedTransactionsCount.DataContext = unsyncedTransactions.Count.ToString();
+
+            //makes the datagrid automatically scroll to the newest transaction if the scroll bar is visible
+            guiTransactions.CollectionChanged += new System.Collections.Specialized.NotifyCollectionChangedEventHandler(delegate (object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+            {
+                if (guiTransactions.Count > 0)
+                {
+                    dataGridTransactions.ScrollIntoView(guiTransactions[guiTransactions.Count - 1]);
+                }
+            });
+
+            //txtEnterStudentNum.IsEnabled = true;
+            //buttonSync.IsEnabled = true;
+            buttonUndoTransaction.IsEnabled = false;
+            loadingWindow.Hide();
+            IsEnabled = true;
         }
 
 
@@ -138,13 +158,38 @@ namespace CardScannerUI
                 ThisSchool = await response.Content.ReadAsAsync<School>();
                 Trace.WriteLine("get this school from ID response status: " + response.StatusCode); //DEBUG
             }
-            catch (HttpRequestException)
+            catch 
             {
-                shutdown = true;
-                MessageBox.Show("Failed to connect to the database, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                Close();
+                GetThisSchoolFromJson();
             }
             
+        }
+
+        private void GetThisSchoolFromJson()
+        {
+            if (!File.Exists(schoolJsonPath))
+            {
+                Trace.WriteLine("the file does not exist - ReadDataFromJsonAsync"); //DEBUG
+                MessageBox.Show("Failed to connect to the database and no backup files exist, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                shutdown = true;
+                Close();
+            }
+            else
+            {
+                string jsonString = File.ReadAllText(schoolJsonPath);
+                try
+                {
+                    ThisSchool = JsonSerializer.Deserialize<School>(jsonString);
+                }
+                catch
+                {
+                    Trace.WriteLine("something went wrong when reading from the file - ReadDataFromJsonAsync"); //DEBUG
+                    MessageBox.Show("Failed to connect to the database and backup files do not exist or could not be read, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    shutdown = true;
+                    Close();
+                }
+
+            }
         }
 
 
@@ -179,9 +224,8 @@ namespace CardScannerUI
             Trace.WriteLine("Closing the program..."); //DEBUG
         }
 
-        /**<summary>Deletes all transactions from the database, student balances are updated automatically. 
-         * This method is for testing purposes.</summary>
-         */
+        #region DEBUG
+        
         private async Task ClearDbTransactionsAsync() //DEBUG
         {
             var responseTransactions = await client.GetAsync("api/Transactions");
@@ -195,6 +239,138 @@ namespace CardScannerUI
                 
             }
         }
+        private async Task ClearDbStudentsAsync() //DEBUG
+        {
+            var response = await client.GetAsync("api/Students");
+            var students = await response.Content.ReadAsAsync<List<Student>>();
+            Trace.WriteLine("get students response status: " + response.StatusCode);
+            foreach (Student i in students)
+            {
+                var responseDelete = await client.DeleteAsync("api/Students/" + i.StudentID);
+                Trace.WriteLine("api/Students/" + i.StudentID);
+                Trace.WriteLine("get students response status: " + responseDelete.StatusCode);
+
+            }
+        }
+
+        private async Task ClearDbSchoolsAsync() //DEBUG
+        {
+            var response = await client.GetAsync("api/Schools");
+            var schools = await response.Content.ReadAsAsync<List<School>>();
+            Trace.WriteLine("get school response status: " + response.StatusCode);
+            foreach (School i in schools)
+            {
+                var responseDelete = await client.DeleteAsync("api/Schools/" + i.ID);
+                Trace.WriteLine("api/Schools/" + i.ID);
+                Trace.WriteLine("get school response status: " + responseDelete.StatusCode);
+
+            }
+        }
+        
+        private async Task ClearDbFoodItemsAsync() //DEBUG
+        {
+            var response = await client.GetAsync("api/FoodItems");
+            var foodItem = await response.Content.ReadAsAsync<List<FoodItem>>();
+            Trace.WriteLine("get food response status: " + response.StatusCode);
+            foreach (FoodItem i in foodItem)
+            {
+                var responseDelete = await client.DeleteAsync("api/FoodItems/" + i.ID);
+                Trace.WriteLine("api/FoodItems/" + i.ID);
+                Trace.WriteLine("get food response status: " + responseDelete.StatusCode);
+
+            }
+        }
+
+        public async Task AddTestDataToDatabase() //DEBUG
+        {
+            //Student student1 = new Student("1", "Student1", "1", 10.00M, "test medical info");
+            //Student student2 = new Student("2", "Student2", "1", 20.00M, "");
+            //School school1 = new School("School1", "1");
+            //FoodItem food1 = new FoodItem("Pancake", 2.00M, "1");
+            //FoodItem food2 = new FoodItem("Apple", 1.00M, "1");
+
+            //Student student1 = new Student("3", "Student", "2", 15.00M, "studentID = 3");
+            //Student student2 = new Student("4", "Student", "2", 25.00M, "studentID = 4");
+            //School school1 = new School("School2", "2");
+            //FoodItem food1 = new FoodItem("Pizza", 2.00M, "1"); //food IDs are assigned based on time, creating one object immediately after the other that belongs to the same school may result in duplicate key exceptions
+            /*
+            Student student;
+            string jsonStringStudent;
+            StringContent httpContentStudent;
+            for (int i = 5; i <= 100; i++)
+            {
+                student = new Student(i.ToString(), "Student " + i, "1", 20.00M, "medical info");
+                jsonStringStudent = JsonSerializer.Serialize(student);
+                httpContentStudent = new StringContent(jsonStringStudent, Encoding.UTF8, "application/json");
+                await client.PostAsync("api/Students", httpContentStudent);
+            }
+            */
+
+            /*
+            string jsonStringStudent1 = JsonSerializer.Serialize(student1);
+            var httpContentStudent1 = new StringContent(jsonStringStudent1, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync("api/Students", httpContentStudent1); 
+
+            string jsonStringStudent2 = JsonSerializer.Serialize(student2);
+            var httpContentStudent2 = new StringContent(jsonStringStudent2, Encoding.UTF8, "application/json");
+            var response2 = await client.PostAsync("api/Students", httpContentStudent2);
+
+            string jsonStringSchool1 = JsonSerializer.Serialize(school1);
+            var httpContentSchool1 = new StringContent(jsonStringSchool1, Encoding.UTF8, "application/json");
+            var response3 = await client.PostAsync("api/Schools", httpContentSchool1);
+            */
+
+            /*
+            string jsonStringFood1 = JsonSerializer.Serialize(food1);
+            var httpContentFood1 = new StringContent(jsonStringFood1, Encoding.UTF8, "application/json");
+            var response4 = await client.PostAsync("api/FoodItems", httpContentFood1);
+
+            FoodItem food2 = new FoodItem("Soup", 2.00M, "2");
+            string jsonStringFood2 = JsonSerializer.Serialize(food2);
+            var httpContentFood2 = new StringContent(jsonStringFood2, Encoding.UTF8, "application/json");
+            var response5 = await client.PostAsync("api/FoodItems", httpContentFood2);
+            */
+
+            //if (response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
+            //{
+            //Trace.WriteLine("successfully added all test data to the database");
+            //}
+            //else
+            //{
+            //Trace.WriteLine("failed to add to the database. responses:");
+            //Trace.WriteLine("student1: " + response);
+            //Trace.WriteLine("student2: " + response2);
+            //Trace.WriteLine("school1: " + response3);
+            //Trace.WriteLine("food1: " + response4);
+            //Trace.WriteLine("food2: " + response5);
+
+            //}
+        }
+
+
+        /*
+        public bool ValidStudentID(string studentID)
+        {
+            if (students == null)
+            {
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(studentID)) //could add more conditions here to avoid searching for things that couldn't be student numbers
+            {
+                return false;
+            }
+            foreach (Student i in students) //using linear search since the list may not be sorted by ID
+            {
+                if (i.StudentID.Equals(studentID))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        */
+
+        #endregion DEBUG
 
         /**<summary>Synchronously loads the transactions from the json file into the unsyncedTransactions list.</summary>
          */
@@ -268,7 +444,15 @@ namespace CardScannerUI
                         }
                         catch
                         {
-                            //!!do something with the unreadable info - copy the file and make a new one? delete the file?
+                            try
+                            {
+                                info.MoveTo(DateTime.Now.ToString("yyyyMMddHHmmssff") + "unreadableTransactions.json", true);
+                            }
+                            catch
+                            {
+                                //if nothing else works, just let the file be overwritten
+                            }
+                            File.Create(transactionsJsonPath);
                             Trace.WriteLine("could not deserialize"); //DEBUG
                         }
                         
@@ -282,7 +466,7 @@ namespace CardScannerUI
             }
         }
 
-        /**<summary>Loads the students, schools, and food items into the main window's lists.</summary>
+        /**<summary>Loads the students and food items into the main window's lists.</summary>
          */
         private async Task GetDataAsync() 
         {
@@ -337,14 +521,75 @@ namespace CardScannerUI
                 {
                     Trace.WriteLine("FoodItems is null");
                 }
+
             }
-            catch (HttpRequestException)
+            catch 
             {
-                shutdown = true;
-                MessageBox.Show("Failed to connect to the database, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                Close();
+                await ReadDataFromJsonAsync();
+                connectionFailed = true;
             }
             Trace.WriteLine("1"); //DEBUG
+        }
+
+        private async Task ReadDataFromJsonAsync()
+        {
+            if (!File.Exists(studentsJsonPath) || !File.Exists(foodItemsJsonPath))
+            {
+                Trace.WriteLine("File does not exist - ReadDataFromJsonAsync"); //DEBUG
+                MessageBox.Show("Failed to connect to the database and backup files do not exist or could not be read, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                shutdown = true;
+                Close();
+            }
+            else
+            {
+                try
+                {
+                    StreamReader sr = new StreamReader(studentsJsonPath);
+                    students = await JsonSerializer.DeserializeAsync<List<Student>>(sr.BaseStream);
+                    sr.Dispose();
+
+                    
+                }
+                catch
+                {
+                    Trace.WriteLine("something went wrong when reading from the students file - ReadDataFromJsonAsync"); //DEBUG
+                    MessageBox.Show("Failed to connect to the database and backup files do not exist or could not be read, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    shutdown = true;
+                    Close();
+                }
+                try
+                {
+                    StreamReader sr2 = new StreamReader(foodItemsJsonPath);
+                    foodItems = await JsonSerializer.DeserializeAsync<ObservableCollection<FoodItem>>(sr2.BaseStream);
+                    sr2.Dispose();
+                }
+                catch
+                {
+                    Trace.WriteLine("something went wrong when reading from the foodItems file - ReadDataFromJsonAsync"); //DEBUG
+                    MessageBox.Show("Failed to connect to the database and backup files do not exist or could not be read, closing the program", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    shutdown = true;
+                    Close();
+                }
+
+            }
+
+        }
+
+        private async Task WriteDataToBackupJsonsAsync()
+        {
+            //writes the current school to a json
+            string SerializeJsonString = JsonSerializer.Serialize(ThisSchool);
+            File.WriteAllText(schoolJsonPath, SerializeJsonString);
+
+            //writes the students to a json
+            using FileStream studentStream = File.Create(studentsJsonPath);
+            await JsonSerializer.SerializeAsync(studentStream, students);
+            await studentStream.DisposeAsync();
+
+            //writes the foodItems to a json
+            using FileStream foodItemStream = File.Create(foodItemsJsonPath);
+            await JsonSerializer.SerializeAsync(foodItemStream, foodItems);
+            await foodItemStream.DisposeAsync();
         }
 
         #region unused async get data methods
@@ -367,94 +612,7 @@ namespace CardScannerUI
         }
         #endregion
 
-        /**<summary>For debugging purposes only.</summary>
-         */
-        public async Task AddTestDataToDatabase() //DEBUG
-        {
-            //Student student1 = new Student("1", "Student1", "1", 10.00M, "test medical info");
-            //Student student2 = new Student("2", "Student2", "1", 20.00M, "");
-            //School school1 = new School("School1", "1");
-            //FoodItem food1 = new FoodItem("Pancake", 2.00M, "1");
-            //FoodItem food2 = new FoodItem("Apple", 1.00M, "1");
-
-            //Student student1 = new Student("3", "Student", "2", 15.00M, "studentID = 3");
-            //Student student2 = new Student("4", "Student", "2", 25.00M, "studentID = 4");
-            //School school1 = new School("School2", "2");
-            //FoodItem food1 = new FoodItem("Pizza", 2.00M, "1"); //food IDs are assigned based on time, creating one object immediately after the other that belongs to the same school may result in duplicate key exceptions
-            Student student;
-            string jsonStringStudent;
-            StringContent httpContentStudent;
-            for (int i = 5; i <= 100; i++)
-            {
-                student = new Student(i.ToString(), "Student " + i, "1", 20.00M, "medical info");
-                jsonStringStudent = JsonSerializer.Serialize(student);
-                httpContentStudent = new StringContent(jsonStringStudent, Encoding.UTF8, "application/json");
-                await client.PostAsync("api/Students", httpContentStudent);
-            }
-
-            /*
-            string jsonStringStudent1 = JsonSerializer.Serialize(student1);
-            var httpContentStudent1 = new StringContent(jsonStringStudent1, Encoding.UTF8, "application/json");
-            var response = await client.PostAsync("api/Students", httpContentStudent1); 
-
-            string jsonStringStudent2 = JsonSerializer.Serialize(student2);
-            var httpContentStudent2 = new StringContent(jsonStringStudent2, Encoding.UTF8, "application/json");
-            var response2 = await client.PostAsync("api/Students", httpContentStudent2);
-
-            string jsonStringSchool1 = JsonSerializer.Serialize(school1);
-            var httpContentSchool1 = new StringContent(jsonStringSchool1, Encoding.UTF8, "application/json");
-            var response3 = await client.PostAsync("api/Schools", httpContentSchool1);
-            */
-
-            /*
-            string jsonStringFood1 = JsonSerializer.Serialize(food1);
-            var httpContentFood1 = new StringContent(jsonStringFood1, Encoding.UTF8, "application/json");
-            var response4 = await client.PostAsync("api/FoodItems", httpContentFood1);
-
-            FoodItem food2 = new FoodItem("Soup", 2.00M, "2");
-            string jsonStringFood2 = JsonSerializer.Serialize(food2);
-            var httpContentFood2 = new StringContent(jsonStringFood2, Encoding.UTF8, "application/json");
-            var response5 = await client.PostAsync("api/FoodItems", httpContentFood2);
-            */
-
-            //if (response.IsSuccessStatusCode && response2.IsSuccessStatusCode && response3.IsSuccessStatusCode && response4.IsSuccessStatusCode && response5.IsSuccessStatusCode)
-            //{
-                //Trace.WriteLine("successfully added all test data to the database");
-            //}
-            //else
-            //{
-                //Trace.WriteLine("failed to add to the database. responses:");
-                //Trace.WriteLine("student1: " + response);
-                //Trace.WriteLine("student2: " + response2);
-                //Trace.WriteLine("school1: " + response3);
-                //Trace.WriteLine("food1: " + response4);
-                //Trace.WriteLine("food2: " + response5);
-                
-            //}
-        }
-
-
-        /*
-        public bool ValidStudentID(string studentID)
-        {
-            if (students == null)
-            {
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(studentID)) //could add more conditions here to avoid searching for things that couldn't be student numbers
-            {
-                return false;
-            }
-            foreach (Student i in students) //using linear search since the list may not be sorted by ID
-            {
-                if (i.StudentID.Equals(studentID))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-        */
+        
 
         /**<summary>Searches for a student with the given student ID and returns the student object.</summary>
          * <param name="studentID">The ID of the student to search for.</param>
@@ -499,7 +657,7 @@ namespace CardScannerUI
             }
 
             //if transactions haven't been synced in a while, try to sync them
-            if (unsyncedTransactions.Count % 25 == 0) //!!need to put a good number here
+            if (unsyncedTransactions.Count % 30 == 0) //!!need to put a good number here
             {
                 await SyncAllTransactionsAsync(); //automatically shows the loading dialog box and disables the main window
             }

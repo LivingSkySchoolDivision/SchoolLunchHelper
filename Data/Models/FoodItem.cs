@@ -6,10 +6,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json.Serialization;
+using System.ComponentModel;
 
 namespace Data.Models
 {
-    public class FoodItem
+    public class FoodItem //: IEditableObject
     {
         private string _Name;
         private string _ID;
@@ -68,7 +69,21 @@ namespace Data.Models
             _Description = Description;
         }
 
+        /*
+        public void BeginEdit()
+        {
+            Console.WriteLine("begin edit - fooditem class"); //DEBUG
+        }
 
+        public void CancelEdit()
+        {
+            Console.WriteLine("cancel edit - fooditem class"); //DEBUG
+        }
 
+        public void EndEdit()
+        {
+            Console.WriteLine("end edit - fooditem class"); //DEBUG
+        }
+        */
     }
 }

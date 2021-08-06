@@ -9,6 +9,7 @@ using Data.Models;
 using lunch_project.Classes;
 using Repositories;
 using System.Diagnostics; //DEBUG 
+using System.Globalization;
 
 namespace LunchAPI.Controllers
 {
@@ -49,13 +50,54 @@ namespace LunchAPI.Controllers
 
         // GET: api/Transactions/School/5
         [HttpGet("School/{schoolID}")]
-        public async Task<ActionResult<IEnumerable<Transaction>>> GetFoodItemsBySchool(string schoolID)
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactionsBySchool(string schoolID)
         {
             var allTransactions = await repo.GetTransactions();
             //this is slower than directly querying EF Core, but it is less likely to cause an exception since it does not involve EF Core translating the LINQ statement to SQL
             var requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
             return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
         }
+
+        // GET: api/Transactions/Recent/5/5
+        [HttpGet("Recent/{schoolID}/{amount}")]
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactionsSince(string schoolID, int amount)
+        {
+            var allTransactions = await repo.GetTransactions();
+            List<Transaction> requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase)).ToList(); //get the school's transactions
+            //requestedTransactions = (List<Transaction>)(requestedTransactions.OrderByDescending(y => y.Time)); 
+            requestedTransactions = (requestedTransactions.OrderByDescending(y => y.Time)).ToList();
+            if (requestedTransactions.Count > amount)
+            {
+                requestedTransactions.RemoveRange(amount, requestedTransactions.Count - amount);
+            }
+            
+            
+            return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
+        }
+
+        // GET: api/Transactions/Between/5/5/5
+        [HttpGet("Between/{schoolID}/{startDate}/{endDate}/{max}")]
+        public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactionsBetween(string schoolID, string startDate, string endDate, int max)
+        {
+            DateTime startDateTime = DateTime.ParseExact(startDate, "yyyyMMdd", CultureInfo.InvariantCulture);
+            DateTime endDateTime = DateTime.ParseExact(endDate, "yyyyMMdd", CultureInfo.InvariantCulture);
+            if (startDateTime > endDateTime)
+            {
+                return BadRequest();
+            }
+            var allTransactions = await repo.GetTransactions();
+            List<Transaction> requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase)).ToList(); //get the school's transactions
+            requestedTransactions.RemoveAll(x => (x.Time < startDateTime)); //remove transactions that happened before the start date
+            requestedTransactions.RemoveAll(y => (y.Time > endDateTime)); //remove transactions that happened after the end date
+            requestedTransactions = (requestedTransactions.OrderByDescending(y => y.Time)).ToList();
+            if (requestedTransactions.Count > max)
+            {
+                requestedTransactions.RemoveRange(max, requestedTransactions.Count - max);
+            }
+
+            return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
+        }
+
 
         /*
         // PUT: api/Transactions/5
