@@ -58,38 +58,10 @@ namespace LunchAPI.Controllers
             return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
         }
 
-        /*
-        // GET: api/Transactions/Recent/5/5
-        [HttpGet("Recent/{schoolID}/{amount}")]
-        public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactions(string schoolID, int amount)
-        {//!!in progress
-            var allTransactions = await repo.GetTransactions();
-            var requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase));
-            requestedTransactions = requestedTransactions.Where()
-            return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
-        }
-        */
-
-        /*
-        // GET: api/Transactions/Since/5/5/5
-        [HttpGet("Recent/{schoolID}/{amount}/{since}")]
-        public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactionsSince(string schoolID, int amount, DateTime since)
-        {//!!in progress
-            var allTransactions = await repo.GetTransactions();
-            List<Transaction> requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase)).ToList(); //get the school's transactions
-            requestedTransactions.RemoveAll(x => (x.Time < since)); //remove transactions that happened before the start date
-            requestedTransactions = (List<Transaction>)requestedTransactions.OrderByDescending(y => y.Time); 
-            requestedTransactions.RemoveRange(amount, requestedTransactions.Count - amount);
-            
-            return new ActionResult<IEnumerable<Transaction>>(requestedTransactions);
-        }
-         */
-
-
         // GET: api/Transactions/Recent/5/5
         [HttpGet("Recent/{schoolID}/{amount}")]
         public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactionsSince(string schoolID, int amount)
-        {//!!in progress
+        {
             var allTransactions = await repo.GetTransactions();
             List<Transaction> requestedTransactions = allTransactions.Value.Where(p => string.Equals(p.SchoolID, schoolID, StringComparison.OrdinalIgnoreCase)).ToList(); //get the school's transactions
             //requestedTransactions = (List<Transaction>)(requestedTransactions.OrderByDescending(y => y.Time)); 
@@ -106,7 +78,7 @@ namespace LunchAPI.Controllers
         // GET: api/Transactions/Between/5/5/5
         [HttpGet("Between/{schoolID}/{startDate}/{endDate}/{max}")]
         public async Task<ActionResult<IEnumerable<Transaction>>> GetRecentTransactionsBetween(string schoolID, string startDate, string endDate, int max)
-        {//!!in progress
+        {
             DateTime startDateTime = DateTime.ParseExact(startDate, "yyyyMMdd", CultureInfo.InvariantCulture);
             DateTime endDateTime = DateTime.ParseExact(endDate, "yyyyMMdd", CultureInfo.InvariantCulture);
             if (startDateTime > endDateTime)

@@ -40,7 +40,6 @@ namespace LunchManager
         private School thisSchool;
         private LoadingBox loadingWindow;
         private AddNewFoodItemHelper addNewFoodItemWindow;
-        private List<FoodItem> lastDeletedFoodItems;
         private ObservableCollection<Student> _displayedStudents;
 
         public static ObservableCollection<FoodItem> unsyncedFoodItems { get { return _unsyncedFoodItems; } set { _unsyncedFoodItems = value; } }
@@ -58,7 +57,6 @@ namespace LunchManager
             transactions = new();
             students = new();
             unsyncedFoodItems = new();
-            lastDeletedFoodItems = new();
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -66,32 +64,6 @@ namespace LunchManager
             loadingWindow = new LoadingBox(this);
             loadingWindow.Show();
             IsEnabled = false;
-
-            //DEBUG
-            List<string> l1 = new() { "a", "b" }; //if linq is used, it makes a copy. if l1=l2 is used they reference the same objects and update when eachother update
-            List<string> l2 = l1;
-            l2.Remove("b");
-            Trace.WriteLine("l1: " + l1[0]);
-            Trace.WriteLine("l2: " + l2[0]);
-            l2[0] = "abc";
-            Trace.WriteLine("l2 changed");
-            Trace.WriteLine("l1: " + l1[0]);
-            Trace.WriteLine("l2: " + l2[0]);
-            l1[0] = "xyz";
-            Trace.WriteLine("l1 changed");
-            Trace.WriteLine("l1: " + l1[0]);
-            Trace.WriteLine("l2: " + l2[0]);
-            l1.Add("a");
-            Trace.WriteLine("l1 added an item");
-            Trace.WriteLine("l1: " + l1[1]);
-            Trace.WriteLine("l2: " + l2[1]);
-            l1.RemoveAt(0);
-            Trace.WriteLine("l1 delete item");
-            Trace.WriteLine("l1: " + l1[0]);
-            Trace.WriteLine("l2: " + l2[0]);
-            
-
-            //DEBUG END
 
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             string apiUri = "";
@@ -124,7 +96,12 @@ namespace LunchManager
             this.Title = "Lunch Manager - " + thisSchool.Name;
             addNewFoodItemWindow = new AddNewFoodItemHelper(this, thisSchool);
 
-            transactions = await GetTransactionsAsync(50);
+            transactions = await GetTransactionsBetweenAsync(DateTime.Today.AddDays(-1), DateTime.Today, 5000); //gets the previous day's transactions
+            LoadOverviewStats();
+            if (transactions == null || transactions.Count == 0)
+            {
+                transactions = await GetTransactionsAsync(50);
+            }
             students = await GetStudentsAsync();
             displayedFoodItems = await GetFoodItemsAsync();
 
@@ -143,6 +120,8 @@ namespace LunchManager
             txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
             txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
             txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + displayedFoodItems.Count + " food types";
+
+            
 
             loadingWindow.Hide();
             IsEnabled = true;
@@ -166,6 +145,26 @@ namespace LunchManager
                 Close();
             }
 
+        }
+
+        /**<summary>Sets the text in the overview tab to display important data.</summary>
+         */
+        private void LoadOverviewStats()
+        {
+            if (transactions.Count == 5000)
+            {
+                txtOverviewStats.Text = "Yesterday, 5000 or more transactions were sent to the server.";
+            }
+            else if (transactions.Count == 0)
+            {
+                txtOverviewStats.Text = "Yesterday, 0 transactions were sent to the server. If this number is always 0, contact your system administrator.";
+                txtOverviewStats.Foreground = Brushes.Red;
+            }
+            else
+            {
+                txtOverviewStats.Text = "Yesterday, " + transactions.Count + " transactions were sent to the server.";
+            }
+            
         }
 
         private async Task<ObservableCollection<FoodItem>> GetFoodItemsAsync()
@@ -234,7 +233,8 @@ namespace LunchManager
             return newTransactionsCollection;
         }
 
-        /**<summary>Loads the students, schools, and food items into the main window's lists.</summary>
+        /**<summary>Loads the students, schools, and food items into the main window's lists. 
+         * Use the individual loading methods instead.</summary>
          */
         private async Task GetDataAsync()
         {
@@ -329,24 +329,6 @@ namespace LunchManager
             
         }
 
-        /*
-        private void btnEditFoodItem_Click(object sender, RoutedEventArgs e)
-        {
-            loadingWindow.Show();
-            IsEnabled = false;
-
-            displayedFoodItems = foodItems;
-
-            dataGridFoodTypes.ItemsSource = null;
-            dataGridFoodTypes.ItemsSource = displayedFoodItems;
-            txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + foodItems.Count + " students";
-            txtStudentsSearch.Text = "Search";
-            txtStudentsSearch.Foreground = Brushes.DarkGray;
-
-            loadingWindow.Hide();
-            IsEnabled = true;
-        }
-        */
 
         private void dataGridFoodTypes_BeginningEdit(object sender, DataGridBeginningEditEventArgs e) 
         {
@@ -387,6 +369,7 @@ namespace LunchManager
             }
             if (editedRowItem.Cost < 0M)
             {
+                //if the price is negative, show an error
                 MessageBox.Show("The \"Price\" field cannot contain a negative value.", "Required field", MessageBoxButton.OK, MessageBoxImage.Warning);
                 e.Row.Background = Brushes.Coral;
                 Trace.WriteLine("row " + editedRowIndex + " has an invalid name field"); //DEBUG
@@ -399,7 +382,7 @@ namespace LunchManager
                 //modifying a datagrid row will change the corresponding foodItem
                 if (e.Row.Background == Brushes.Coral) //if the item was invalid before, change the row color back to normal
                 {
-                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0) //!!this may not work, should check the brush of the previous or next row
+                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0) 
                     {
                         e.Row.Background = Brushes.White;
                     }
@@ -431,21 +414,6 @@ namespace LunchManager
                     MessageBox.Show("Cannot save changes because the server could not be reached, please check you internet connection and try again. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                     Close();
                 }
-                /*
-                if (!response.IsSuccessStatusCode)
-                {
-                    
-                    if (displayedFoodItems.Contains(editedRowItem)) //DEBUG
-                    {
-                        Trace.WriteLine("displayedfooditems still has the item removed from displayedfooditems");
-                    }
-                    else
-                    {
-                        Trace.WriteLine("displayedfooditems does not have the item removed from fooditems");
-                    }
-                    MessageBox.Show("Cannot save changes because the server could not be reached, please check you internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-                */
             }
             else
             {
@@ -506,19 +474,6 @@ namespace LunchManager
             
         }
 
-        private void dataGridFoodTypes_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
-        {
-            /*
-            if (string.Equals(e.Column.Header.ToString(), "Name"))
-            {
-                if (string.IsNullOrEmpty(((FoodItem)dataGridFoodTypes.SelectedItem).Name))
-                {
-
-                }
-            }
-            */
-        }
-
         private async void btnAddNewFoodType_Click(object sender, RoutedEventArgs e)
         {
             addNewFoodItemWindow.ShowDialog();
@@ -526,11 +481,6 @@ namespace LunchManager
             await SaveUnsyncedFoodItemsAsync();
             txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + displayedFoodItems.Count + " food types";
 
-        }
-
-        private void dataGridFoodTypes_AddingNewItem(object sender, AddingNewItemEventArgs e)
-        {
-            
         }
 
         /**<summary>Takes a food item created with the default food item constructor and makes a new one with the proper constructor.
@@ -580,7 +530,7 @@ namespace LunchManager
                 Trace.WriteLine("2"); //DEBUG
                 messageBoxMessage = messageBoxMessage.Remove(messageBoxMessage.Length - 2);
                 Trace.WriteLine("3"); //DEBUG
-                var result = MessageBox.Show(messageBoxMessage + "?", "Delete items?", MessageBoxButton.YesNo);
+                var result = MessageBox.Show(messageBoxMessage + "? This action cannot be undone.", "Delete items?", MessageBoxButton.YesNo);
                 if (result == MessageBoxResult.Yes)
                 {
                     for (int i = displayedFoodItems.Count - 1; i >= 0; i--)
@@ -611,7 +561,6 @@ namespace LunchManager
                                 Trace.WriteLine("length of displayedFoodItems: " + displayedFoodItems.Count); //DEBUG
                             }
 
-                            lastDeletedFoodItems.Add(displayedFoodItems[i]); //fails here
                             Trace.WriteLine(".."); //DEBUG
                             displayedFoodItems.RemoveAt(i);
                         }
@@ -643,7 +592,7 @@ namespace LunchManager
 
         private async void dataGridFoodTypes_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Delete && dataGridFoodTypes.IsKeyboardFocused)
+            if (e.Key == Key.Delete)
             {
                 e.Handled = true; //stops the default behavior of the delete key so that DeleteSelectedFoodItems can handle it
                 Trace.WriteLine("pressed delete key"); //DEBUG
@@ -872,7 +821,8 @@ namespace LunchManager
         {
             if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
             {
-                Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
+                Trace.WriteLine("no student selected"); //DEBUG
+                MessageBox.Show("Please select a student in the table first.", "No student selected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             loadingWindow.Show();
@@ -900,7 +850,8 @@ namespace LunchManager
         {
             if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
             {
-                Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
+                Trace.WriteLine("no student selected"); //DEBUG
+                MessageBox.Show("Please select a student in the table first.", "No student selected", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
             loadingWindow.Show();
@@ -974,7 +925,7 @@ namespace LunchManager
         }
 
 
-        private void btnExportStudents_Click(object sender, RoutedEventArgs e) //!!!
+        private void btnExportStudents_Click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog saveDialog = new SaveFileDialog();
             saveDialog.Filter = "CSV (*.csv)|*.csv";
@@ -1059,7 +1010,16 @@ namespace LunchManager
 
         private async Task RefreshTransactionsDataGrid()
         {
-            transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
+            DateTime startDate = dpTransactionStart.SelectedDate ?? DateTime.Now;
+            DateTime endDate = dpTransactionEnd.SelectedDate ?? DateTime.Now;
+            if (!(startDate > endDate) && (dpTransactionStart.SelectedDate != null) && (dpTransactionEnd.SelectedDate != null))
+            {
+                transactions = await GetTransactionsBetweenAsync(startDate, endDate, 5000);
+            }
+            else
+            {
+                transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
+            }
 
             dataGridTransactions.ItemsSource = null;
             dataGridTransactions.ItemsSource = transactions;
@@ -1067,13 +1027,15 @@ namespace LunchManager
             txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
         }
 
-        private void txtTransactionsSearch_KeyDown(object sender, KeyEventArgs e)
+        private async void txtTransactionsSearch_KeyDown(object sender, KeyEventArgs e)
         {
             if (((e.Key == Key.Return) || (e.Key == Key.Enter)) && txtTransactionsSearch.IsKeyboardFocused)
             {
                 loadingWindow.SetMessage("Searching...");
                 loadingWindow.Show();
                 IsEnabled = false;
+
+                await RefreshTransactionsDataGrid();
 
                 var searchedTransactions = new ObservableCollection<Transaction>();
                 if (int.TryParse(txtTransactionsSearch.Text, out int num)) //if the text entered is a number, search by student number
@@ -1143,6 +1105,7 @@ namespace LunchManager
             dataGridTransactions.ItemsSource = transactions;
             txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
             */
+
             await RefreshTransactionsDataGrid();
             txtTransactionsSearch.Text = "Search";
             txtTransactionsSearch.Foreground = Brushes.DarkGray;
@@ -1156,16 +1119,19 @@ namespace LunchManager
             loadingWindow.Show();
             IsEnabled = false;
 
-            transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
+            //transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
+            dpTransactionStart.SelectedDate = null;
+            dpTransactionEnd.SelectedDate = null;
+            txtStartEndDateError.Visibility = Visibility.Hidden;
 
             await RefreshTransactionsDataGrid();
-            //txtTransactionsSearch.Text = "Search";
-            //txtTransactionsSearch.Foreground = Brushes.DarkGray;
 
             loadingWindow.Hide();
             IsEnabled = true;
         }
 
+        /**<summary>Validates the transaction date range and loads the requested transactions if the range is valid.</summary>
+         */
         private async void btnEnterTransactionRange_Click(object sender, RoutedEventArgs e)
         {
             DateTime startDate = dpTransactionStart.SelectedDate ?? DateTime.Now;
@@ -1194,7 +1160,7 @@ namespace LunchManager
 
                 if (transactions.Count == maxResults)
                 {
-                    MessageBox.Show("The number of transactions between the two dates is greater than 5000. Only the most recent 5000 transactions will be shown. Enter dates within a smaller time period to see all results in that time period.", "Showing limited results", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("The number of transactions between the two dates is greater than " + maxResults +  ". Only the most recent " + maxResults + " transactions will be shown. Enter dates within a smaller time period to see all results in that time period.", "Showing limited results", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
             else
@@ -1206,6 +1172,13 @@ namespace LunchManager
 
         }
 
+        /**<summary>Gets the transactions that took place in a certain date range up to a maximum number to be loaded.</summary>
+         * <param name="startDate">The start of the range of dates. Transactions taking place on this day are included 
+         * in the results.</param>
+         * <param name="endDate">The end of the range of dates. Transactions taking place on this day are excluded 
+         * from the results.</param>
+         * <param name="max">The maximum number of transactions to load.</param>
+         */
         private async Task<ObservableCollection<Transaction>> GetTransactionsBetweenAsync(DateTime startDate, DateTime endDate, int max)
         {
             ObservableCollection<Transaction> newTransactionsCollection = new();
@@ -1235,6 +1208,9 @@ namespace LunchManager
             return newTransactionsCollection;
         }
 
+        /**<summary>Exports the transactions shown in the datagrid as a CSV. Does not give an option to export 
+         * all transactions.</summary>
+         */
         private void btnExportDisplayedTransactions_Click(object sender, RoutedEventArgs e)
         {
             SaveFileDialog saveDialog = new SaveFileDialog();

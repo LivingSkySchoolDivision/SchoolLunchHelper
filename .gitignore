@@ -390,6 +390,9 @@ FodyWeavers.xsd
 
 # Transaction Log
 TransactionsLog.json
+FoodItemsBackup.json
+StudentsBackup.json
+SchoolBackup.json
 
 # config files
 App.config
