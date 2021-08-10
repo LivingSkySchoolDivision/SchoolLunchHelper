@@ -162,7 +162,7 @@
                                     Header="Balance" 
                                     Width="*"
                                     MinWidth="50"
-                                    IsReadOnly="False" FontSize="12.5"/>
+                                    IsReadOnly="True" FontSize="12.5"/>
 
                         </DataGrid.Columns>
                     </DataGrid>
