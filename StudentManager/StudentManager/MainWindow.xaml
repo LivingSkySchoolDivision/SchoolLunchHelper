@@ -10,11 +10,14 @@
         WindowState="Maximized">
     <Grid Background="#FFE5E5E5">
 
+        <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
 
-        <Rectangle HorizontalAlignment="Left" Height="165" Margin="21,71,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+        <Rectangle HorizontalAlignment="Left" Height="197" Margin="21,104,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
         <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
         <Rectangle Height="7" VerticalAlignment="Top" Fill="#FF007ACC" Margin="0,48,-6,0"/>
         <Label Content="Student Manager" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="322" Height="58" FontWeight="Bold"/>
+        <Button x:Name="btnRefreshStudents" Content="⟳" HorizontalAlignment="Left" Margin="21,65,0,0" Height="25" Width="25" VerticalAlignment="Top" FontSize="18" FontWeight="Bold" 
+                        Foreground="#FF007ACC" Background="White" BorderBrush="#FF007ACC" Click="btnRefreshStudents_Click" FontFamily="Bahnschrift" ToolTip="Refresh" />
 
         <DataGrid x:Name="dataGridStudents"
                               Margin="253,54,10,16"
@@ -26,10 +29,12 @@
                               CanUserSortColumns="True"
                               CanUserAddRows="False"
                               ItemsSource="{Binding students, Mode=TwoWay}"
-                              RowEditEnding="dataGridStudents_RowEditEnding"
                               ScrollViewer.CanContentScroll="True"
-                              SelectionMode="Single"
+                              SelectionMode="Extended"
                               MinRowHeight="23"
+                              EnableRowVirtualization="True"
+                              PreviewKeyDown="dataGridStudents_PreviewKeyDown"
+                              SelectionChanged="dataGridStudents_SelectionChanged"
                               >
             <DataGrid.Columns>
                 <DataGridTextColumn Binding="{Binding Path=Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -53,13 +58,20 @@
                                     Width="*"
                                     MinWidth="50"
                                     IsReadOnly="True" FontSize="12.5"/>
+                <DataGridTextColumn Binding="{Binding Path=MedicalInfo,  Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
+                                    Header="Medical Information" 
+                                    Width="300"
+                                    MinWidth="200"
+                                    IsReadOnly="True" FontSize="12.5"/>
 
             </DataGrid.Columns>
         </DataGrid>
-        <Button x:Name="btnImportCsv" Click="btnImportCsv_Click" Content="Import CSV" HorizontalAlignment="Left" Margin="34,197,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
-        <ComboBox x:Name="cbSchool" HorizontalAlignment="Left" Margin="98,81,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="cbSchool_SelectionChanged"/>
-        <Button x:Name="btnExportCsv" Click="btnExportCsv_Click" Content="Export CSV" HorizontalAlignment="Left" Margin="34,164,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
-        <Label Content="School ID:" HorizontalAlignment="Left" Margin="30,78,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnImportCsv" Click="btnImportCsv_Click" Content="Import CSV" HorizontalAlignment="Left" Margin="34,230,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
+        <ComboBox x:Name="cbSchool" HorizontalAlignment="Left" Margin="98,114,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="cbSchool_SelectionChanged"/>
+        <Button x:Name="btnExportCsv" Click="btnExportCsv_Click" Content="Export CSV" HorizontalAlignment="Left" Margin="34,197,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
+        <Label Content="School ID:" HorizontalAlignment="Left" Margin="30,111,0,0" VerticalAlignment="Top"/>
+        <Button x:Name="btnDelete" Click="btnDelete_Click" Content="Delete" HorizontalAlignment="Left" Margin="34,164,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
+        <Button x:Name="btnAddStudent" Click="btnAddStudent_Click" Content="Add a student" HorizontalAlignment="Left" Margin="34,263,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
 
     </Grid>
 </Window>
