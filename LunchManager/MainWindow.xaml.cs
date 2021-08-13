@@ -795,6 +795,7 @@ namespace LunchManager
             }
         }
 
+        /*
         private async void dataGridStudents_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
         {
             if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
@@ -816,6 +817,7 @@ namespace LunchManager
             IsEnabled = true;
 
         }
+        */
 
         private async void btnAddToStudentBalance_Click(object sender, RoutedEventArgs e)
         {
@@ -836,8 +838,9 @@ namespace LunchManager
             else
             {
                 txtStudentBalanceAddRemoveError.Visibility = Visibility.Hidden;
-                displayedStudents[dataGridStudents.SelectedIndex].Balance += decimal.Round(amount, 2);
-                await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                //displayedStudents[dataGridStudents.SelectedIndex].Balance += decimal.Round(amount, 2);
+                //await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                await SendNewTransactionAsync((amount * -1), displayedStudents[dataGridStudents.SelectedIndex]); //cost is negative to add to balance
 
                 await RefreshStudentsDataGrid();
             }
@@ -865,8 +868,9 @@ namespace LunchManager
             else
             {
                 txtStudentBalanceAddRemoveError.Visibility = Visibility.Hidden;
-                displayedStudents[dataGridStudents.SelectedIndex].Balance -= decimal.Round(amount, 2);
-                await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                //displayedStudents[dataGridStudents.SelectedIndex].Balance -= decimal.Round(amount, 2);
+                //await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                await SendNewTransactionAsync(amount, displayedStudents[dataGridStudents.SelectedIndex]);
 
                 await RefreshStudentsDataGrid();
             }
@@ -875,6 +879,50 @@ namespace LunchManager
             IsEnabled = true;
         }
 
+        /**<summary>Creates and sends a new transaction to the database.</summary>
+         * <param name="student">The student the transaction belongs to.</param>
+         * <param name="cost">The amount to remove from the student's balance. Negative to add to a student's balance.</param>
+         */
+        private async Task SendNewTransactionAsync(decimal cost, Student student)
+        {
+            string foodName = "";
+            if (cost <= 0)
+            {
+                foodName = "Added to balance";
+            }
+            else
+            {
+                foodName = "Removed from balance";
+            }
+            Transaction newTransaction = new Transaction(student.SchoolID, "0", foodName, cost, student.Name, thisSchool.ID, thisSchool.Name);
+            
+            Trace.WriteLine("trying to send a tranaction with ID: " + newTransaction.ID); //DEBUG
+            string jsonString = JsonSerializer.Serialize(newTransaction);
+            var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            try
+            {
+                var response = await client.PostAsync("api/Transactions", httpContent);
+                Trace.WriteLine(jsonString); //DEBUG
+                Trace.WriteLine("sync new row response: " + response); //DEBUG
+                if (!response.IsSuccessStatusCode && !(response.StatusCode == System.Net.HttpStatusCode.Conflict))
+                {
+                    Trace.WriteLine("can't reach the database");
+                    MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Close();
+                }
+            }
+            catch (HttpRequestException) //this exception is not thrown if the URI can't be found
+            {
+                Trace.WriteLine("can't reach the database");
+                MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+
+        }
+
+        /**<summary>Saves changes made to a student.</summary>
+         * <param name="student">The modified student.</param>
+         */
         private async Task SaveModifiedStudentAsync(Student student)
         {
             Trace.WriteLine("trying to sync a student with ID: " + student.StudentID); //DEBUG
@@ -916,7 +964,7 @@ namespace LunchManager
         private async Task RefreshStudentsDataGrid()
         {
             students = await GetStudentsAsync();
-            //displayedStudents = students; //don't need this, displayedStudents references students
+            displayedStudents = students; 
 
             dataGridStudents.ItemsSource = null;
             dataGridStudents.ItemsSource = displayedStudents;
@@ -1008,6 +1056,8 @@ namespace LunchManager
             IsEnabled = true;
         }
 
+        /**<summary>Refreshes the transactions data grid.</summary>
+         */
         private async Task RefreshTransactionsDataGrid()
         {
             DateTime startDate = dpTransactionStart.SelectedDate ?? DateTime.Now;
