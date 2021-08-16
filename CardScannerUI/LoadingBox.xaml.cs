@@ -19,6 +19,9 @@ namespace CardScannerUI
     /// </summary>
     public partial class LoadingBox : Window
     {
+        /**<summary>Constructor for LoadingBox.</summary>
+         * <param name="owner">The LoadingBox's owner window.</param>
+         */
         public LoadingBox(Window owner)
         {
             InitializeComponent();

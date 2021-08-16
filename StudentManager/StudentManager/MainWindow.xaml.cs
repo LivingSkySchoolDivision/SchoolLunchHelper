@@ -452,7 +452,9 @@ namespace StudentManager
             await SyncUnsyncedStudentsAsync(false);
         }
 
-        /**<returns>True if the student exists, false if they do not exist. Null if the database could not be reached.</returns>
+        /**<summary>Checks if a student exists in the database.</summary>
+         * <param name="studentID">The ID number of the student.</param>
+         * <returns>True if the student exists, false if they do not exist. Null if the database could not be reached.</returns>
          */
         public static async Task<bool?> StudentExists(string studentID)
         {

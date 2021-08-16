@@ -138,7 +138,7 @@
                               AutoGenerateColumns="False"
                               CanUserDeleteRows="False"
                               CanUserResizeRows="True"
-                              CanUserSortColumns="True"
+                              CanUserSortColumns="False"
                               CanUserAddRows="False"
                               ItemsSource="{Binding displayedStudents, Mode=TwoWay}"
                               ScrollViewer.CanContentScroll="True"

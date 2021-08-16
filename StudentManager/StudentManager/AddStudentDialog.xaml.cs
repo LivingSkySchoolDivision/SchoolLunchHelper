@@ -21,6 +21,9 @@ namespace StudentManager
     /// </summary>
     public partial class AddStudentDialog : Window
     {
+        /**<summary>Constructor for AddStudentDialog.</summary>
+         * <param name="owner">The window's owner window.</param>
+         */
         public AddStudentDialog(MainWindow owner)
         {
             InitializeComponent();

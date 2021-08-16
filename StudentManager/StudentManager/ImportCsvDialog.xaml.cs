@@ -35,6 +35,9 @@ namespace StudentManager
 
         public ObservableCollection<string> headers { get { return _headers; } set { _headers = value; } }
 
+        /**<summary>Constructor for ImportCsvDialog.</summary>
+         * <param name="owner">The window's owner window.</param>
+         */
         public ImportCsvDialog(Window owner)
         {
             InitializeComponent();
@@ -157,7 +160,7 @@ namespace StudentManager
                 
         }
 
-        private async void btnConfirmImport_Click(object sender, RoutedEventArgs e)
+        private void btnConfirmImport_Click(object sender, RoutedEventArgs e)
         {
             loadingWindow.Show();
             IsEnabled = false;
@@ -169,6 +172,8 @@ namespace StudentManager
             Close();
         }
 
+        /**<summary>Converts the CSV rows to student objects.</summary>
+         */
         private void ImportCSV()
         {
             using (TextFieldParser parser = new TextFieldParser(fileName))

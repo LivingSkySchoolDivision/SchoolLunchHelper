@@ -59,6 +59,8 @@ namespace LunchManager
             unsyncedFoodItems = new();
         }
 
+        /**<summary>Event handler for the main window's Loaded event.</summary>
+         */
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             loadingWindow = new LoadingBox(this);
@@ -167,6 +169,9 @@ namespace LunchManager
             
         }
 
+        /**<summary>Gets the current school's FoodItems.</summary>
+         * <returns>The FoodItems that are available at the current school.</returns>
+         */
         private async Task<ObservableCollection<FoodItem>> GetFoodItemsAsync()
         {
             //HttpResponseMessage responseFood;
@@ -190,6 +195,9 @@ namespace LunchManager
             return newFoodItemsCollection;
         }
 
+        /**<summary>Gets the students for the current school from the database asynchronously.</summary>
+         * <returns>Students that go to the current school.</returns>
+         */
         private async Task<ObservableCollection<Student>> GetStudentsAsync()
         {
             //HttpResponseMessage responseFood;
@@ -213,6 +221,10 @@ namespace LunchManager
             return newStudentsCollection;
         }
 
+        /**<summary>Gets the x most recent transactions from the database asynchronously.</summary>
+         * <param name="numToLoad">The number of transactions to load from the database.</param>
+         * <returns>The x most recent transactions.</returns>
+         */
         private async Task<ObservableCollection<Transaction>> GetTransactionsAsync(int numToLoad)
         {
             ObservableCollection<Transaction> newTransactionsCollection = new();
@@ -441,6 +453,8 @@ namespace LunchManager
 
         }
 
+        /**<summary>Sends the FoodItems that have not been synced to the database.</summary>
+         */
         private async Task SaveUnsyncedFoodItemsAsync()
         {
             loadingWindow.Show();
@@ -485,7 +499,8 @@ namespace LunchManager
 
         /**<summary>Takes a food item created with the default food item constructor and makes a new one with the proper constructor.
          * The datagrid needs to use the default constructor to create a new row - this method converts it into a proper food item.</summary>
-         * <remarks>Assumes the data</remarks>
+         * <remarks>Assumes the data in the old FoodItem is valid.</remarks>
+         * <param name="foodItem">The FoodItem to reconstruct.</param>
          */
         private FoodItem ReconstructFoodItem(FoodItem foodItem)
         {
@@ -880,7 +895,7 @@ namespace LunchManager
         }
 
         /**<summary>Creates and sends a new transaction to the database.</summary>
-         * <param name="student">The student the transaction belongs to.</param>
+         * <param name="student">The student the transaction belongs to. The student must exist in the database.</param>
          * <param name="cost">The amount to remove from the student's balance. Negative to add to a student's balance.</param>
          */
         private async Task SendNewTransactionAsync(decimal cost, Student student)
@@ -894,7 +909,7 @@ namespace LunchManager
             {
                 foodName = "Removed from balance";
             }
-            Transaction newTransaction = new Transaction(student.SchoolID, "0", foodName, cost, student.Name, thisSchool.ID, thisSchool.Name);
+            Transaction newTransaction = new Transaction(student.StudentID, "0", foodName, cost, student.Name, thisSchool.ID, thisSchool.Name);
             
             Trace.WriteLine("trying to send a tranaction with ID: " + newTransaction.ID); //DEBUG
             string jsonString = JsonSerializer.Serialize(newTransaction);
@@ -961,6 +976,9 @@ namespace LunchManager
             IsEnabled = true;
         }
 
+        /**
+         * <summary>Refreshes the datagrid displaying students.</summary>
+         */
         private async Task RefreshStudentsDataGrid()
         {
             students = await GetStudentsAsync();
@@ -1228,6 +1246,7 @@ namespace LunchManager
          * <param name="endDate">The end of the range of dates. Transactions taking place on this day are excluded 
          * from the results.</param>
          * <param name="max">The maximum number of transactions to load.</param>
+         * <returns>The transactions within the two dates.</returns>
          */
         private async Task<ObservableCollection<Transaction>> GetTransactionsBetweenAsync(DateTime startDate, DateTime endDate, int max)
         {
