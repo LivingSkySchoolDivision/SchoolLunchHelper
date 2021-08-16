@@ -97,6 +97,9 @@ namespace StudentManager
             IsEnabled = true;
         }
 
+        /**<summary>Retrieves the students from the selected school from the database.</summary>
+         * <returns>An ObservableCollection of students from the database.</returns>
+         */
         private async Task<ObservableCollection<Student>> GetStudentsAsync()
         {
             ObservableCollection<Student> newStudentsCollection = new();
@@ -118,6 +121,9 @@ namespace StudentManager
             return newStudentsCollection;
         }
 
+        /**<summary>Retrieves the list of schools from the database.</summary>
+         * <returns>The list of schools in the system.</returns>
+         */
         private async Task<List<School>> GetSchoolsAsync()
         {
             List<School> getSchools = new();
@@ -141,6 +147,8 @@ namespace StudentManager
             await RefreshStudents();
         }
 
+        /**<summary>Refreshes the student datagrid.</summary>
+         */
         private async Task RefreshStudents()
         {
             loadingWindow.Show();
@@ -200,14 +208,14 @@ namespace StudentManager
             importCsvDialog.ShowDialog();
             if (unsyncedStudents.Count > 0)
             {
-                var result = MessageBox.Show("Would you like to update the students that already exist in the database with the information in the imported file?", "Update existing students?", MessageBoxButton.YesNoCancel);
+                var result = MessageBox.Show("Would you like to update the students that already exist in the database with the information in the imported file? Balances will not be updated.", "Update existing students?", MessageBoxButton.YesNoCancel);
                 if (result == MessageBoxResult.Yes)
                 {
-                    await SyncStudentsAsync(true);
+                    await SyncUnsyncedStudentsAsync(true);
                 }
                 else if (result == MessageBoxResult.No)
                 {
-                    await SyncStudentsAsync(false);
+                    await SyncUnsyncedStudentsAsync(false);
                 }
                 else
                 {
@@ -217,31 +225,114 @@ namespace StudentManager
             
         }
 
-        private async Task SyncStudentsAsync(bool replaceExisting)
+        /**<summary>Syncs students to the database with the option to replace the information of students that already 
+         * exist. The existing student's balances will not be updated but the rest of their information will be if
+         * the option to replace existing students is enabled.</summary>
+         * <param name="replaceExisting">True if existing students should have their information updated.</param>
+         */
+        private async Task SyncUnsyncedStudentsAsync(bool replaceExisting) 
         {
             loadingWindow.Show();
             IsEnabled = false;
             for (int i = unsyncedStudents.Count - 1; i >= 0; i--)
             {
                 Trace.WriteLine("trying to sync a student with ID: " + unsyncedStudents[i].StudentID); //DEBUG
-                string jsonString = JsonSerializer.Serialize(unsyncedStudents[i]);
-                var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
                 try
                 {
-                    var response = await client.PostAsync("api/Students", httpContent);
-                    Trace.WriteLine(jsonString); //DEBUG
-                    Trace.WriteLine("sync new row response: " + response); //DEBUG
-                    if (replaceExisting && response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                    //var response = await client.PostAsync("api/Students", httpContent);
+                    var getResponse = await client.GetAsync("api/Students/" + unsyncedStudents[i].StudentID);
+                    //Trace.WriteLine(jsonString); //DEBUG
+                    Trace.WriteLine("get response: " + getResponse); //DEBUG
+                    if (replaceExisting && (getResponse.IsSuccessStatusCode))
                     {
-                        var postResponse = await client.PutAsync("api/Students/" + unsyncedStudents[i].StudentID, httpContent);
+                        try
+                        {
+                            var oldStudent = await getResponse.Content.ReadAsAsync<Student>(); //get old balance
+                            decimal oldBalance = oldStudent.Balance;
+                            Trace.WriteLine("old balance: " + oldBalance + " new balance: " + unsyncedStudents[i].Balance); //DEBUG
+                            unsyncedStudents[i].Balance = oldBalance; //set the new balance back to what it was before importing the CSV
+                            Trace.WriteLine("updated balance: " + unsyncedStudents[i].Balance); //DEBUG
+                            string jsonString = JsonSerializer.Serialize(unsyncedStudents[i]);
+                            var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                            var putResponse = await client.PutAsync("api/Students/" + unsyncedStudents[i].StudentID, httpContent);
+                            if (putResponse.IsSuccessStatusCode)
+                            {
+                                unsyncedStudents.RemoveAt(i);
+                            }
+                        }
+                        catch
+                        {
+                            Trace.WriteLine("can't reach the database");
+                            MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                            Close();
+                            break; //if there is a server error, no point trying to sync any more entries
+                        }
+
                     }
-                    else if (replaceExisting && response.IsSuccessStatusCode)
+                    else if (getResponse.StatusCode.Equals(System.Net.HttpStatusCode.NotFound))
                     {
-                        unsyncedStudents.RemoveAt(i);
-                    }
-                    else if (!replaceExisting && (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Conflict))
-                    {
-                        unsyncedStudents.RemoveAt(i);
+                        Trace.WriteLine("student does not exist");
+                        try
+                        {
+                            decimal initialBalance = unsyncedStudents[i].Balance;
+                            unsyncedStudents[i].Balance = 0; //balance will be set by a transaction
+                            Transaction transaction = new Transaction(unsyncedStudents[i].StudentID, "0", "Initial balance", (initialBalance * -1), unsyncedStudents[i].Name, "0", "Manager");
+                            
+                            string jsonString = JsonSerializer.Serialize(unsyncedStudents[i]);
+                            var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                            string jsonString2 = JsonSerializer.Serialize(transaction);
+                            var httpContent2 = new StringContent(jsonString2, Encoding.UTF8, "application/json");
+
+                            var postResponse = await client.PostAsync("api/Students", httpContent);
+                            Trace.WriteLine(postResponse); //DEBUG
+                            if (postResponse.IsSuccessStatusCode)
+                            {
+                                var transactionResponse = await client.PostAsync("api/Transactions", httpContent2);
+                                Trace.WriteLine(transactionResponse);
+
+                                Trace.WriteLine("student response: " + postResponse.ReasonPhrase + "\ntransaction response: " + transactionResponse.ReasonPhrase); //DEBUG
+                                if (transactionResponse.IsSuccessStatusCode)
+                                {
+                                    Trace.WriteLine("sucessfully added student");
+                                    unsyncedStudents.RemoveAt(i);
+                                }
+                                else
+                                {
+                                    Trace.WriteLine("error adding student");
+                                    try
+                                    {
+                                        await client.DeleteAsync("api/Transactions/" + transaction.ID);
+                                    }
+                                    catch
+                                    {
+                                        Trace.WriteLine("can't reach the database");
+                                        MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        Close();
+                                        break; //if there is a server error, no point trying to sync any more entries
+                                    }
+                                    try
+                                    {
+                                        await client.DeleteAsync("api/Students/" + unsyncedStudents[i].StudentID);
+                                    }
+                                    catch
+                                    {
+                                        Trace.WriteLine("can't reach the database");
+                                        MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        Close();
+                                        break; //if there is a server error, no point trying to sync any more entries
+                                    }
+                                }
+                            }
+
+                        }
+                        catch
+                        {
+                            Trace.WriteLine("can't reach the database");
+                            MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                            Close();
+                            break; //if there is a server error, no point trying to sync any more entries
+                        }
                     }
                 }
                 catch (HttpRequestException)
@@ -268,6 +359,8 @@ namespace StudentManager
             }
         }
 
+        /**<summary>Deletes the students selected in the datagrid.</summary>
+         */
         private async Task DeleteSelectedStudentsAsync()
         {
             if (dataGridStudents.SelectedItem == null || students.Count == 0 || dataGridStudents.SelectedItem.Equals(CollectionView.NewItemPlaceholder))
@@ -356,12 +449,14 @@ namespace StudentManager
         {
             addStudentDialog.ShowDialog();
 
-            await SyncStudentsAsync(false);
+            await SyncUnsyncedStudentsAsync(false);
         }
 
-        /**<returns>True if the student exists or the database could not be reached. Otherwise false.</returns>
+        /**<summary>Checks if a student exists in the database.</summary>
+         * <param name="studentID">The ID number of the student.</param>
+         * <returns>True if the student exists, false if they do not exist. Null if the database could not be reached.</returns>
          */
-        public static async Task<bool> StudentExists(string studentID)
+        public static async Task<bool?> StudentExists(string studentID)
         {
             try
             {
@@ -384,7 +479,7 @@ namespace StudentManager
             {
                 MessageBox.Show("Failed to connect to the server, please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            return true;
+            return null;
         }
     }
 }

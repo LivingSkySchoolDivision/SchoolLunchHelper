@@ -17,9 +17,13 @@ namespace StudentManager
 {
     /// <summary>
     /// Interaction logic for AddStudentDialog.xaml
+    /// A dialog box to add a new student to the database.
     /// </summary>
     public partial class AddStudentDialog : Window
     {
+        /**<summary>Constructor for AddStudentDialog.</summary>
+         * <param name="owner">The window's owner window.</param>
+         */
         public AddStudentDialog(MainWindow owner)
         {
             InitializeComponent();
@@ -56,7 +60,7 @@ namespace StudentManager
                 valid = false;
             }
 
-            if (string.IsNullOrWhiteSpace(txtStudentID.Text) || (await MainWindow.StudentExists(txtStudentID.Text)))
+            if (string.IsNullOrWhiteSpace(txtStudentID.Text) || (await MainWindow.StudentExists(txtStudentID.Text) ?? true))
             {
                 txtStudentID.Focus();
                 txtStudentID.BorderBrush = Brushes.Red;

@@ -22,6 +22,9 @@ namespace Repositories
         {
         }
 
+        /**<summary>Gets all FoodItems from the database.</summary>
+         * <returns>An action result containing all FoodItems in the database.</returns>
+         */
         public async Task<ActionResult<IEnumerable<FoodItem>>> GetFoodItems()
         {
             return await _context.FoodItems.ToListAsync();
@@ -35,7 +38,7 @@ namespace Repositories
             return foodItem;
         }
         */
-
+        
         public async Task<FoodItem> FindAsync(string id)
         {
             return await _context.FoodItems.FindAsync(id);

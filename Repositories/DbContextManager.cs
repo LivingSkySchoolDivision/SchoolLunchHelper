@@ -19,6 +19,9 @@ namespace Repositories
             ConnectionString = connectionString;
         }
 
+        /**<summary>Creates a new DataDbContext instance.</summary>
+         * <returns>A new DataDbContextInstance.</returns>
+         */
         public static DataDbContext GetNewDbContext()
         {
             return new DataDbContext(ConnectionString);

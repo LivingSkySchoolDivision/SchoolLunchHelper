@@ -59,6 +59,8 @@ namespace LunchManager
             unsyncedFoodItems = new();
         }
 
+        /**<summary>Event handler for the main window's Loaded event.</summary>
+         */
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
             loadingWindow = new LoadingBox(this);
@@ -167,6 +169,9 @@ namespace LunchManager
             
         }
 
+        /**<summary>Gets the current school's FoodItems.</summary>
+         * <returns>The FoodItems that are available at the current school.</returns>
+         */
         private async Task<ObservableCollection<FoodItem>> GetFoodItemsAsync()
         {
             //HttpResponseMessage responseFood;
@@ -190,6 +195,9 @@ namespace LunchManager
             return newFoodItemsCollection;
         }
 
+        /**<summary>Gets the students for the current school from the database asynchronously.</summary>
+         * <returns>Students that go to the current school.</returns>
+         */
         private async Task<ObservableCollection<Student>> GetStudentsAsync()
         {
             //HttpResponseMessage responseFood;
@@ -213,6 +221,10 @@ namespace LunchManager
             return newStudentsCollection;
         }
 
+        /**<summary>Gets the x most recent transactions from the database asynchronously.</summary>
+         * <param name="numToLoad">The number of transactions to load from the database.</param>
+         * <returns>The x most recent transactions.</returns>
+         */
         private async Task<ObservableCollection<Transaction>> GetTransactionsAsync(int numToLoad)
         {
             ObservableCollection<Transaction> newTransactionsCollection = new();
@@ -441,6 +453,8 @@ namespace LunchManager
 
         }
 
+        /**<summary>Sends the FoodItems that have not been synced to the database.</summary>
+         */
         private async Task SaveUnsyncedFoodItemsAsync()
         {
             loadingWindow.Show();
@@ -485,7 +499,8 @@ namespace LunchManager
 
         /**<summary>Takes a food item created with the default food item constructor and makes a new one with the proper constructor.
          * The datagrid needs to use the default constructor to create a new row - this method converts it into a proper food item.</summary>
-         * <remarks>Assumes the data</remarks>
+         * <remarks>Assumes the data in the old FoodItem is valid.</remarks>
+         * <param name="foodItem">The FoodItem to reconstruct.</param>
          */
         private FoodItem ReconstructFoodItem(FoodItem foodItem)
         {
@@ -795,6 +810,7 @@ namespace LunchManager
             }
         }
 
+        /*
         private async void dataGridStudents_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
         {
             if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
@@ -816,6 +832,7 @@ namespace LunchManager
             IsEnabled = true;
 
         }
+        */
 
         private async void btnAddToStudentBalance_Click(object sender, RoutedEventArgs e)
         {
@@ -836,8 +853,9 @@ namespace LunchManager
             else
             {
                 txtStudentBalanceAddRemoveError.Visibility = Visibility.Hidden;
-                displayedStudents[dataGridStudents.SelectedIndex].Balance += decimal.Round(amount, 2);
-                await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                //displayedStudents[dataGridStudents.SelectedIndex].Balance += decimal.Round(amount, 2);
+                //await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                await SendNewTransactionAsync((amount * -1), displayedStudents[dataGridStudents.SelectedIndex]); //cost is negative to add to balance
 
                 await RefreshStudentsDataGrid();
             }
@@ -865,8 +883,9 @@ namespace LunchManager
             else
             {
                 txtStudentBalanceAddRemoveError.Visibility = Visibility.Hidden;
-                displayedStudents[dataGridStudents.SelectedIndex].Balance -= decimal.Round(amount, 2);
-                await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                //displayedStudents[dataGridStudents.SelectedIndex].Balance -= decimal.Round(amount, 2);
+                //await SaveModifiedStudentAsync(displayedStudents[dataGridStudents.SelectedIndex]);
+                await SendNewTransactionAsync(amount, displayedStudents[dataGridStudents.SelectedIndex]);
 
                 await RefreshStudentsDataGrid();
             }
@@ -875,6 +894,50 @@ namespace LunchManager
             IsEnabled = true;
         }
 
+        /**<summary>Creates and sends a new transaction to the database.</summary>
+         * <param name="student">The student the transaction belongs to. The student must exist in the database.</param>
+         * <param name="cost">The amount to remove from the student's balance. Negative to add to a student's balance.</param>
+         */
+        private async Task SendNewTransactionAsync(decimal cost, Student student)
+        {
+            string foodName = "";
+            if (cost <= 0)
+            {
+                foodName = "Added to balance";
+            }
+            else
+            {
+                foodName = "Removed from balance";
+            }
+            Transaction newTransaction = new Transaction(student.StudentID, "0", foodName, cost, student.Name, thisSchool.ID, thisSchool.Name);
+            
+            Trace.WriteLine("trying to send a tranaction with ID: " + newTransaction.ID); //DEBUG
+            string jsonString = JsonSerializer.Serialize(newTransaction);
+            var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+            try
+            {
+                var response = await client.PostAsync("api/Transactions", httpContent);
+                Trace.WriteLine(jsonString); //DEBUG
+                Trace.WriteLine("sync new row response: " + response); //DEBUG
+                if (!response.IsSuccessStatusCode && !(response.StatusCode == System.Net.HttpStatusCode.Conflict))
+                {
+                    Trace.WriteLine("can't reach the database");
+                    MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Close();
+                }
+            }
+            catch (HttpRequestException) //this exception is not thrown if the URI can't be found
+            {
+                Trace.WriteLine("can't reach the database");
+                MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+
+        }
+
+        /**<summary>Saves changes made to a student.</summary>
+         * <param name="student">The modified student.</param>
+         */
         private async Task SaveModifiedStudentAsync(Student student)
         {
             Trace.WriteLine("trying to sync a student with ID: " + student.StudentID); //DEBUG
@@ -913,10 +976,13 @@ namespace LunchManager
             IsEnabled = true;
         }
 
+        /**
+         * <summary>Refreshes the datagrid displaying students.</summary>
+         */
         private async Task RefreshStudentsDataGrid()
         {
             students = await GetStudentsAsync();
-            //displayedStudents = students; //don't need this, displayedStudents references students
+            displayedStudents = students; 
 
             dataGridStudents.ItemsSource = null;
             dataGridStudents.ItemsSource = displayedStudents;
@@ -1008,6 +1074,8 @@ namespace LunchManager
             IsEnabled = true;
         }
 
+        /**<summary>Refreshes the transactions data grid.</summary>
+         */
         private async Task RefreshTransactionsDataGrid()
         {
             DateTime startDate = dpTransactionStart.SelectedDate ?? DateTime.Now;
@@ -1178,6 +1246,7 @@ namespace LunchManager
          * <param name="endDate">The end of the range of dates. Transactions taking place on this day are excluded 
          * from the results.</param>
          * <param name="max">The maximum number of transactions to load.</param>
+         * <returns>The transactions within the two dates.</returns>
          */
         private async Task<ObservableCollection<Transaction>> GetTransactionsBetweenAsync(DateTime startDate, DateTime endDate, int max)
         {

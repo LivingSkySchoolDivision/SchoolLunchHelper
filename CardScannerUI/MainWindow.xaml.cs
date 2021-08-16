@@ -165,6 +165,8 @@ namespace CardScannerUI
             
         }
 
+        /**<summary>Loads the school object from the backup JSON file.</summary>
+         */
         private void GetThisSchoolFromJson()
         {
             if (!File.Exists(schoolJsonPath))
@@ -192,7 +194,9 @@ namespace CardScannerUI
             }
         }
 
-
+        /**<summary>Event handler for the window's closing event. If the shutdown field is true the program will close 
+         * without trying to sync transactions.</summary>
+         */
         private async void Window_Closing(object sender, CancelEventArgs e)
         { 
             if (unsyncedTransactions.Count != 0 && !shutdown) //if there are unsynced transactions and the program should not be closed without syncing
@@ -531,6 +535,8 @@ namespace CardScannerUI
             Trace.WriteLine("1"); //DEBUG
         }
 
+        /**<summary>Asynchronously reads student and foodItem data from the backup JSON files and stores it in the window's lists.</summary>
+         */
         private async Task ReadDataFromJsonAsync()
         {
             if (!File.Exists(studentsJsonPath) || !File.Exists(foodItemsJsonPath))
@@ -575,6 +581,8 @@ namespace CardScannerUI
 
         }
 
+        /**<summary>Writes the program's data into JSON files.</summary>
+         */
         private async Task WriteDataToBackupJsonsAsync()
         {
             //writes the current school to a json

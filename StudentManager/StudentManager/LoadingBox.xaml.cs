@@ -20,6 +20,10 @@ namespace StudentManager
     public partial class LoadingBox : Window
     {
         public static readonly string defaultMessage = "Loading, please wait";
+
+        /**<summary>Constructor for LoadingBox.</summary>
+         * <param name="owner">The window that owns the instance of the LoadingBox.</param>
+         */
         public LoadingBox(Window owner)
         {
             InitializeComponent();
