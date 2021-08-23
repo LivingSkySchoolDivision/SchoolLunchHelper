@@ -53,7 +53,7 @@
         <Label Content="Field" HorizontalAlignment="Left" Margin="306,85,0,0" VerticalAlignment="Top" FontSize="16"/>
         <Label Content="Column header" HorizontalAlignment="Left" Margin="408,85,0,0" VerticalAlignment="Top" FontSize="16"/>
         <Label Content="Import a CSV" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" FontSize="24" FontWeight="Bold" />
-        <Button x:Name="btnConfirmImport" Content="Import" Click="btnConfirmImport_Click" Height="28" HorizontalAlignment="Left" Margin="338,334,0,0" VerticalAlignment="Top" Width="124"/>
+        <Button x:Name="btnConfirmImport" Content="Import" Click="btnConfirmImport_Click" Height="28" HorizontalAlignment="Left" Margin="338,334,0,0" VerticalAlignment="Top" Width="124" BorderBrush="#FF007ACC" BorderThickness="2"/>
 
 
     </Grid>

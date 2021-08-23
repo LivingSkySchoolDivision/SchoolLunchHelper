@@ -234,6 +234,11 @@ namespace StudentManager
         {
             loadingWindow.Show();
             IsEnabled = false;
+            if (unsyncedStudents.Count == 0)
+            {
+                return;
+            }
+
             for (int i = unsyncedStudents.Count - 1; i >= 0; i--)
             {
                 Trace.WriteLine("trying to sync a student with ID: " + unsyncedStudents[i].StudentID); //DEBUG

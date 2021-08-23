@@ -21,6 +21,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Data.Models;
 
+
 namespace StudentManager
 {
     /// <summary>
@@ -52,8 +53,43 @@ namespace StudentManager
         private void btnChooseFile_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            if ((openFileDialog.ShowDialog() == true) && File.Exists(openFileDialog.FileName))
+            if ((openFileDialog.ShowDialog() == true) && (File.Exists(openFileDialog.FileName)))
             {
+                if (!openFileDialog.FileName.EndsWith(".csv"))
+                {
+                    MessageBox.Show("The chosen file is not a CSV. Please choose a CSV file.", "File is not a CSV", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+                try
+                {
+                    loadingWindow.Show();
+                    IsEnabled = false;
+                    //try to read as a csv, if it fails we know it is not a CSV
+                    var path = openFileDialog.FileName;
+                    using (var parser = new TextFieldParser(path))
+                    {
+                        parser.TextFieldType = FieldType.Delimited;
+                        parser.SetDelimiters(",");
+
+                        string[] line;
+                        while (!parser.EndOfData)
+                        {
+                            line = parser.ReadFields();
+                        }
+                    }
+
+                }
+                catch
+                {
+                    MessageBox.Show("The chosen file cannot be read as a CSV.", "File is not a CSV", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                finally
+                {
+                    loadingWindow.Hide();
+                    IsEnabled = true;
+                }
+
                 fileName = openFileDialog.FileName;
                 tbFileChosen.Text = fileName;
 
@@ -162,86 +198,106 @@ namespace StudentManager
 
         private void btnConfirmImport_Click(object sender, RoutedEventArgs e)
         {
-            loadingWindow.Show();
-            IsEnabled = false;
+            if (fileName != null)
+            {
+                loadingWindow.Show();
+                IsEnabled = false;
 
-            ImportCSV();
+                ImportCSV();
 
-            loadingWindow.Hide();
-            IsEnabled = true;
-            Close();
+                loadingWindow.Hide();
+                IsEnabled = true;
+                Close();
+            }
+            
         }
 
         /**<summary>Converts the CSV rows to student objects.</summary>
          */
         private void ImportCSV()
         {
-            using (TextFieldParser parser = new TextFieldParser(fileName))
+            loadingWindow.Show();
+            IsEnabled = false;
+            try
             {
-                int countRow = 0;
-                int countColumn = 0;
-                int numColumns = headers.Count;
-                decimal newBalance = 0;
-                string newStudentID = "";
-                string newName = "";
-                string newMedicalInfo = "";
-                string newSchoolID = "";
-
-                parser.TextFieldType = FieldType.Delimited;
-                parser.SetDelimiters(",");
-                while (!parser.EndOfData)
+                using (TextFieldParser parser = new TextFieldParser(fileName))
                 {
-                    Trace.WriteLine("row num = " + countRow); //DEBUG
+                    int countRow = 0;
+                    int countColumn = 0;
+                    int numColumns = headers.Count;
+                    decimal newBalance = 0;
+                    string newStudentID = "";
+                    string newName = "";
+                    string newMedicalInfo = "";
+                    string newSchoolID = "";
 
-                    //Process row
-                    string[] fields = parser.ReadFields();
-                    foreach (string field in fields)
+                    parser.TextFieldType = FieldType.Delimited;
+                    parser.SetDelimiters(",");
+                    while (!parser.EndOfData)
                     {
-                        //Process fields
+                        Trace.WriteLine("row num = " + countRow); //DEBUG
+
+                        //Process row
+                        string[] fields = parser.ReadFields();
+                        foreach (string field in fields)
+                        {
+                            //Process fields
+                            if (countRow != 0)
+                            {
+                                Trace.WriteLine("countRow != 0");
+                                Trace.WriteLine("range of headers list: 0-" + (headers.Count - 1));
+                                Trace.WriteLine("column num: " + countColumn);
+                                if (cbChooseBalanceColumn.SelectedItem.Equals(headers[countColumn]) && (!decimal.TryParse(field, out newBalance)))
+                                {
+                                    Trace.WriteLine("could not parse decimal: " + field); //DEBUG
+                                    MessageBox.Show("There was an error importing the file. Make sure the columns and fields are set correctly and try again.", "Failed to import", MessageBoxButton.OK, MessageBoxImage.Error);
+                                    return;
+                                }
+                                else if (cbChooseMedicalInfoColumn.SelectedItem.Equals(headers[countColumn]))
+                                {
+                                    newMedicalInfo = field;
+                                }
+                                else if (cbChooseNameColumn.SelectedItem.Equals(headers[countColumn]))
+                                {
+                                    newName = field;
+                                }
+                                else if (cbChooseStudentNumColumn.SelectedItem.Equals(headers[countColumn]))
+                                {
+                                    newStudentID = field;
+                                }
+                                else if (cbChooseSchoolColumn.SelectedItem.Equals(headers[countColumn]))
+                                {
+                                    newSchoolID = field;
+                                }
+                                Trace.WriteLine("unsynced students count: " + MainWindow.unsyncedStudents.Count); //DEBUG
+                            }
+                            Trace.WriteLine("column num = " + countColumn); //DEBUG
+                            Trace.WriteLine("field: " + field); //DEBUG
+                            countColumn += 1;
+                        }
                         if (countRow != 0)
                         {
-                            Trace.WriteLine("countRow != 0");
-                            Trace.WriteLine("range of headers list: 0-" + (headers.Count - 1));
-                            Trace.WriteLine("column num: " + countColumn);
-                            if (cbChooseBalanceColumn.SelectedItem.Equals(headers[countColumn]) && (!decimal.TryParse(field, out newBalance)))
-                            {
-                                Trace.WriteLine("could not parse decimal: " + field); //DEBUG
-                                MessageBox.Show("There was an error importing the file. Make sure the columns and fields are set correctly and try again.", "Failed to import", MessageBoxButton.OK, MessageBoxImage.Error);
-                                return;
-                            }
-                            else if (cbChooseMedicalInfoColumn.SelectedItem.Equals(headers[countColumn]))
-                            {
-                                newMedicalInfo = field;
-                            }
-                            else if (cbChooseNameColumn.SelectedItem.Equals(headers[countColumn]))
-                            {
-                                newName = field;
-                            }
-                            else if (cbChooseStudentNumColumn.SelectedItem.Equals(headers[countColumn]))
-                            {
-                                newStudentID = field;
-                            }
-                            else if (cbChooseSchoolColumn.SelectedItem.Equals(headers[countColumn]))
-                            {
-                                newSchoolID = field;
-                            }
-                            Trace.WriteLine("unsynced students count: " + MainWindow.unsyncedStudents.Count); //DEBUG
+                            MainWindow.unsyncedStudents.Add(new Student(newStudentID, newName, newSchoolID, newBalance, newMedicalInfo));
+                            Trace.WriteLine("student-> name=" + MainWindow.unsyncedStudents[0].Name + ", studentNum=" + MainWindow.unsyncedStudents[0].StudentID + ", school=" + MainWindow.unsyncedStudents[0].SchoolID + ", balance=" + MainWindow.unsyncedStudents[0].Balance + ", medical info=" + MainWindow.unsyncedStudents[0].MedicalInfo); //DEBUG
                         }
-                        Trace.WriteLine("column num = " + countColumn); //DEBUG
-                        Trace.WriteLine("field: " + field); //DEBUG
-                        countColumn += 1;
+                        countRow += 1;
+                        countColumn = 0;
                     }
-                    if (countRow != 0)
-                    {
-                        MainWindow.unsyncedStudents.Add(new Student(newStudentID, newName, newSchoolID, newBalance, newMedicalInfo));
-                        Trace.WriteLine("student-> name=" + MainWindow.unsyncedStudents[0].Name + ", studentNum=" + MainWindow.unsyncedStudents[0].StudentID + ", school=" + MainWindow.unsyncedStudents[0].SchoolID + ", balance=" + MainWindow.unsyncedStudents[0].Balance + ", medical info=" + MainWindow.unsyncedStudents[0].MedicalInfo); //DEBUG
-                    }
-                    countRow += 1;
-                    countColumn = 0;
-                }
-                
 
+
+                }
             }
+            catch
+            {
+                MessageBox.Show("Error importing from the chosen file.", "Import error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            finally
+            {
+                loadingWindow.Hide();
+                IsEnabled = true;
+            }
+            
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
