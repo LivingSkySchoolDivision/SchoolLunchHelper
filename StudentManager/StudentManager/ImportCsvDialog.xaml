@@ -9,6 +9,7 @@
         WindowStartupLocation="CenterOwner"
         Loaded="Window_Loaded"
         Closing="Window_Closing" WindowStyle="ToolWindow"
+        ContentRendered="Window_ContentRendered"
         >
     <Grid Background="#FFE5E5E5">
         <Rectangle HorizontalAlignment="Left" Height="171" Margin="21,71,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>

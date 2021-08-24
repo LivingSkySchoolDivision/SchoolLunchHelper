@@ -29,12 +29,37 @@ namespace StudentManager
     /// </summary>
     public partial class ImportCsvDialog : Window
     {
-        private ObservableCollection<string> _headers = new();
+        private ObservableCollection<string> _headers;
         private LoadingBox loadingWindow;
         private string fileName;
+        private bool acceptImport;
+
+        private string cbStudentNumHeader;
+        private string cbBalanceHeader;
+        private string cbNameHeader;
+        private string cbMedicalInfoHeader;
+        private string cbSchoolHeader;
         
 
         public ObservableCollection<string> headers { get { return _headers; } set { _headers = value; } }
+
+        public string FileName { get { return fileName; } }
+        public bool AcceptImport { get { return acceptImport; } }
+
+        /*
+        public string GetCbChooseStudentNumColumn { get { return cbStudentNumHeader; } }
+        public string GetCbChooseBalanceColumn { get { return cbBalanceHeader; } }
+        public string GetCbChooseNameColumn { get { return cbNameHeader; } }
+        public string GetCbChooseMedicalInfoColumn { get { return cbMedicalInfoHeader; } }
+        public string GetCbChooseSchoolColumn { get { return cbSchoolHeader; } }
+
+        public string GetCbChooseStudentNumColumn { get { return cbChooseStudentNumColumn.SelectedItem.ToString(); } }
+        public string GetCbChooseBalanceColumn { get { return cbChooseBalanceColumn.SelectedItem.ToString(); } }
+        public string GetCbChooseNameColumn { get { return cbChooseNameColumn.SelectedItem.ToString(); } }
+        public string GetCbChooseMedicalInfoColumn { get { return cbChooseMedicalInfoColumn.SelectedItem.ToString(); } }
+        public string GetCbChooseSchoolColumn { get { return cbChooseSchoolColumn.SelectedItem.ToString(); } }
+        */
+
 
         /**<summary>Constructor for ImportCsvDialog.</summary>
          * <param name="owner">The window's owner window.</param>
@@ -43,11 +68,15 @@ namespace StudentManager
         {
             InitializeComponent();
             Owner = owner;
+            acceptImport = false;
+            Trace.WriteLine("headers = new()"); //DEBUG
+            headers = new();
         }
         
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             loadingWindow = new LoadingBox(this);
+            btnConfirmImport.IsDefault = true;
         }
 
         private void btnChooseFile_Click(object sender, RoutedEventArgs e)
@@ -62,7 +91,8 @@ namespace StudentManager
                 }
                 try
                 {
-                    loadingWindow.Show();
+                    //loadingWindow.Show();
+
                     IsEnabled = false;
                     //try to read as a csv, if it fails we know it is not a CSV
                     var path = openFileDialog.FileName;
@@ -86,16 +116,20 @@ namespace StudentManager
                 }
                 finally
                 {
-                    loadingWindow.Hide();
+                    //loadingWindow.Hide();
+
                     IsEnabled = true;
                 }
 
                 fileName = openFileDialog.FileName;
                 tbFileChosen.Text = fileName;
 
-                loadingWindow.Show();
+                //loadingWindow.Show();
+
                 IsEnabled = false;
+
                 headers = new ObservableCollection<string>();
+                Trace.WriteLine("headers = new()"); //DEBUG
                 using (TextFieldParser parser = new TextFieldParser(fileName))
                 {
                     int countRow = 0;
@@ -114,6 +148,7 @@ namespace StudentManager
                         Trace.WriteLine("column num = " + countColumn); //DEBUG
                         Trace.WriteLine("field: " + field); //DEBUG
                         countColumn += 1;
+                        Trace.WriteLine("headers count: " + headers.Count); //DEBUG
                     }
  
                 }
@@ -189,128 +224,279 @@ namespace StudentManager
                     cbChooseMedicalInfoColumn.SelectedIndex = headers.IndexOf("MedicalInfo");
                 }
 
-                loadingWindow.Hide();
+                //loadingWindow.Hide();
+                Trace.WriteLine("final headers count: " + headers.Count); //DEBUG
+
                 IsEnabled = true;
 
             }
                 
         }
 
-        private void btnConfirmImport_Click(object sender, RoutedEventArgs e)
+        private async void btnConfirmImport_Click(object sender, RoutedEventArgs e)
         {
             if (fileName != null)
             {
-                loadingWindow.Show();
-                IsEnabled = false;
+                cbStudentNumHeader = cbChooseStudentNumColumn.SelectedItem.ToString();
+                cbBalanceHeader = cbChooseBalanceColumn.SelectedItem.ToString();
+                cbNameHeader = cbChooseNameColumn.SelectedItem.ToString();
+                cbMedicalInfoHeader = cbChooseMedicalInfoColumn.SelectedItem.ToString();
+                cbSchoolHeader = cbChooseSchoolColumn.SelectedItem.ToString();
 
-                ImportCSV();
+                List<string> chosenHeaders = new List<string>(new string[] {cbBalanceHeader, cbMedicalInfoHeader, cbNameHeader, cbSchoolHeader, cbSchoolHeader});
+                if (chosenHeaders.Count != chosenHeaders.Distinct().Count()) //!!this is always true - even with 5 distinct headers distinct.count=4
+                {
+                    Trace.WriteLine("count = " + chosenHeaders.Count + ", distinct headers = " + chosenHeaders.Distinct().Count());
+                    Trace.WriteLine("balance = " + cbBalanceHeader); //DEBUG
+                    Trace.WriteLine("medicalInfo = " + cbMedicalInfoHeader); //DEBUG
+                    Trace.WriteLine("name = " + cbNameHeader); //DEBUG
+                    Trace.WriteLine("studentID = " + cbStudentNumHeader); //DEBUG
+                    Trace.WriteLine("school = " + cbSchoolHeader); //DEBUG
+                    MessageBox.Show("Each CSV column can only be matched to one field.", "Cannot Import", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                loadingWindow.Hide();
-                IsEnabled = true;
+                acceptImport = true;
+                await ImportCsvAsync();
+
+                //prepare to close
+                tbFileChosen.Text = "No file chosen";
+                headers = new();
+                cbChooseStudentNumColumn.ItemsSource = null;
+                cbChooseNameColumn.ItemsSource = null;
+                cbChooseMedicalInfoColumn.ItemsSource = null;
+                cbChooseBalanceColumn.ItemsSource = null;
+                cbChooseSchoolColumn.ItemsSource = null;
                 Close();
             }
-            
+
         }
 
-        /**<summary>Converts the CSV rows to student objects.</summary>
-         */
-        private void ImportCSV()
+
+        private async Task ImportCsvAsync()
         {
             loadingWindow.Show();
             IsEnabled = false;
             try
             {
-                using (TextFieldParser parser = new TextFieldParser(fileName))
-                {
-                    int countRow = 0;
-                    int countColumn = 0;
-                    int numColumns = headers.Count;
-                    decimal newBalance = 0;
-                    string newStudentID = "";
-                    string newName = "";
-                    string newMedicalInfo = "";
-                    string newSchoolID = "";
-
-                    parser.TextFieldType = FieldType.Delimited;
-                    parser.SetDelimiters(",");
-                    while (!parser.EndOfData)
-                    {
-                        Trace.WriteLine("row num = " + countRow); //DEBUG
-
-                        //Process row
-                        string[] fields = parser.ReadFields();
-                        foreach (string field in fields)
-                        {
-                            //Process fields
-                            if (countRow != 0)
-                            {
-                                Trace.WriteLine("countRow != 0");
-                                Trace.WriteLine("range of headers list: 0-" + (headers.Count - 1));
-                                Trace.WriteLine("column num: " + countColumn);
-                                if (cbChooseBalanceColumn.SelectedItem.Equals(headers[countColumn]) && (!decimal.TryParse(field, out newBalance)))
-                                {
-                                    Trace.WriteLine("could not parse decimal: " + field); //DEBUG
-                                    MessageBox.Show("There was an error importing the file. Make sure the columns and fields are set correctly and try again.", "Failed to import", MessageBoxButton.OK, MessageBoxImage.Error);
-                                    return;
-                                }
-                                else if (cbChooseMedicalInfoColumn.SelectedItem.Equals(headers[countColumn]))
-                                {
-                                    newMedicalInfo = field;
-                                }
-                                else if (cbChooseNameColumn.SelectedItem.Equals(headers[countColumn]))
-                                {
-                                    newName = field;
-                                }
-                                else if (cbChooseStudentNumColumn.SelectedItem.Equals(headers[countColumn]))
-                                {
-                                    newStudentID = field;
-                                }
-                                else if (cbChooseSchoolColumn.SelectedItem.Equals(headers[countColumn]))
-                                {
-                                    newSchoolID = field;
-                                }
-                                Trace.WriteLine("unsynced students count: " + MainWindow.unsyncedStudents.Count); //DEBUG
-                            }
-                            Trace.WriteLine("column num = " + countColumn); //DEBUG
-                            Trace.WriteLine("field: " + field); //DEBUG
-                            countColumn += 1;
-                        }
-                        if (countRow != 0)
-                        {
-                            MainWindow.unsyncedStudents.Add(new Student(newStudentID, newName, newSchoolID, newBalance, newMedicalInfo));
-                            Trace.WriteLine("student-> name=" + MainWindow.unsyncedStudents[0].Name + ", studentNum=" + MainWindow.unsyncedStudents[0].StudentID + ", school=" + MainWindow.unsyncedStudents[0].SchoolID + ", balance=" + MainWindow.unsyncedStudents[0].Balance + ", medical info=" + MainWindow.unsyncedStudents[0].MedicalInfo); //DEBUG
-                        }
-                        countRow += 1;
-                        countColumn = 0;
-                    }
-
-
-                }
+                await Task.Run(() => ImportCSV());
             }
             catch
             {
+                loadingWindow.Hide();
+                IsEnabled = true;
                 MessageBox.Show("Error importing from the chosen file.", "Import error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            finally
-            {
-                loadingWindow.Hide();
-                IsEnabled = true;
-            }
-            
+            loadingWindow.Hide();
+            IsEnabled = true;
+
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void ImportCSV()
+        {
+            /*
+            this.Dispatcher.Invoke(() =>
+            {
+                fileName = importCsvDialog.FileName;
+                headers = importCsvDialog.headers;
+                cbChooseBalanceHeader = importCsvDialog.GetCbChooseBalanceColumn;
+                cbChooseMedicalInfoHeader = importCsvDialog.GetCbChooseMedicalInfoColumn;
+                cbChooseNameHeader = importCsvDialog.GetCbChooseNameColumn;
+                cbChooseStudentNumHeader = importCsvDialog.GetCbChooseStudentNumColumn;
+                cbChooseSchoolHeader = importCsvDialog.GetCbChooseSchoolColumn;
+            });
+            */
+
+            if ((headers.Count == 0) || string.IsNullOrWhiteSpace(fileName))
+            {
+                Trace.WriteLine("headers is empty");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(cbBalanceHeader) || string.IsNullOrWhiteSpace(cbMedicalInfoHeader) || string.IsNullOrWhiteSpace(cbNameHeader) || string.IsNullOrWhiteSpace(cbStudentNumHeader) || string.IsNullOrWhiteSpace(cbSchoolHeader))
+            {
+                Trace.WriteLine("one or more of the cb headers were null or whitespace");
+                return;
+            }
+
+            using (TextFieldParser parser = new TextFieldParser(fileName))
+            {
+                int countRow = 0;
+                int countColumn = 0;
+                int numColumns = headers.Count;
+                decimal newBalance = 0;
+                string newStudentID = "";
+                string newName = "";
+                string newMedicalInfo = "";
+                string newSchoolID = "";
+
+                parser.TextFieldType = FieldType.Delimited;
+                parser.SetDelimiters(",");
+                while (!parser.EndOfData)
+                {
+                    Trace.WriteLine("row num = " + countRow); //DEBUG
+
+                    //Process row
+                    string[] fields = parser.ReadFields();
+                    foreach (string field in fields)
+                    {
+                        //Process fields
+                        if (countRow != 0)
+                        {
+                            Trace.WriteLine("countRow != 0");
+                            Trace.WriteLine("range of headers list: 0-" + (headers.Count - 1));
+                            Trace.WriteLine("column num: " + countColumn);
+                            if (cbBalanceHeader.Equals(headers[countColumn]) && (!decimal.TryParse(field, out newBalance)))
+                            {
+                                Trace.WriteLine("could not parse decimal: " + field); //DEBUG
+                                MessageBox.Show("There was an error importing the file. Make sure the columns and fields are set correctly and try again.", "Failed to import", MessageBoxButton.OK, MessageBoxImage.Error);
+                                return;
+                            }
+                            else if (cbMedicalInfoHeader.Equals(headers[countColumn]))
+                            {
+                                newMedicalInfo = field;
+                            }
+                            else if (cbNameHeader.Equals(headers[countColumn]))
+                            {
+                                newName = field;
+                            }
+                            else if (cbStudentNumHeader.Equals(headers[countColumn]))
+                            {
+                                newStudentID = field;
+                            }
+                            else if (cbSchoolHeader.Equals(headers[countColumn]))
+                            {
+                                newSchoolID = field;
+                            }
+                            Trace.WriteLine("unsynced students count: " + MainWindow.unsyncedStudents.Count); //DEBUG
+                        }
+                        Trace.WriteLine("column num = " + countColumn); //DEBUG
+                        Trace.WriteLine("field: " + field); //DEBUG
+                        countColumn += 1;
+                    }
+                    if (countRow != 0)
+                    {
+                        MainWindow.unsyncedStudents.Add(new Student(newStudentID, newName, newSchoolID, newBalance, newMedicalInfo));
+                        Trace.WriteLine("student-> name=" + MainWindow.unsyncedStudents[0].Name + ", studentNum=" + MainWindow.unsyncedStudents[0].StudentID + ", school=" + MainWindow.unsyncedStudents[0].SchoolID + ", balance=" + MainWindow.unsyncedStudents[0].Balance + ", medical info=" + MainWindow.unsyncedStudents[0].MedicalInfo); //DEBUG
+                    }
+                    countRow += 1;
+                    countColumn = 0;
+                }
+            }
+        }
+
+            /**<summary>Converts the CSV rows to student objects.</summary>
+             */
+            /*
+            private void ImportCSV()
+            {
+                try
+                {
+                    using (TextFieldParser parser = new TextFieldParser(fileName))
+                    {
+                        int countRow = 0;
+                        int countColumn = 0;
+                        int numColumns = headers.Count;
+                        decimal newBalance = 0;
+                        string newStudentID = "";
+                        string newName = "";
+                        string newMedicalInfo = "";
+                        string newSchoolID = "";
+
+                        parser.TextFieldType = FieldType.Delimited;
+                        parser.SetDelimiters(",");
+                        while (!parser.EndOfData)
+                        {
+                            Trace.WriteLine("row num = " + countRow); //DEBUG
+
+                            //Process row
+                            string[] fields = parser.ReadFields();
+                            foreach (string field in fields)
+                            {
+                                //Process fields
+                                if (countRow != 0)
+                                {
+                                    Trace.WriteLine("countRow != 0");
+                                    Trace.WriteLine("range of headers list: 0-" + (headers.Count - 1));
+                                    Trace.WriteLine("column num: " + countColumn);
+                                    if (cbChooseBalanceColumn.SelectedItem.Equals(headers[countColumn]) && (!decimal.TryParse(field, out newBalance)))
+                                    {
+                                        Trace.WriteLine("could not parse decimal: " + field); //DEBUG
+                                        MessageBox.Show("There was an error importing the file. Make sure the columns and fields are set correctly and try again.", "Failed to import", MessageBoxButton.OK, MessageBoxImage.Error);
+                                        return;
+                                    }
+                                    else if (cbChooseMedicalInfoColumn.SelectedItem.Equals(headers[countColumn]))
+                                    {
+                                        newMedicalInfo = field;
+                                    }
+                                    else if (cbChooseNameColumn.SelectedItem.Equals(headers[countColumn]))
+                                    {
+                                        newName = field;
+                                    }
+                                    else if (cbChooseStudentNumColumn.SelectedItem.Equals(headers[countColumn]))
+                                    {
+                                        newStudentID = field;
+                                    }
+                                    else if (cbChooseSchoolColumn.SelectedItem.Equals(headers[countColumn]))
+                                    {
+                                        newSchoolID = field;
+                                    }
+                                    Trace.WriteLine("unsynced students count: " + MainWindow.unsyncedStudents.Count); //DEBUG
+                                }
+                                Trace.WriteLine("column num = " + countColumn); //DEBUG
+                                Trace.WriteLine("field: " + field); //DEBUG
+                                countColumn += 1;
+                            }
+                            if (countRow != 0)
+                            {
+                                MainWindow.unsyncedStudents.Add(new Student(newStudentID, newName, newSchoolID, newBalance, newMedicalInfo));
+                                Trace.WriteLine("student-> name=" + MainWindow.unsyncedStudents[0].Name + ", studentNum=" + MainWindow.unsyncedStudents[0].StudentID + ", school=" + MainWindow.unsyncedStudents[0].SchoolID + ", balance=" + MainWindow.unsyncedStudents[0].Balance + ", medical info=" + MainWindow.unsyncedStudents[0].MedicalInfo); //DEBUG
+                            }
+                            countRow += 1;
+                            countColumn = 0;
+                        }
+
+
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Error importing from the chosen file.", "Import error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+            }
+            */
+
+
+            private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             e.Cancel = true;
-            tbFileChosen.Text = "No file chosen";
-            headers = new();
+            //tbFileChosen.Text = "No file chosen";
+            //headers = new();
+            /*
             cbChooseStudentNumColumn.ItemsSource = null;
             cbChooseNameColumn.ItemsSource = null;
             cbChooseMedicalInfoColumn.ItemsSource = null;
             cbChooseBalanceColumn.ItemsSource = null;
             cbChooseSchoolColumn.ItemsSource = null;
+            */
             Hide();
+        }
+    
+
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            tbFileChosen.Text = "No file chosen";
+            headers = new();
+            Trace.WriteLine("headers = new()"); //DEBUG
+            cbChooseStudentNumColumn.ItemsSource = null;
+            cbChooseNameColumn.ItemsSource = null;
+            cbChooseMedicalInfoColumn.ItemsSource = null;
+            cbChooseBalanceColumn.ItemsSource = null;
+            cbChooseSchoolColumn.ItemsSource = null;
+            
         }
     }
 }

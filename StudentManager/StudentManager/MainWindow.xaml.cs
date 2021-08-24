@@ -28,6 +28,8 @@ using System.Configuration;
 using Microsoft.Win32;
 using CsvHelper;
 using System.Globalization;
+using System.Windows.Threading;
+using Microsoft.VisualBasic.FileIO;
 
 namespace StudentManager
 {
@@ -39,7 +41,7 @@ namespace StudentManager
         private static HttpClient client;
         private string apiUri;
         private static ObservableCollection<Student> _students;
-        private LoadingBox loadingWindow;
+        private static LoadingBox loadingWindow;
         private ImportCsvDialog importCsvDialog;
         private AddStudentDialog addStudentDialog;
         private static List<Student> _unsyncedStudents;
@@ -206,6 +208,14 @@ namespace StudentManager
         private async void btnImportCsv_Click(object sender, RoutedEventArgs e)
         {
             importCsvDialog.ShowDialog();
+
+            bool accept = importCsvDialog.AcceptImport;
+            Trace.WriteLine("accept = " + accept); //DEBUG
+            if (!accept)
+            {
+                return;
+            }
+
             if (unsyncedStudents.Count > 0)
             {
                 var result = MessageBox.Show("Would you like to update the students that already exist in the database with the information in the imported file? Balances will not be updated.", "Update existing students?", MessageBoxButton.YesNoCancel);
@@ -225,6 +235,7 @@ namespace StudentManager
             
         }
 
+
         /**<summary>Syncs students to the database with the option to replace the information of students that already 
          * exist. The existing student's balances will not be updated but the rest of their information will be if
          * the option to replace existing students is enabled.</summary>
@@ -232,12 +243,12 @@ namespace StudentManager
          */
         private async Task SyncUnsyncedStudentsAsync(bool replaceExisting) 
         {
-            loadingWindow.Show();
-            IsEnabled = false;
             if (unsyncedStudents.Count == 0)
             {
                 return;
             }
+            loadingWindow.Show();
+            IsEnabled = false;
 
             for (int i = unsyncedStudents.Count - 1; i >= 0; i--)
             {
@@ -486,5 +497,8 @@ namespace StudentManager
             }
             return null;
         }
+
+        
+
     }
 }
