@@ -250,17 +250,6 @@ namespace StudentManager
                 
                 acceptImport = true;
                 await ImportCsvAsync();
-
-                //prepare to close
-                /*
-                tbFileChosen.Text = "No file chosen";
-                headers = new();
-                cbChooseStudentNumColumn.ItemsSource = null;
-                cbChooseNameColumn.ItemsSource = null;
-                cbChooseMedicalInfoColumn.ItemsSource = null;
-                cbChooseBalanceColumn.ItemsSource = null;
-                cbChooseSchoolColumn.ItemsSource = null;
-                */
                 Close();
             }
 
@@ -290,19 +279,6 @@ namespace StudentManager
 
         private void ImportCSV()
         {
-            /*
-            this.Dispatcher.Invoke(() =>
-            {
-                fileName = importCsvDialog.FileName;
-                headers = importCsvDialog.headers;
-                cbChooseBalanceHeader = importCsvDialog.GetCbChooseBalanceColumn;
-                cbChooseMedicalInfoHeader = importCsvDialog.GetCbChooseMedicalInfoColumn;
-                cbChooseNameHeader = importCsvDialog.GetCbChooseNameColumn;
-                cbChooseStudentNumHeader = importCsvDialog.GetCbChooseStudentNumColumn;
-                cbChooseSchoolHeader = importCsvDialog.GetCbChooseSchoolColumn;
-            });
-            */
-
             if ((headers.Count == 0) || string.IsNullOrWhiteSpace(fileName))
             {
                 Trace.WriteLine("headers is empty");
@@ -345,7 +321,12 @@ namespace StudentManager
                             if (cbBalanceHeader.Equals(headers[countColumn]) && (!decimal.TryParse(field, out newBalance)))
                             {
                                 Trace.WriteLine("could not parse decimal: " + field); //DEBUG
-                                MessageBox.Show("There was an error importing the file. Make sure the columns and fields are set correctly and try again.", "Failed to import", MessageBoxButton.OK, MessageBoxImage.Error);
+                                //display the message box on top of the loading window
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    MessageBox.Show("There was an error importing the file. Make sure the columns and fields are set correctly and try again.", "Failed to import", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                                });
                                 return;
                             }
                             else if (cbMedicalInfoHeader.Equals(headers[countColumn]))
