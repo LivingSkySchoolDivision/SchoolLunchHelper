@@ -5,14 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StudentManager"
         mc:Ignorable="d"
-        Title="Student Manager" Height="450" Width="800"
+        Title="Student Manager" Height="650" Width="800"
         Loaded="Window_Loaded"
         WindowState="Maximized">
     <Grid Background="#FFE5E5E5">
 
-        <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
 
-        <Rectangle HorizontalAlignment="Left" Height="197" Margin="21,104,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+        <Rectangle HorizontalAlignment="Left" Height="207" Margin="21,104,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+        <Rectangle HorizontalAlignment="Left" Height="182" Margin="21,323,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+
+        <Rectangle  Height="16" VerticalAlignment="Bottom" Fill="White" Margin="0,347,0,0"/>
         <Rectangle  Height="48" VerticalAlignment="Top" Fill="White" HorizontalAlignment="Stretch"/>
         <Rectangle Height="7" VerticalAlignment="Top" Fill="#FF007ACC" Margin="0,48,-6,0"/>
         <Label Content="Student Manager" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="24" Width="322" Height="58" FontWeight="Bold"/>
@@ -26,7 +28,7 @@
                               AutoGenerateColumns="False"
                               CanUserDeleteRows="False"
                               CanUserResizeRows="True"
-                              CanUserSortColumns="True"
+                              CanUserSortColumns="False"
                               CanUserAddRows="False"
                               ItemsSource="{Binding students, Mode=TwoWay}"
                               ScrollViewer.CanContentScroll="True"
@@ -60,18 +62,36 @@
                                     IsReadOnly="True" FontSize="12.5"/>
                 <DataGridTextColumn Binding="{Binding Path=MedicalInfo,  Mode=TwoWay, UpdateSourceTrigger=LostFocus}" 
                                     Header="Medical Information" 
-                                    Width="300"
-                                    MinWidth="200"
+                                    MinWidth="250"
+                                    Width="*"
                                     IsReadOnly="True" FontSize="12.5"/>
 
             </DataGrid.Columns>
         </DataGrid>
-        <Button x:Name="btnImportCsv" Click="btnImportCsv_Click" Content="Import CSV" HorizontalAlignment="Left" Margin="34,230,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
+        <Button x:Name="btnImportCsv" Click="btnImportCsv_Click" Content="Import CSV" HorizontalAlignment="Left" Margin="34,236,0,0" Width="184" Height="28"  VerticalAlignment="Top" FontSize="12.5"/>
         <ComboBox x:Name="cbSchool" HorizontalAlignment="Left" Margin="98,114,0,0" VerticalAlignment="Top" Width="120" SelectionChanged="cbSchool_SelectionChanged"/>
-        <Button x:Name="btnExportCsv" Click="btnExportCsv_Click" Content="Export CSV" HorizontalAlignment="Left" Margin="34,197,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
-        <Label Content="School ID:" HorizontalAlignment="Left" Margin="30,111,0,0" VerticalAlignment="Top"/>
-        <Button x:Name="btnDelete" Click="btnDelete_Click" Content="Delete" HorizontalAlignment="Left" Margin="34,164,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
-        <Button x:Name="btnAddStudent" Click="btnAddStudent_Click" Content="Add a student" HorizontalAlignment="Left" Margin="34,263,0,0" Width="184" Height="28"  VerticalAlignment="Top"/>
+        <Button x:Name="btnExportCsv" Click="btnExportCsv_Click" Content="Export CSV" HorizontalAlignment="Left" Margin="34,201,0,0" Width="184" Height="28"  VerticalAlignment="Top" FontSize="12.5"/>
+        <TextBlock Text="School ID:" HorizontalAlignment="Left" Margin="34,116,0,0" VerticalAlignment="Top" FontSize="12.5"/>
+        <Button x:Name="btnDelete" Click="btnDelete_Click" Content="Delete" HorizontalAlignment="Left" Margin="34,166,0,0" Width="184" Height="28"  VerticalAlignment="Top" FontSize="12.5"/>
+        <Button x:Name="btnAddStudent" Click="btnAddStudent_Click" Content="Add a student" HorizontalAlignment="Left" Margin="34,271,0,0" Width="184" Height="28"  VerticalAlignment="Top" FontSize="12.5"/>
+
+        <TextBox x:Name="txtEnterAmount" HorizontalAlignment="Left" Margin="46,371,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Width="172" Height="25" FontSize="14"/>
+        <Button Click="btnSetBalances_Click" x:Name="btnSetBalances" Content="Set" HorizontalAlignment="Left" Margin="100,395,0,0" VerticalAlignment="Top" FontSize="12.5" Width="48" Height="23"/>
+        <Button Click="btnAddBalances_Click" x:Name="btnAddBalances" Content="Add" HorizontalAlignment="Left" Margin="46,395,0,0" VerticalAlignment="Top" FontSize="12.5" Width="55" Height="23"/>
+        <Button Click="btnRemoveBalances_Click" x:Name="btnRemoveBalances" Content="Remove" HorizontalAlignment="Left" Margin="147,395,0,0" VerticalAlignment="Top" FontSize="12.5" Width="71" Height="23"/>
+        <RadioButton x:Name="rbAllStudents" GroupName="BalanceOptions" Content="All students at selected school" HorizontalAlignment="Left" Margin="34,443,0,0" VerticalAlignment="Top" />
+        <RadioButton x:Name="rbSelectedStudents" GroupName="BalanceOptions" Content="Selected students only" HorizontalAlignment="Left" Margin="34,462,0,0" VerticalAlignment="Top"/>
+
+        <TextBlock HorizontalAlignment="Left" Margin="34,333,0,0" Text="Enter an amount to add, set, or remove from student balances:" TextWrapping="Wrap" VerticalAlignment="Top" Width="184" FontSize="12.5"/>
+        <TextBlock HorizontalAlignment="Left" Margin="34,422,0,0" Text="Apply to:" TextWrapping="Wrap" VerticalAlignment="Top" Width="184" FontSize="12"/>
+        <Label Content="$" HorizontalAlignment="Left" Margin="28,367,0,0" VerticalAlignment="Top" FontSize="14"/>
+        <TextBlock x:Name="txtSelectOneError" HorizontalAlignment="Left" Margin="37,477,0,0" Text="Select one" TextWrapping="Wrap" VerticalAlignment="Top" Width="184" FontSize="12" FontStyle="Italic" Foreground="red" Visibility="Hidden"/>
+        <TextBlock x:Name="txtSchoolName" HorizontalAlignment="Left" Margin="98,134,0,0" Text="" TextWrapping="Wrap" VerticalAlignment="Top" Foreground="Black" FontStyle="Italic" TextDecorations="{x:Null}" Width="120" FontFamily="Segoe UI" Height="34"/>
+        <Rectangle HorizontalAlignment="Left" Height="61" Margin="21,518,0,0" Fill="WhiteSmoke" VerticalAlignment="Top" Width="210"/>
+        <TextBlock HorizontalAlignment="Left" Margin="34,527,0,0" Text="Change selected students' school to:" TextWrapping="Wrap" VerticalAlignment="Top" Width="169" FontSize="12.5" Height="34"/>
+        <ComboBox x:Name="cbChangeStudentSchool" HorizontalAlignment="Left" Margin="95,546,0,0" VerticalAlignment="Top" Width="72" Height="22"/>
+        <Button x:Name="btnConfirmChangeSchool" Click="btnConfirmChangeSchool_Click" Content="Confirm" HorizontalAlignment="Left" Margin="166,546,0,0" VerticalAlignment="Top" Height="22" Width="52" BorderBrush="#FFACACAC"/>
+
 
     </Grid>
 </Window>

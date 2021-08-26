@@ -28,6 +28,8 @@ using System.Configuration;
 using Microsoft.Win32;
 using CsvHelper;
 using System.Globalization;
+using System.Windows.Threading;
+using Microsoft.VisualBasic.FileIO;
 
 namespace StudentManager
 {
@@ -39,11 +41,12 @@ namespace StudentManager
         private static HttpClient client;
         private string apiUri;
         private static ObservableCollection<Student> _students;
-        private LoadingBox loadingWindow;
+        private static LoadingBox loadingWindow;
         private ImportCsvDialog importCsvDialog;
         private AddStudentDialog addStudentDialog;
         private static List<Student> _unsyncedStudents;
         private static ObservableCollection<string> _schoolIDs;
+        private static List<School> schools;
 
         public static ObservableCollection<Student> students { get { return _students; } set { _students = value; } }
         public static List<Student> unsyncedStudents { get { return _unsyncedStudents; } set { _unsyncedStudents = value; } }
@@ -75,16 +78,21 @@ namespace StudentManager
             client = ApiHelper.ApiClient; //gets the newly initialized HttpClient
 
             schoolIDs = new();
-            List<School> schools = await GetSchoolsAsync();
+            schools = await GetSchoolsAsync();
             if (schools != null && schools.Count > 0)
             {
-                foreach (School i in schools)
+                foreach (School j in schools)
                 {
-                    schoolIDs.Add(i.ID);
+                    schoolIDs.Add(j.ID);
                 }
                 cbSchool.ItemsSource = schoolIDs;
                 cbSchool.SelectedIndex = 0;
+                cbChangeStudentSchool.ItemsSource = schoolIDs;
+                cbSchool.SelectedIndex = 0;
+                UpdateSchoolName();
             }
+            
+
             students = await GetStudentsAsync();
             dataGridStudents.ItemsSource = students;
             unsyncedStudents = new List<Student>();
@@ -145,6 +153,51 @@ namespace StudentManager
         private async void cbSchool_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             await RefreshStudents();
+            UpdateSchoolName();
+        }
+
+        /**<summary>Updates the school name in the window's title and the textblock displaying the selected school's name.</summary>
+         */
+        private void UpdateSchoolName()
+        {
+            if (string.IsNullOrWhiteSpace(cbSchool.Text))
+            {
+                return;
+            }
+            School school = GetSchoolByID(cbSchool.Text);
+            if (school == null)
+            {
+                return;
+            }
+            else
+            {
+                txtSchoolName.Text = school.Name;
+                Title = "Student Manager - " + school.Name + " selected";
+            }
+        }
+
+        /**<summary>Finds the school object with the given ID.</summary>
+         * <param name="ID">The ID of the school to find.</param>
+         * <returns>The school with the given ID.</returns>
+         */
+        private School GetSchoolByID(string ID)
+        {
+            Trace.WriteLine("want school with ID: " + ID);
+            if (schools == null)
+            {
+                return null;
+            }
+            foreach (School i in schools)
+            {
+                Trace.WriteLine("school: " + i.ID + " " + i.Name);
+                
+                if (i.ID.Equals(ID))
+                {
+                    Trace.WriteLine("found school");
+                    return i;
+                }
+            }
+            return null;
         }
 
         /**<summary>Refreshes the student datagrid.</summary>
@@ -206,9 +259,18 @@ namespace StudentManager
         private async void btnImportCsv_Click(object sender, RoutedEventArgs e)
         {
             importCsvDialog.ShowDialog();
+
+            bool accept = importCsvDialog.AcceptImport;
+            Trace.WriteLine("accept = " + accept); //DEBUG
+            if (!accept)
+            {
+                return;
+            }
+            importCsvDialog.AcceptImport = false;
+
             if (unsyncedStudents.Count > 0)
             {
-                var result = MessageBox.Show("Would you like to update the students that already exist in the database with the information in the imported file? Balances will not be updated.", "Update existing students?", MessageBoxButton.YesNoCancel);
+                var result = MessageBox.Show("Would you like to update the students that already exist in the database with the information in the imported file? Existing students' balances will not be updated.", "Update existing students?", MessageBoxButton.YesNoCancel);
                 if (result == MessageBoxResult.Yes)
                 {
                     await SyncUnsyncedStudentsAsync(true);
@@ -225,6 +287,7 @@ namespace StudentManager
             
         }
 
+
         /**<summary>Syncs students to the database with the option to replace the information of students that already 
          * exist. The existing student's balances will not be updated but the rest of their information will be if
          * the option to replace existing students is enabled.</summary>
@@ -232,8 +295,13 @@ namespace StudentManager
          */
         private async Task SyncUnsyncedStudentsAsync(bool replaceExisting) 
         {
+            if (unsyncedStudents.Count == 0)
+            {
+                return;
+            }
             loadingWindow.Show();
             IsEnabled = false;
+
             for (int i = unsyncedStudents.Count - 1; i >= 0; i--)
             {
                 Trace.WriteLine("trying to sync a student with ID: " + unsyncedStudents[i].StudentID); //DEBUG
@@ -275,52 +343,66 @@ namespace StudentManager
                         try
                         {
                             decimal initialBalance = unsyncedStudents[i].Balance;
-                            unsyncedStudents[i].Balance = 0; //balance will be set by a transaction
-                            Transaction transaction = new Transaction(unsyncedStudents[i].StudentID, "0", "Initial balance", (initialBalance * -1), unsyncedStudents[i].Name, "0", "Manager");
-                            
-                            string jsonString = JsonSerializer.Serialize(unsyncedStudents[i]);
-                            var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
-
-                            string jsonString2 = JsonSerializer.Serialize(transaction);
-                            var httpContent2 = new StringContent(jsonString2, Encoding.UTF8, "application/json");
-
-                            var postResponse = await client.PostAsync("api/Students", httpContent);
-                            Trace.WriteLine(postResponse); //DEBUG
-                            if (postResponse.IsSuccessStatusCode)
+                            if (unsyncedStudents[i].Balance == 0) //if the balance is 0, don't send a transaction
                             {
-                                var transactionResponse = await client.PostAsync("api/Transactions", httpContent2);
-                                Trace.WriteLine(transactionResponse);
+                                string jsonString0 = JsonSerializer.Serialize(unsyncedStudents[i]);
+                                var httpContent0 = new StringContent(jsonString0, Encoding.UTF8, "application/json");
+                                var postResponse0 = await client.PostAsync("api/Students", httpContent0);
 
-                                Trace.WriteLine("student response: " + postResponse.ReasonPhrase + "\ntransaction response: " + transactionResponse.ReasonPhrase); //DEBUG
-                                if (transactionResponse.IsSuccessStatusCode)
+                            }
+                            else
+                            {
+                                unsyncedStudents[i].Balance = 0; //balance will be set by a transaction
+                                Transaction transaction = new Transaction(unsyncedStudents[i].StudentID, "0", "Initial balance", (initialBalance * -1), unsyncedStudents[i].Name, unsyncedStudents[i].SchoolID, "Student manager");
+
+                                string jsonString = JsonSerializer.Serialize(unsyncedStudents[i]);
+                                var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+
+                                string jsonString2 = JsonSerializer.Serialize(transaction);
+                                var httpContent2 = new StringContent(jsonString2, Encoding.UTF8, "application/json");
+
+                                var postResponse = await client.PostAsync("api/Students", httpContent);
+                                Trace.WriteLine(postResponse); //DEBUG
+                                if (postResponse.IsSuccessStatusCode)
                                 {
-                                    Trace.WriteLine("sucessfully added student");
-                                    unsyncedStudents.RemoveAt(i);
-                                }
-                                else
-                                {
-                                    Trace.WriteLine("error adding student");
-                                    try
+                                    var transactionResponse = await client.PostAsync("api/Transactions", httpContent2);
+                                    Trace.WriteLine(transactionResponse);
+
+                                    Trace.WriteLine("student response: " + postResponse.ReasonPhrase + "\ntransaction response: " + transactionResponse.ReasonPhrase); //DEBUG
+                                    if (transactionResponse.IsSuccessStatusCode)
                                     {
-                                        await client.DeleteAsync("api/Transactions/" + transaction.ID);
+                                        Trace.WriteLine("sucessfully added student");
+                                        unsyncedStudents.RemoveAt(i);
                                     }
-                                    catch
+                                    else
                                     {
-                                        Trace.WriteLine("can't reach the database");
-                                        MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                                        Close();
-                                        break; //if there is a server error, no point trying to sync any more entries
-                                    }
-                                    try
-                                    {
-                                        await client.DeleteAsync("api/Students/" + unsyncedStudents[i].StudentID);
-                                    }
-                                    catch
-                                    {
-                                        Trace.WriteLine("can't reach the database");
-                                        MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                                        Close();
-                                        break; //if there is a server error, no point trying to sync any more entries
+                                        Trace.WriteLine("error adding student");
+                                        try
+                                        {
+                                            await client.DeleteAsync("api/Transactions/" + transaction.ID);
+                                        }
+                                        catch
+                                        {
+                                            Trace.WriteLine("can't reach the database");
+                                            loadingWindow.Hide();
+                                            IsEnabled = true;
+                                            MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                            Close();
+                                            break; //if there is a server error, no point trying to sync any more entries
+                                        }
+                                        try
+                                        {
+                                            await client.DeleteAsync("api/Students/" + unsyncedStudents[i].StudentID);
+                                        }
+                                        catch
+                                        {
+                                            Trace.WriteLine("can't reach the database");
+                                            loadingWindow.Hide();
+                                            IsEnabled = true;
+                                            MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                                            Close();
+                                            break; //if there is a server error, no point trying to sync any more entries
+                                        }
                                     }
                                 }
                             }
@@ -329,6 +411,8 @@ namespace StudentManager
                         catch
                         {
                             Trace.WriteLine("can't reach the database");
+                            loadingWindow.Hide();
+                            IsEnabled = true;
                             MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                             Close();
                             break; //if there is a server error, no point trying to sync any more entries
@@ -338,6 +422,8 @@ namespace StudentManager
                 catch (HttpRequestException)
                 {
                     Trace.WriteLine("can't reach the database");
+                    loadingWindow.Hide();
+                    IsEnabled = true;
                     MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
                     Close();
                     break; //if there is a server error, no point trying to sync any more entries
@@ -346,7 +432,7 @@ namespace StudentManager
             await RefreshStudents();
             loadingWindow.Hide();
             IsEnabled = true;
-            MessageBox.Show("Successfully added students.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Successfully added/updated students.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private async void dataGridStudents_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -448,8 +534,12 @@ namespace StudentManager
         private async void btnAddStudent_Click(object sender, RoutedEventArgs e)
         {
             addStudentDialog.ShowDialog();
-
-            await SyncUnsyncedStudentsAsync(false);
+            if (addStudentDialog.AcceptAddNewStudent)
+            {
+                await SyncUnsyncedStudentsAsync(false);
+                addStudentDialog.AcceptAddNewStudent = false;
+            }
+            
         }
 
         /**<summary>Checks if a student exists in the database.</summary>
@@ -480,6 +570,275 @@ namespace StudentManager
                 MessageBox.Show("Failed to connect to the server, please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             return null;
+        }
+
+        /**<summary>Adds to students' balances. Applies to either all students or only students selected in the datagrid,
+         * depending on which radio button option is selected.</summary>
+         */
+        private async void btnAddBalances_Click(object sender, RoutedEventArgs e)
+        {
+            bool allStudentsChecked = rbAllStudents.IsChecked ?? false;
+            bool selectedStudentsChecked = rbSelectedStudents.IsChecked ?? false;
+            if (!allStudentsChecked && !selectedStudentsChecked)
+            {
+                txtSelectOneError.Visibility = Visibility.Visible;
+                return;
+            }
+
+            txtSelectOneError.Visibility = Visibility.Hidden;
+            bool decimalIsValid = decimal.TryParse(txtEnterAmount.Text, out decimal amount);
+            if (!decimalIsValid || amount <= 0)
+            {
+                MessageBox.Show("Please enter a positive number with no currency signs. Ex. 2.25", "Invalid number", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            amount *= -1; //to add to a balance the amount must be negative
+            decimal.Round(amount, 2);
+            if (allStudentsChecked)
+            {
+                var mbResponse = MessageBox.Show("Add $" + -1 * amount + " to each student in the selected school's balance? This action cannot be undone.", "Confirm add", MessageBoxButton.YesNoCancel);
+                if (!mbResponse.Equals(MessageBoxResult.Yes))
+                {
+                    return;
+                }
+
+                IsEnabled = false;
+                loadingWindow.Show();
+                foreach (Student i in students)
+                {
+                    await SyncTransactionAsync(i, amount, "Student manager - added to balance");
+                }
+
+            }
+            else if (selectedStudentsChecked)
+            {
+                var mbResponse = MessageBox.Show("Add $" + -1 * amount + " to each student selected in the table? This action cannot be undone.", "Confirm add", MessageBoxButton.YesNoCancel);
+                if (!mbResponse.Equals(MessageBoxResult.Yes))
+                {
+                    return;
+                }
+
+                IsEnabled = false;
+                loadingWindow.Show();
+
+                var grid = dataGridStudents;
+                for (int i = 0; i < students.Count; i++)
+                {
+                    Trace.WriteLine("index: " + i); //DEBUG
+                    if (grid.SelectedItems.Contains(students[i]))
+                    {
+                        await SyncTransactionAsync(students[i], amount, "Student manager - added to balance");
+                    }
+                }
+  
+            }
+            txtEnterAmount.Text = "";
+            await RefreshStudents();
+
+            IsEnabled = true;
+            loadingWindow.Hide();
+
+        }
+
+        /**<summary>Removes from students' balances. Applies to either all students or only students selected in the datagrid,
+         * depending on which radio button option is selected.</summary>
+         */
+        private async void btnRemoveBalances_Click(object sender, RoutedEventArgs e)
+        {
+            bool allStudentsChecked = rbAllStudents.IsChecked ?? false;
+            bool selectedStudentsChecked = rbSelectedStudents.IsChecked ?? false;
+            if (!allStudentsChecked && !selectedStudentsChecked)
+            {
+                txtSelectOneError.Visibility = Visibility.Visible;
+                return;
+            }
+
+            txtSelectOneError.Visibility = Visibility.Hidden;
+            bool decimalIsValid = decimal.TryParse(txtEnterAmount.Text, out decimal amount);
+            if (!decimalIsValid || amount <= 0)
+            {
+                MessageBox.Show("Please enter a positive number with no currency signs. Ex. 2.25", "Invalid number", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            decimal.Round(amount, 2);
+            if (allStudentsChecked)
+            {
+                var mbResponse = MessageBox.Show("Remove $" + amount + " from each student in the selected school's balance? This action cannot be undone.", "Confirm remove", MessageBoxButton.YesNoCancel);
+                if (!mbResponse.Equals(MessageBoxResult.Yes))
+                {
+                    return;
+                }
+
+                IsEnabled = false;
+                loadingWindow.Show();
+                foreach (Student i in students)
+                {
+                    await SyncTransactionAsync(i, amount, "Student manager - removed from balance");
+                }
+
+            }
+            else if (selectedStudentsChecked)
+            {
+                var mbResponse = MessageBox.Show("Remove $" + amount + " from each student selected in the table? This action cannot be undone.", "Confirm remove", MessageBoxButton.YesNoCancel);
+                if (!mbResponse.Equals(MessageBoxResult.Yes))
+                {
+                    return;
+                }
+
+                IsEnabled = false;
+                loadingWindow.Show();
+
+                var grid = dataGridStudents;
+                for (int i = 0; i < students.Count; i++)
+                {
+                    Trace.WriteLine("index: " + i); //DEBUG
+                    if (grid.SelectedItems.Contains(students[i]))
+                    {
+                        await SyncTransactionAsync(students[i], amount, "Student manager - removed from balance");
+                    }
+                }
+
+            }
+            await RefreshStudents();
+            txtEnterAmount.Text = "";
+
+            IsEnabled = true;
+            loadingWindow.Hide();
+        }
+
+        /**<summary>Sets students' balances to the amount in the textbox. Applies to either all students or only students 
+         * selected in the datagrid, depending on which radio button option is selected.</summary>
+         */
+        private async void btnSetBalances_Click(object sender, RoutedEventArgs e)
+        {
+            bool allStudentsChecked = rbAllStudents.IsChecked ?? false;
+            bool selectedStudentsChecked = rbSelectedStudents.IsChecked ?? false;
+            if (!allStudentsChecked && !selectedStudentsChecked)
+            {
+                txtSelectOneError.Visibility = Visibility.Visible;
+                return;
+            }
+
+            txtSelectOneError.Visibility = Visibility.Hidden;
+            bool decimalIsValid = decimal.TryParse(txtEnterAmount.Text, out decimal amount);
+            if (!decimalIsValid)
+            {
+                MessageBox.Show("Please enter a number with no currency signs. Ex. 2.25", "Invalid number", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            decimal.Round(amount, 2);
+            if (allStudentsChecked)
+            {
+                var mbResponse = MessageBox.Show("Set each student in the selected school's balance to $" + amount + "? This action cannot be undone.", "Confirm set balance", MessageBoxButton.YesNoCancel);
+                if (!mbResponse.Equals(MessageBoxResult.Yes))
+                {
+                    return;
+                }
+
+                IsEnabled = false;
+                loadingWindow.Show();
+                foreach (Student i in students) 
+                {
+                    //balance - x = amount
+                    //-x = amount - balance
+                    //x = balance - amount
+                    await SyncTransactionAsync(i, i.Balance - amount, "Student manager - set balance");
+                }
+
+            }
+            else if (selectedStudentsChecked)
+            {
+                var mbResponse = MessageBox.Show("Set each student selected in the table's balance to $" + amount + "? This action cannot be undone.", "Confirm set balance", MessageBoxButton.YesNoCancel);
+                if (!mbResponse.Equals(MessageBoxResult.Yes))
+                {
+                    return;
+                }
+
+                IsEnabled = false;
+                loadingWindow.Show();
+
+                var grid = dataGridStudents;
+                for (int i = 0; i < students.Count; i++)
+                {
+                    Trace.WriteLine("index: " + i); //DEBUG
+                    if (grid.SelectedItems.Contains(students[i]))
+                    {
+                        await SyncTransactionAsync(students[i], students[i].Balance - amount, "Student manager - set balance");
+                    }
+                }
+
+            }
+            await RefreshStudents();
+            txtEnterAmount.Text = "";
+
+            IsEnabled = true;
+            loadingWindow.Hide();
+        }
+
+        /**<summary>Creates a new transaction and sends it to the database.</summary>
+         * <param name="student">The student the transaction belongs to.</param>
+         * <param name="amount">The transaction's cost. This amount will be removed from the student's balance.</param>
+         * <param name="reason">The message to put in the transaction's FoodName field.</param>
+         * <returns>The HTTP response message obtained from sending the transaction.</returns>
+         */
+        private async Task<HttpResponseMessage> SyncTransactionAsync(Student student, decimal amount, string reason)
+        {
+            HttpResponseMessage response = null;
+            try
+            {
+                Transaction transaction = new Transaction(student.StudentID, "0", reason, amount, student.Name, student.SchoolID, "Student manager");
+                var jsonString = JsonSerializer.Serialize(transaction);
+                var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                response = await client.PostAsync("api/Transactions", httpContent);
+            }
+            catch
+            {
+                Trace.WriteLine("can't reach the database");
+                MessageBox.Show("Cannot connect to the server, your changes will not be saved. Please check your internet connection and try again.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                Close();
+            }
+            Trace.WriteLine("tried to send a transaction for a student with ID: " + student.StudentID + " response: " + response); //DEBUG
+            return response;
+            
+        }
+
+        /**<summary>Changes the selected students' school to the school selected in the combobox.</summary>
+         */
+        private async Task UpdateStudentSchool()
+        {
+            string newSchoolID = cbChangeStudentSchool.Text;
+            if (string.IsNullOrWhiteSpace(newSchoolID))
+            {
+                return;
+            }
+
+            IsEnabled = false;
+            loadingWindow.Show();
+
+            var grid = dataGridStudents;
+            for (int i = 0; i < students.Count; i++)
+            {
+                Trace.WriteLine("index: " + i); //DEBUG
+                if (grid.SelectedItems.Contains(students[i]))
+                {
+                    students[i].SchoolID = newSchoolID;
+                    unsyncedStudents.Add(students[i]);
+                }
+            }
+
+            if (unsyncedStudents.Count > 0)
+            {
+                await SyncUnsyncedStudentsAsync(true);
+                cbSchool.SelectedIndex = cbChangeStudentSchool.SelectedIndex; //show the school the students were moved to
+            }
+
+            IsEnabled = true;
+            loadingWindow.Hide();
+        }
+
+        private async void btnConfirmChangeSchool_Click(object sender, RoutedEventArgs e)
+        {
+            await UpdateStudentSchool();
         }
     }
 }

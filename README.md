@@ -34,7 +34,7 @@ To use a barcode scanner, ensure that the barcode scanner can be used with a Win
 The School Lunch Helper was designed for and tested on a SQL database. Entity Framework Core (EF Core) is used to create migrations for and communicate with the database.
 
 ## Schools
-The "Schools" database table requires a record of each school using the system along with a unique school ID number. These ID numbers are used in configuration files.
+The "Schools" database table requires a record of each school using the system along with a unique school ID number. These ID numbers are used in configuration files. 
 
 ## Create Migrations with EF Core
 Creating database migrations with EF Core's Designer is simple - the instructions can be found [here](https://docs.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs).

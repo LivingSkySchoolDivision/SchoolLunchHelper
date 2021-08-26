@@ -21,6 +21,10 @@ namespace StudentManager
     /// </summary>
     public partial class AddStudentDialog : Window
     {
+        private bool acceptAddNewStudent;
+
+        public bool AcceptAddNewStudent { get { return acceptAddNewStudent; } set { acceptAddNewStudent = value; } }
+
         /**<summary>Constructor for AddStudentDialog.</summary>
          * <param name="owner">The window's owner window.</param>
          */
@@ -28,6 +32,7 @@ namespace StudentManager
         {
             InitializeComponent();
             Owner = owner;
+            acceptAddNewStudent = false;
             
         }
         
@@ -52,7 +57,7 @@ namespace StudentManager
                 valid = false;
                 
             }
-            else if ((!Decimal.TryParse(txtBalance.Text, out balance)) || (balance < 0M))
+            else if ((!Decimal.TryParse(txtBalance.Text, out balance)))
             {
                 txtBalance.Focus();
                 txtBalance.BorderBrush = Brushes.Red;
@@ -80,9 +85,13 @@ namespace StudentManager
                 {
                     newStudent = new Student(txtStudentID.Text, txtName.Text, (string)cbSchoolID.SelectedItem, balance, "");
                 }
-
+                acceptAddNewStudent = true;
                 MainWindow.unsyncedStudents.Add(newStudent);
                 Close();
+            }
+            else
+            {
+                acceptAddNewStudent = false;
             }
         }
 

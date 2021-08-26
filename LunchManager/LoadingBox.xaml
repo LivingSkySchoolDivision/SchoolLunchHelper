@@ -16,6 +16,6 @@
         ShowInTaskbar="False">
     <Grid>
         <ProgressBar HorizontalAlignment="Center" Height="15" Margin="0,76,0,0" VerticalAlignment="Top" Width="200" IsIndeterminate="True"/>
-        <TextBlock x:Name="txtMessage" Text="Loading, please wait" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" Width="118"/>
+        <TextBlock x:Name="txtMessage" Text="Loading, please wait" HorizontalAlignment="Center" Margin="0,45,0,0" VerticalAlignment="Top" MinWidth="118"/>
     </Grid>
 </Window>
