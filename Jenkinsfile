@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        REPO_API = "Lunch/api"
+        REPO_API = "lunch/api"
         PRIVATE_REPO_API = "${PRIVATE_DOCKER_REGISTRY}/${REPO_API}"
         TAG = "${BUILD_TIMESTAMP}"
     }
