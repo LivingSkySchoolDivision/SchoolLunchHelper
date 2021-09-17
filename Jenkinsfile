@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Git clone') {
             steps {
-                git branch: 'main',
+                git branch: 'RefactorCleanup',
                     url: 'https://github.com/LivingSkySchoolDivision/SchoolLunchHelper.git'
             }
         }
