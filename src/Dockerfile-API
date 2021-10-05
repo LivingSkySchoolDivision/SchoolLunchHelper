@@ -7,11 +7,11 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY ["API/API.csproj", "API/"]
-COPY ["Core/Core.csproj", "Core/"]
-RUN dotnet restore "API/API.csproj"
+COPY ["LSSD.Lunch.API/API.csproj", "LSSD.Lunch.API/"]
+COPY ["LSSD.Lunch.Core/Core.csproj", "LSSD.Lunch.Core/"]
+RUN dotnet restore "LSSD.Lunch.API/API.csproj"
 COPY . .
-WORKDIR "/src/API"
+WORKDIR "/src/LSSD.Lunch.API"
 RUN dotnet build "API.csproj" -c Release -o /app/build
 
 FROM build AS publish
