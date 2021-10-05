@@ -1,5 +1,4 @@
-﻿using Data.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -24,6 +23,7 @@ using System.ComponentModel;
 using Microsoft.Win32;
 using CsvHelper;
 using System.Globalization;
+using LSSD.Lunch;
 
 namespace LunchManager
 {

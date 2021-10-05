@@ -18,13 +18,13 @@ using System.Data;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.IO;
-using Data.Models;
 using System.Net.Http.Formatting;
 using System.Net.Http;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Timers;
 using System.Configuration;
+using LSSD.Lunch;
 
 namespace CardScannerUI
 {
