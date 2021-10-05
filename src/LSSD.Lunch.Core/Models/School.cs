@@ -11,21 +11,6 @@ namespace LSSD.Lunch
     public class School : IGUIDable
     {    
         public Guid Id { get; set; }
-        private string _Name;
-        private string _ID;
-
-        //private setter is for EF Core
-        [Required]
-        public string Name { get { return _Name; } set { _Name = value; } }
-
-        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public string ID { get { return _ID; } private set { _ID = value; } }
-
-
-        public School(string Name, string ID)
-        {
-            _Name = Name;
-            _ID = ID;
-        }
+        public string Name { get;set; }
     }
 }

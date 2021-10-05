@@ -39,7 +39,7 @@ namespace LSSD.Lunch.API
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
             });
 
-            services.AddSingleton<MongoDbConnection>();
+            services.AddSingleton<MongoDbConnection>(x => new MongoDbConnection(Configuration.GetConnectionString("InternalDatabase")));
             services.AddSingleton<IRepository<Student>, MongoRepository<Student>>(); 
             services.AddSingleton<IRepository<FoodItem>, MongoRepository<FoodItem>>(); 
             services.AddSingleton<IRepository<School>, MongoRepository<School>>(); 
