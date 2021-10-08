@@ -33,20 +33,16 @@ namespace LunchManager
     public partial class MainWindow : Window
     {
         private HttpClient client; //the application shares one http client
-        private ObservableCollection<Transaction> _transactions;
-        private ObservableCollection<Student> _students;
-        private static ObservableCollection<FoodItem> _unsyncedFoodItems;
-        private static ObservableCollection<FoodItem> _displayedFoodItems;
+
+        public ObservableCollection<FoodItem> unsyncedFoodItems { get; set; }
+        public static ObservableCollection<FoodItem> displayedFoodItems { get; set; }
+        public ObservableCollection<Transaction> transactions { get; set; }
+        public ObservableCollection<Student> students { get; set; }
+        public ObservableCollection<Student> displayedStudents { get; set; }
+
         private School thisSchool;
         private LoadingBox loadingWindow;
         private AddNewFoodItemHelper addNewFoodItemWindow;
-        private ObservableCollection<Student> _displayedStudents;
-
-        public static ObservableCollection<FoodItem> unsyncedFoodItems { get { return _unsyncedFoodItems; } set { _unsyncedFoodItems = value; } }
-        public static ObservableCollection<FoodItem> displayedFoodItems { get { return _displayedFoodItems; } set { _displayedFoodItems = value; } }
-        public ObservableCollection<Transaction> transactions { get { return _transactions; } set { _transactions = value; } }
-        public ObservableCollection<Student> students { get { return _students; } set { _students = value; } }
-        public ObservableCollection<Student> displayedStudents { get { return _displayedStudents; } set { _displayedStudents = value; } }
 
         public MainWindow()
         {
@@ -54,20 +50,34 @@ namespace LunchManager
 
             Application.Current.MainWindow = this;
 
-            transactions = new();
-            students = new();
-            unsyncedFoodItems = new();
+            transactions = new ObservableCollection<Transaction>();
+            students = new ObservableCollection<Student>();
+            unsyncedFoodItems = new ObservableCollection<FoodItem>();
         }
 
-        /**<summary>Event handler for the main window's Loaded event.</summary>
-         */
+        private bool reloadConfigFile() 
+        {
+
+            return false;
+        }
+
+        /// <summary>
+        /// Event handler for the main window's Loaded event.
+        /// </summary>
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // Show loading window
             loadingWindow = new LoadingBox(this);
             loadingWindow.Show();
             IsEnabled = false;
 
+            // Load config file
+            reloadConfigFile();
+
+            
+
             var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+
             string apiUri = "";
             string thisSchoolID = "";
             try
@@ -115,7 +125,7 @@ namespace LunchManager
             cbNumTransactionsToShow.ItemsSource = numTransactionsOptions;
 
             cbNumTransactionsToShow.SelectedIndex = 0;
-            
+
 
             //dataGridFoodTypes.DataContext = this;
             btnDeleteFoodItem.IsEnabled = false;
@@ -123,7 +133,7 @@ namespace LunchManager
             txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
             txtNumFoodTypesShown.Text = "Showing " + displayedFoodItems.Count + " of " + displayedFoodItems.Count + " food types";
 
-            
+
 
             loadingWindow.Hide();
             IsEnabled = true;
@@ -166,7 +176,7 @@ namespace LunchManager
             {
                 txtOverviewStats.Text = "Yesterday, " + transactions.Count + " transactions were sent to the server.";
             }
-            
+
         }
 
         /**<summary>Gets the current school's FoodItems.</summary>
@@ -180,7 +190,7 @@ namespace LunchManager
             {
                 //responseFood = await client.GetAsync("api/FoodItem/School/" + thisSchool.ID);
                 //newFoodItemsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>(); //is null
-                var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.ID);
+                var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.Id.ToString());
                 newFoodItemsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
                 if (newFoodItemsCollection == null) //DEBUG
                 {
@@ -206,7 +216,7 @@ namespace LunchManager
             {
                 //responseFood = await client.GetAsync("api/FoodItem/School/" + thisSchool.ID);
                 //newFoodItemsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>(); //is null
-                var responseFood = await client.GetAsync("api/Students/School/" + thisSchool.ID);
+                var responseFood = await client.GetAsync("api/Students/School/" + thisSchool.Id.ToString());
                 newStudentsCollection = await responseFood.Content.ReadAsAsync<ObservableCollection<Student>>();
                 if (newStudentsCollection == null) //DEBUG
                 {
@@ -230,7 +240,7 @@ namespace LunchManager
             ObservableCollection<Transaction> newTransactionsCollection = new();
             try
             {
-                var responseTransactions = await client.GetAsync("api/Transactions/Recent/" + thisSchool.ID + "/" + numToLoad);
+                var responseTransactions = await client.GetAsync("api/Transactions/Recent/" + thisSchool.Id.ToString() + "/" + numToLoad);
                 newTransactionsCollection = await responseTransactions.Content.ReadAsAsync<ObservableCollection<Transaction>>();
                 if (newTransactionsCollection == null) //DEBUG
                 {
@@ -245,15 +255,15 @@ namespace LunchManager
             return newTransactionsCollection;
         }
 
-        /**<summary>Loads the students, schools, and food items into the main window's lists. 
+        /**<summary>Loads the students, schools, and food items into the main window's lists.
          * Use the individual loading methods instead.</summary>
          */
         private async Task GetDataAsync()
         {
-            
+
             try
             {
-                var responseStudents = await client.GetAsync("api/Students/School/" + thisSchool.ID);
+                var responseStudents = await client.GetAsync("api/Students/School/" + thisSchool.Id.ToString());
                 students = await responseStudents.Content.ReadAsAsync<ObservableCollection<Student>>();
 
                 Trace.WriteLine("get students response status: " + responseStudents.StatusCode); //DEBUG
@@ -268,9 +278,9 @@ namespace LunchManager
                 {
                     Trace.WriteLine("Students is null");
                 }
-                
 
-                var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.ID);
+
+                var responseFood = await client.GetAsync("api/FoodItems/School/" + thisSchool.Id.ToString());
                 displayedFoodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
                 Trace.WriteLine("response: " + responseFood); //DEBUG
 
@@ -306,7 +316,7 @@ namespace LunchManager
                     Trace.WriteLine("Transactions is null");
                 }
                 */
-                
+
             }
             catch (HttpRequestException)
             {
@@ -338,11 +348,11 @@ namespace LunchManager
             {
                 btnDeleteFoodItem.IsEnabled = false;
             }
-            
+
         }
 
 
-        private void dataGridFoodTypes_BeginningEdit(object sender, DataGridBeginningEditEventArgs e) 
+        private void dataGridFoodTypes_BeginningEdit(object sender, DataGridBeginningEditEventArgs e)
         {
             Trace.WriteLine("beginning edit"); //DEBUG
         }
@@ -373,7 +383,7 @@ namespace LunchManager
             {
                 //has invalid entries, put it in validation error mode and don't add it to unsynced transactions
                 MessageBox.Show("The \"Name\" field cannot be empty. Please enter a name for the food type.", "Required field", MessageBoxButton.OK, MessageBoxImage.Warning);
-                //dataGridFoodTypes.CanUserAddRows = false; 
+                //dataGridFoodTypes.CanUserAddRows = false;
                 e.Row.Background = Brushes.Coral;
                 Trace.WriteLine("row " + editedRowIndex + " has an invalid name field"); //DEBUG
                 Trace.WriteLine("name: " + editedRowItem.Name + ", cost: " + editedRowItem.Cost + ", description: " + editedRowItem.Description); //DEBUG
@@ -394,7 +404,7 @@ namespace LunchManager
                 //modifying a datagrid row will change the corresponding foodItem
                 if (e.Row.Background == Brushes.Coral) //if the item was invalid before, change the row color back to normal
                 {
-                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0) 
+                    if (editedRowIndex == 0 || editedRowIndex % 2 == 0)
                     {
                         e.Row.Background = Brushes.White;
                     }
@@ -407,13 +417,13 @@ namespace LunchManager
                 editedRowItem.Cost = decimal.Round(editedRowItem.Cost, 2);
                 string jsonString = JsonSerializer.Serialize(editedRowItem);
                 var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
-                HttpResponseMessage response = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest); 
+                HttpResponseMessage response = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest);
                 try
                 {
                     loadingWindow.Show();
                     IsEnabled = false;
 
-                    response = await client.PutAsync("api/FoodItems/" + editedRowItem.ID, httpContent);
+                    response = await client.PutAsync("api/FoodItems/" + editedRowItem.Id.ToString(), httpContent);
                     Trace.WriteLine("put request status code: " + response.StatusCode);
 
                     loadingWindow.Hide();
@@ -461,7 +471,7 @@ namespace LunchManager
             IsEnabled = false;
             for (int i = unsyncedFoodItems.Count - 1; i >= 0; i--)
             {
-                Trace.WriteLine("trying to sync a foodItem with ID: " + unsyncedFoodItems[i].ID); //DEBUG
+                Trace.WriteLine("trying to sync a foodItem with ID: " + unsyncedFoodItems[i].Id.ToString()); //DEBUG
                 Trace.WriteLine(unsyncedFoodItems[i]); //DEBUG
                 string jsonString = JsonSerializer.Serialize(unsyncedFoodItems[i]);
                 var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
@@ -472,7 +482,7 @@ namespace LunchManager
                     Trace.WriteLine("sync new row response: " + response); //DEBUG
                     if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Conflict) //if the foodItem is in the database, remove it from the list
                     {
-                        unsyncedFoodItems.RemoveAt(i); 
+                        unsyncedFoodItems.RemoveAt(i);
                     }
                 }
                 catch (HttpRequestException) //this exception is not thrown if the URI can't be found
@@ -485,7 +495,7 @@ namespace LunchManager
             }
             loadingWindow.Hide();
             IsEnabled = true;
-            
+
         }
 
         private async void btnAddNewFoodType_Click(object sender, RoutedEventArgs e)
@@ -508,13 +518,13 @@ namespace LunchManager
             foodItem.Cost = decimal.Round(foodItem.Cost, 2);
             if (foodItem.Description != null)
             {
-                newFoodItem = new FoodItem(foodItem.Name, foodItem.Cost, foodItem.Description, thisSchool.ID);
+                newFoodItem = new FoodItem(foodItem.Name, foodItem.Cost, foodItem.Description, thisSchool.Id.ToString());
             }
             else
             {
-                newFoodItem = new FoodItem(foodItem.Name, foodItem.Cost, "", thisSchool.ID);
+                newFoodItem = new FoodItem(foodItem.Name, foodItem.Cost, "", thisSchool.Id.ToString());
             }
-            
+
             return newFoodItem;
         }
 
@@ -554,13 +564,13 @@ namespace LunchManager
                         Trace.WriteLine("length of displayedFoodItems: " + displayedFoodItems.Count); //DEBUG
                         if (grid.SelectedItems.Contains(displayedFoodItems[i]))
                         {
-                            if (!string.IsNullOrWhiteSpace(displayedFoodItems[i].ID))
+                            if (!string.IsNullOrWhiteSpace(displayedFoodItems[i].Id.ToString()))
                             {
                                 Trace.WriteLine("index: " + i); //DEBUG
                                 Trace.WriteLine("length of displayedFoodItems: " + displayedFoodItems.Count); //DEBUG
                                 try
                                 {
-                                    var response = await client.DeleteAsync("api/FoodItems/" + displayedFoodItems[i].ID);
+                                    var response = await client.DeleteAsync("api/FoodItems/" + displayedFoodItems[i].Id.ToString());
                                     Trace.WriteLine(response.StatusCode.ToString()); //DEBUG
                                 }
                                 catch (HttpRequestException)
@@ -570,7 +580,7 @@ namespace LunchManager
                                     Close();
                                     break; //if there is a server error, no point trying to sync any more entries
                                 }
-                                
+
                                 Trace.WriteLine("."); //DEBUG
                                 Trace.WriteLine("index: " + i); //DEBUG
                                 Trace.WriteLine("length of displayedFoodItems: " + displayedFoodItems.Count); //DEBUG
@@ -619,7 +629,7 @@ namespace LunchManager
                         Trace.WriteLine("Remaining foodItem in list ->  Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
                     }
                 }
-                
+
             }
         }
 
@@ -683,7 +693,7 @@ namespace LunchManager
 
         private async void btnRefreshFoodItems_Click(object sender, RoutedEventArgs e)
         {
-            
+
             loadingWindow.Show();
             IsEnabled = false;
 
@@ -781,7 +791,7 @@ namespace LunchManager
                     displayedStudents.Add(i);
                 }
             }
-            
+
             dataGridStudents.ItemsSource = null;
             dataGridStudents.ItemsSource = displayedStudents;
             txtNumStudentsShown.Text = "Showing " + displayedStudents.Count + " of " + students.Count + " students";
@@ -809,30 +819,6 @@ namespace LunchManager
                 txtStudentsSearch.Foreground = Brushes.DarkGray;
             }
         }
-
-        /*
-        private async void dataGridStudents_RowEditEnding(object sender, DataGridRowEditEndingEventArgs e)
-        {
-            if ((dataGridStudents.SelectedIndex > displayedStudents.Count - 1) || (dataGridStudents.SelectedIndex < 0))
-            {
-                Trace.WriteLine("item that was being added as a new row is out of range"); //DEBUG
-                return;
-            }
-            loadingWindow.Show();
-            IsEnabled = false;
-
-            int editedRowIndex = e.Row.GetIndex();
-            Trace.WriteLine("index of edited row: " + editedRowIndex); //DEBUG
-            Student editedRowItem = displayedStudents[e.Row.GetIndex()];
-
-            editedRowItem.Balance = decimal.Round(editedRowItem.Balance, 2);
-            await SaveModifiedStudentAsync(editedRowItem);
-
-            loadingWindow.Hide();
-            IsEnabled = true;
-
-        }
-        */
 
         private async void btnAddToStudentBalance_Click(object sender, RoutedEventArgs e)
         {
@@ -910,7 +896,7 @@ namespace LunchManager
                 foodName = "Removed from balance";
             }
             Transaction newTransaction = new Transaction(student.StudentID, "0", foodName, cost, student.Name, thisSchool.ID, thisSchool.Name);
-            
+
             Trace.WriteLine("trying to send a tranaction with ID: " + newTransaction.ID); //DEBUG
             string jsonString = JsonSerializer.Serialize(newTransaction);
             var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
@@ -948,7 +934,7 @@ namespace LunchManager
                 var response = await client.PutAsync("api/Students/" + student.StudentID, httpContent);
                 Trace.WriteLine(jsonString); //DEBUG
                 Trace.WriteLine("sync new row response: " + response); //DEBUG
-                if (!response.IsSuccessStatusCode && !(response.StatusCode == System.Net.HttpStatusCode.Conflict)) 
+                if (!response.IsSuccessStatusCode && !(response.StatusCode == System.Net.HttpStatusCode.Conflict))
                 {
                     Trace.WriteLine("can't reach the database");
                     MessageBox.Show("Cannot connect to the server, your last change will not be saved. Please check your internet connection or try again later. The program will now be closed.", "Connection failed", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -982,7 +968,7 @@ namespace LunchManager
         private async Task RefreshStudentsDataGrid()
         {
             students = await GetStudentsAsync();
-            displayedStudents = students; 
+            displayedStudents = students;
 
             dataGridStudents.ItemsSource = null;
             dataGridStudents.ItemsSource = displayedStudents;
@@ -1037,7 +1023,7 @@ namespace LunchManager
                             {
                                 csv.WriteRecords(displayedStudents);
                             }
-                            
+
                         }
                         catch (IOException)
                         {
@@ -1166,14 +1152,6 @@ namespace LunchManager
             loadingWindow.Show();
             IsEnabled = false;
 
-            /*
-            transactions = await GetTransactionsAsync((int)cbNumTransactionsToShow.SelectedItem);
-
-            dataGridTransactions.ItemsSource = null;
-            dataGridTransactions.ItemsSource = transactions;
-            txtNumTransactionsShown.Text = "Showing " + transactions.Count + " transactions";
-            */
-
             await RefreshTransactionsDataGrid();
             txtTransactionsSearch.Text = "Search";
             txtTransactionsSearch.Foreground = Brushes.DarkGray;
@@ -1213,7 +1191,7 @@ namespace LunchManager
             }
             txtStartEndDateError.Visibility = Visibility.Hidden;
             //if the start date is not null, the input is valid. If the end date was not entered it will use today's date
-            if (dpTransactionStart.SelectedDate != null) 
+            if (dpTransactionStart.SelectedDate != null)
             {
                 loadingWindow.Show();
                 IsEnabled = false;
@@ -1236,18 +1214,16 @@ namespace LunchManager
                 txtStartEndDateError.Text = "Please enter a start date";
                 txtStartEndDateError.Visibility = Visibility.Visible;
             }
-            
+
 
         }
 
-        /**<summary>Gets the transactions that took place in a certain date range up to a maximum number to be loaded.</summary>
-         * <param name="startDate">The start of the range of dates. Transactions taking place on this day are included 
-         * in the results.</param>
-         * <param name="endDate">The end of the range of dates. Transactions taking place on this day are excluded 
-         * from the results.</param>
-         * <param name="max">The maximum number of transactions to load.</param>
-         * <returns>The transactions within the two dates.</returns>
-         */
+        /// <summary>Gets the transactions that took place in a certain date range up to a maximum number to be loaded.</summary>
+        /// <param name="startDate">The start of the range of dates. Transactions taking place on this day are included in the results.</param>
+        /// <param name="endDate">The end of the range of dates. Transactions taking place on this day are excluded from the results.</param>
+        /// <param name="max">The maximum number of transactions to load.</param>
+        /// <returns>The transactions within the two dates.</returns>
+
         private async Task<ObservableCollection<Transaction>> GetTransactionsBetweenAsync(DateTime startDate, DateTime endDate, int max)
         {
             ObservableCollection<Transaction> newTransactionsCollection = new();
@@ -1257,7 +1233,7 @@ namespace LunchManager
                 Trace.WriteLine("end: " + endDate); //DEBUG
                 //var responseTransactions = await client.GetAsync("api/Transactions/Between/" + thisSchool.ID + "/" + startDate + "/" + endDate);
                 //var responseTransactions = await client.GetAsync("api/Transactions/Between/1/2021-07-05T14%3A50%3A38.301Z/2021-08-05T14%3A50%3A38.301Z"); //DEBUG
-                var responseTransactions = await client.GetAsync("api/Transactions/Between/" + thisSchool.ID + "/" + startDate.ToString("yyyyMMdd") + "/" + endDate.ToString("yyyyMMdd") + "/" + max);
+                var responseTransactions = await client.GetAsync("api/Transactions/Between/" + thisSchool.Id.ToString() + "/" + startDate.ToString("yyyyMMdd") + "/" + endDate.ToString("yyyyMMdd") + "/" + max);
                 newTransactionsCollection = await responseTransactions.Content.ReadAsAsync<ObservableCollection<Transaction>>();
                 if (newTransactionsCollection == null) //DEBUG
                 {
@@ -1277,7 +1253,7 @@ namespace LunchManager
             return newTransactionsCollection;
         }
 
-        /**<summary>Exports the transactions shown in the datagrid as a CSV. Does not give an option to export 
+        /**<summary>Exports the transactions shown in the datagrid as a CSV. Does not give an option to export
          * all transactions.</summary>
          */
         private void btnExportDisplayedTransactions_Click(object sender, RoutedEventArgs e)

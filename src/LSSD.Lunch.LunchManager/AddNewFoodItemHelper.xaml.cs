@@ -58,14 +58,13 @@ namespace LunchManager
             {
                 FoodItem newFoodItem;
                 cost = decimal.Round(cost, 2);
-                if (txtFoodDescription.Text != null)
-                {
-                    newFoodItem = new FoodItem(txtFoodName.Text, cost, txtFoodDescription.Text, thisSchool.ID);
-                }
-                else
-                {
-                    newFoodItem = new FoodItem(txtFoodName.Text, cost, "", thisSchool.ID);
-                }
+                
+                newFoodItem = new FoodItem() {
+                    Name = txtFoodName.Text,
+                    Cost = cost,
+                    Description = string.IsNullOrEmpty(txtFoodDescription.Text) ? "" : txtFoodDescription.Text,
+                    SchoolId = thisSchool.Id
+                };
 
                 MainWindow.unsyncedFoodItems.Add(newFoodItem);
                 MainWindow.displayedFoodItems.Add(newFoodItem);
@@ -91,16 +90,6 @@ namespace LunchManager
 
         private void txtFoodCost_TextChanged(object sender, TextChangedEventArgs e)
         {
-            /*
-            if (string.IsNullOrWhiteSpace(txtFoodName.Text))
-            {
-                txtFoodCost.BorderBrush = Brushes.Red;
-            }
-            else
-            {
-                txtFoodCost.BorderBrush = new SolidColorBrush(Color.FromArgb(100, 171, 173, 179));
-            }
-            */
             decimal cost;
             if (string.IsNullOrWhiteSpace(txtFoodCost.Text))
             {
