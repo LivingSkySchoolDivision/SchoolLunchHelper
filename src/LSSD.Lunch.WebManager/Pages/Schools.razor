@@ -17,6 +17,7 @@
         <div class="container">
             <h1>Schools</h1>
 
+            <a href="/schools/@(new Guid())">New</a>
             <table class="table">
 
             @foreach(School school in AllSchools.OrderBy(x => x.Name)) 

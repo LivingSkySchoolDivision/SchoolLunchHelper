@@ -17,10 +17,11 @@
 
     protected override void OnInitialized()
     {
-        if (schoolid != null) {
+        if (schoolid != (new Guid()).ToString()) {
             school = _repo.Get(schoolid);
+        } else {
+            school = new School();
         }
-
     }
 
     protected void HandleInValidSubmit()
@@ -32,6 +33,15 @@
     {
         // Save
         _repo.InsertOrUpdate(school);
+        
+        // Navigate back 
+        NavigationManager.NavigateTo("/schools");
+    }
+
+    protected void OnClick_Delete(School school)
+    {
+        // Save
+        _repo.Delete(school);
         
         // Navigate back 
         NavigationManager.NavigateTo("/schools");
@@ -58,7 +68,11 @@
             </div>
         </div>
         <div class="form-group">
-            <div class="form-row">
+            <div class="form-row">                
+                <div class="col">
+                    <button type="button" class="btn btn-danger btn-block" @onclick="() => OnClick_Delete(school)">Delete</button>
+                </div>
+                <div class="col"></div>
                 <div class="col">
                     <button type="submit" class="btn btn-primary btn-block">Save</button>
                 </div>

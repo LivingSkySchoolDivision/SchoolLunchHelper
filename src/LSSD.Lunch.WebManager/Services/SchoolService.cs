@@ -31,6 +31,10 @@ namespace LSSD.Lunch.WebManager.Services
         {
             _repository.Update(school);
         }
+
+        public void Delete(School school) {
+            _repository.Delete(school);
+        }
     }
 
 }
