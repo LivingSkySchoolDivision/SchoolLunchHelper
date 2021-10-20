@@ -9,11 +9,12 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using LSSD.Lunch.WebManager.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using LSSD.MongoDB;
+using LSSD.Lunch.WebManager.Services;
 
 namespace LSSD.Lunch.WebManager
 {
@@ -92,7 +93,9 @@ namespace LSSD.Lunch.WebManager
 
             services.AddAuthorization();
             
-            services.AddSingleton<WeatherForecastService>();
+            services.AddSingleton<MongoDbConnection>(x => new MongoDbConnection(Configuration.GetConnectionString("InternalDatabase")));
+            services.AddSingleton<SchoolService>();
+            services.AddSingleton<IRepository<School>, MongoRepository<School>>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

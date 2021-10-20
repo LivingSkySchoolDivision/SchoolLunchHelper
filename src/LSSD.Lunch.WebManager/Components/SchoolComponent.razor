@@ -1,0 +1,41 @@
+@using Services
+
+@code {
+
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+
+    
+    [Parameter]
+    public School School { get; set; } = null;
+
+    [Inject]
+    SchoolService _repository { get; set; }
+    
+    [Parameter]
+    public string BackRoute { get; set; } = "";
+
+
+    protected void HandleValidSubmit()
+    {
+        saveData();
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        saveData();
+    }
+
+    private void saveData()
+    {
+        // Save the resource via the service
+        _repository.InsertOrUpdate(School);
+        NavigationManager.NavigateTo(BackRoute);
+    }
+
+    protected void OnClick_Cancel()
+    {
+        // Go back
+        NavigationManager.NavigateTo(BackRoute);
+    }
+}

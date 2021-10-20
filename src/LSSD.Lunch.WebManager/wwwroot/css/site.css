@@ -57,6 +57,10 @@ a, .btn-link {
     margin-right: auto;
 }
 
+.container {
+    min-width: 700px;
+}
+
 .resource_group_container {
     display: flex;
     flex-wrap: wrap;
@@ -117,14 +121,6 @@ a, .btn-link {
     color: rgba(0,0,0,0.2);
 }
 
-.booking_view_container {    
-    min-width: 600px;
-    border: 2px solid rgba(0,0,0,0.2);
-    padding: 25px;
-    border-radius: 5px;
-    max-width: 1000px;
-}
-
 .config_button {
     display: block;
     margin-left: auto;
@@ -142,18 +138,9 @@ a, .btn-link {
 .config_button a:hover { text-decoration: none;}
 
 @media only screen and (max-width: 850px) {
-	.booking_view_container{
-        width: 100%;
-        min-width: 100%;
-        max-width: 100%;
-    }
 
     .main_inner {
         width: 100%;
-    }
-
-    .booking_view_container .form-row {    
-        margin-bottom: 1.5rem;
     }
 
     .resource_group {

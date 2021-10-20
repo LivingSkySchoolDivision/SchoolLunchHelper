@@ -22,5 +22,6 @@ namespace LSSD.Lunch
         public string FoodName { get; set; }
         public string SchoolName { get; set; }
 
+        public decimal Cost { get;set; }
     }
 }

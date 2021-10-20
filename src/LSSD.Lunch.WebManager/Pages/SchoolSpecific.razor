@@ -1,0 +1,74 @@
+@page "/schools/{schoolid}"
+@using Services
+
+@code {
+    
+    [Inject]
+    SchoolService _repo { get; set; }
+    
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+
+    [Parameter]
+    public string schoolid { get; set; }
+
+    School school = null;
+
+
+    protected override void OnInitialized()
+    {
+        if (schoolid != null) {
+            school = _repo.Get(schoolid);
+        }
+
+    }
+
+    protected void HandleInValidSubmit()
+    {
+        // Do nothing
+    }
+
+    protected void HandleValidSubmit()
+    {
+        // Save
+        _repo.InsertOrUpdate(school);
+        
+        // Navigate back 
+        NavigationManager.NavigateTo("/schools");
+    }
+
+}
+
+<AuthorizeView Context="user">
+    <Authorized>
+      
+    <div class="container">
+
+    @if(school != null) {
+        <EditForm Model="@school" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="@HandleInValidSubmit">
+        <div class="form-group">
+            <div class="row">
+                <div class="col-sm-3">ID</div>
+                <div class="col-sm-6">@school.Id.ToString()</div>
+            </div>
+            <div class="form-group row">
+                <label for="resourceName" class="col-sm-3">Name: </label>
+                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@school.Name"></InputText>
+                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => school.Name)" />
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="form-row">
+                <div class="col">
+                    <button type="submit" class="btn btn-primary btn-block">Save</button>
+                </div>
+            </div>
+        </div>
+
+        </EditForm>
+    } else {
+        <i>Object not found</i>
+    }
+</div>
+    </Authorized>
+</AuthorizeView>

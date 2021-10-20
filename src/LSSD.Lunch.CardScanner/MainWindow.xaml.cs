@@ -329,7 +329,7 @@ namespace CardScannerUI
         {
             try
             {
-                var responseStudents = await client.GetAsync("api/Students/School/" + ThisSchool.ID);
+                var responseStudents = await client.GetAsync("api/Students/School/" + ThisSchool.Id);
                 students = await responseStudents.Content.ReadAsAsync<List<Student>>();
                 
                 Trace.WriteLine("get students response status: " + responseStudents.StatusCode); //DEBUG

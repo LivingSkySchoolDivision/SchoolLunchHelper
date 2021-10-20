@@ -1,0 +1,32 @@
+@page "/schools"
+@using Services
+@code {
+    [Inject]
+    SchoolService _repo { get; set; }
+
+    List<School> AllSchools = new List<School>();
+
+    protected override void OnInitialized()
+    {
+        AllSchools = _repo.GetAll().ToList();        
+    }
+}
+
+<AuthorizeView Context="user">
+    <Authorized>      
+        <div class="container">
+            <h1>Schools</h1>
+
+            <table class="table">
+
+            @foreach(School school in AllSchools.OrderBy(x => x.Name)) 
+            {
+                <tr>
+                    <td><a href="schools/@(school.Id)">@(school.Name)</a></td>
+                </tr>
+            }
+
+            </table>
+        </div>
+    </Authorized>
+</AuthorizeView>
