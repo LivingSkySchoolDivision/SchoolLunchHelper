@@ -95,7 +95,13 @@ namespace LSSD.Lunch.WebManager
             
             services.AddSingleton<MongoDbConnection>(x => new MongoDbConnection(Configuration.GetConnectionString("InternalDatabase")));
             services.AddSingleton<SchoolService>();
+            services.AddSingleton<FoodItemService>();
+            services.AddSingleton<StudentService>();
+            services.AddSingleton<TransactionService>();
             services.AddSingleton<IRepository<School>, MongoRepository<School>>();
+            services.AddSingleton<IRepository<Student>, MongoRepository<Student>>();
+            services.AddSingleton<IRepository<Transaction>, MongoRepository<Transaction>>();
+            services.AddSingleton<IRepository<FoodItem>, MongoRepository<FoodItem>>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

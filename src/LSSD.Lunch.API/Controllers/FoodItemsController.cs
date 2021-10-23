@@ -21,18 +21,6 @@ namespace LSSD.Lunch.API.Controllers
             _service = service;
         }
         
-        [HttpPost]
-        public IActionResult Post(FoodItem FoodItem) 
-        {
-            try {
-                _service.InsertOrUpdate(FoodItem);
-                return NoContent();
-            }  
-            catch {
-                return BadRequest();
-            }
-        }
-
         [HttpGet]
         public IEnumerable<FoodItem> Get()
         {

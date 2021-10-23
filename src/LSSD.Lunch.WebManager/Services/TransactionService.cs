@@ -17,6 +17,11 @@ namespace LSSD.Lunch.WebManager.Services
             return _repository.GetById(GUID);
         }
 
+        public Transaction Get(string GUID) 
+        {
+            return _repository.GetById(GUID);
+        }
+
         public IEnumerable<Transaction> GetAll() 
         {
             return _repository.GetAll();            
@@ -25,6 +30,10 @@ namespace LSSD.Lunch.WebManager.Services
         public void InsertOrUpdate(Transaction Transaction) 
         {
             _repository.Update(Transaction);
+        }
+
+        public void Delete(Transaction item) {
+            _repository.Delete(item);
         }
         
     }
