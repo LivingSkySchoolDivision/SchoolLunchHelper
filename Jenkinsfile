@@ -4,6 +4,7 @@ pipeline {
         REPO_API = "lunch/api"
         REPO_WEBMAN = "lunch/webmanager"
         PRIVATE_REPO_API = "${PRIVATE_DOCKER_REGISTRY}/${REPO_API}"
+        PRIVATE_REPO_WEBMAN = "${PRIVATE_DOCKER_REGISTRY}/${REPO_WEBMAN}"
         TAG = "${BUILD_TIMESTAMP}"
     }
     stages {
@@ -23,7 +24,7 @@ pipeline {
         stage('Docker build - WebManager') {
             steps {
                 dir("src") {
-                    sh "docker build -f Dockerfile-Manager -t ${REPO_WEBMAN}:latest -t ${REPO_WEBMAN}:${TAG} ."
+                    sh "docker build -f Dockerfile-Manager -t ${PRIVATE_REPO_WEBMAN}:latest -t ${PRIVATE_REPO_WEBMAN}:${TAG} ."
                 }
             }
         }
@@ -31,8 +32,8 @@ pipeline {
             steps {
                 sh "docker push ${PRIVATE_REPO_API}:${TAG}"
                 sh "docker push ${PRIVATE_REPO_API}:latest"
-                sh "docker push ${REPO_WEBMAN}:${TAG}"
-                sh "docker push ${REPO_WEBMAN}:latest"
+                sh "docker push ${PRIVATE_REPO_WEBMAN}:${TAG}"
+                sh "docker push ${PRIVATE_REPO_WEBMAN}:latest"
             }
         }
     }
