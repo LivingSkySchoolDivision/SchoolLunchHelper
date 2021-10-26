@@ -7,11 +7,11 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
 WORKDIR /src
-COPY ["LSSD.LSSD.Lunch.WebManager/LSSD.Lunch.WebManager.csproj", "LSSD.LSSD.Lunch.WebManager/"]
+COPY ["LSSD.Lunch.WebManager/LSSD.Lunch.WebManager.csproj", "LSSD.Lunch.WebManager/"]
 COPY ["LSSD.Lunch.Core/Core.csproj", "LSSD.Lunch.Core/"]
-RUN dotnet restore "LSSD.LSSD.Lunch.WebManager/LSSD.Lunch.WebManager.csproj"
+RUN dotnet restore "LSSD.Lunch.WebManager/LSSD.Lunch.WebManager.csproj"
 COPY . .
-WORKDIR "/src/LSSD.LSSD.Lunch.WebManager"
+WORKDIR "/src/LSSD.Lunch.WebManager"
 RUN dotnet build "LSSD.Lunch.WebManager.csproj" -c Release -o /app/build
 
 FROM build AS publish
