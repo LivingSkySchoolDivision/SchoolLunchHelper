@@ -7,6 +7,9 @@
     FoodItemService _repo { get; set; }
     
     [Inject]
+    SchoolService _schoolrepo { get; set; }
+    
+    [Inject]
     NavigationManager NavigationManager { get; set; }
 
     [Parameter]
@@ -76,6 +79,18 @@
                 <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@item.Description"></InputText>
                 <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => item.Description)" />
             </div>
+            <div class="form-group row">
+            <label for="resourceSchool" class="col-sm-3">School: </label>
+            <InputSelect  id="resourceSchool" class="form-control col-sm-8" @bind-Value="@item.SchoolId">
+                <option value="@(new Guid())">-</option>
+                @foreach (School school in _schoolrepo.GetAll())
+                {
+                    <option value="@(school.Id)">@(school.Name)</option>
+                }
+            </InputSelect>
+            <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => item.SchoolId)" />
+        </div>
+
         </div>
         <div class="form-group">
             <div class="form-row">                
