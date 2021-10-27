@@ -1,11 +1,11 @@
-@page "/fooditems/{id}"
+@page "/students/{id}"
 @using Services
 
 @code {
     
     [Inject]
-    FoodItemService _repo { get; set; }
-    
+    StudentService _repo { get; set; }
+
     [Inject]
     SchoolService _schoolrepo { get; set; }
     
@@ -15,15 +15,15 @@
     [Parameter]
     public string id { get; set; }
 
-    FoodItem item = null;
+    Student thisObj = null;
 
 
     protected override void OnInitialized()
     {
         if (id != (new Guid()).ToString()) {
-            item = _repo.Get(id);
+            thisObj = _repo.Get(id);
         } else {
-            item = new FoodItem();
+            thisObj = new Student();
         }
     }
 
@@ -35,19 +35,19 @@
     protected void HandleValidSubmit()
     {
         // Save
-        _repo.InsertOrUpdate(item);
+        _repo.InsertOrUpdate(thisObj);
         
         // Navigate back 
-        NavigationManager.NavigateTo("/fooditems");
+        NavigationManager.NavigateTo("/students");
     }
 
-    protected void OnClick_Delete(FoodItem FoodItem)
+    protected void OnClick_Delete(Student thisObj)
     {
         // Save
-        _repo.Delete(FoodItem);
+        _repo.Delete(thisObj);
         
         // Navigate back 
-        NavigationManager.NavigateTo("/fooditems");
+        NavigationManager.NavigateTo("/students");
     }
 
 }
@@ -57,44 +57,50 @@
       
     <div class="container">
 
-    @if(item != null) {
-        <EditForm Model="@item" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="@HandleInValidSubmit">
+    @if(thisObj != null) {
+        <EditForm Model="@thisObj" OnValidSubmit="@HandleValidSubmit" OnInvalidSubmit="@HandleInValidSubmit">
         <div class="form-group">
             <div class="row">
                 <div class="col-sm-3">ID</div>
-                <div class="col-sm-6">@item.Id.ToString()</div>
+                <div class="col-sm-6">@thisObj.Id.ToString()</div>
             </div>
             <div class="form-group row">
                 <label for="resourceName" class="col-sm-3">Name: </label>
-                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@item.Name"></InputText>
-                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => item.Name)" />
+                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@thisObj.Name"></InputText>
+                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.Name)" />
             </div>
+            
             <div class="form-group row">
-                <label for="resourceName" class="col-sm-3">Cost: </label>
-                <InputNumber id="resourceName" class="form-control col-sm-8" @bind-Value="@item.Cost"></InputNumber>
-                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => item.Cost)" />
+                <label for="resourceName" class="col-sm-3">Student ID: </label>
+                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@thisObj.StudentId"></InputText>
+                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.StudentId)" />
             </div>
+
+            
             <div class="form-group row">
-                <label for="resourceName" class="col-sm-3">Description: </label>
-                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@item.Description"></InputText>
-                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => item.Description)" />
+                <label for="resourceName" class="col-sm-3">Medical: </label>
+                <InputTextArea id="resourceName" class="form-control col-sm-8" @bind-Value="@thisObj.MedicalInfo"></InputTextArea>
+                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.MedicalInfo)" />
             </div>
+
+            
             <div class="form-group row">
                 <label for="resourceSchool" class="col-sm-3">School: </label>
-                <InputSelect  id="resourceSchool" class="form-control col-sm-8" @bind-Value="@item.SchoolId">
+                <InputSelect  id="resourceSchool" class="form-control col-sm-8" @bind-Value="@thisObj.SchoolId">
                     <option value="@(new Guid())">-</option>
                     @foreach (School school in _schoolrepo.GetAll())
                     {
                         <option value="@(school.Id)">@(school.Name)</option>
                     }
                 </InputSelect>
-                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => item.SchoolId)" />
+                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.SchoolId)" />
             </div>
+
         </div>
         <div class="form-group">
             <div class="form-row">                
                 <div class="col">
-                    <button type="button" class="btn btn-danger btn-block" @onclick="() => OnClick_Delete(item)">Delete</button>
+                    <button type="button" class="btn btn-danger btn-block" @onclick="() => OnClick_Delete(thisObj)">Delete</button>
                 </div>
                 <div class="col"></div>
                 <div class="col">

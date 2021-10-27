@@ -1,0 +1,33 @@
+@page "/students"
+@using Services
+@code {
+    [Inject]
+    StudentService _repo { get; set; }
+
+    List<Student> AllStudents = new List<Student>();
+
+    protected override void OnInitialized()
+    {
+        AllStudents = _repo.GetAll().ToList();        
+    }
+}
+
+<AuthorizeView Context="user">
+    <Authorized>      
+        <div class="container">
+            <h1>Students</h1>
+
+            <a href="/students/@(new Guid())">New</a>
+            <table class="table">
+
+            @foreach(Student student in AllStudents.OrderBy(x => x.Name)) 
+            {
+                <tr>
+                    <td><a href="students/@(student.Id)">@(student.Name)</a></td>
+                </tr>
+            }
+
+            </table>
+        </div>
+    </Authorized>
+</AuthorizeView>

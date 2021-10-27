@@ -17,13 +17,23 @@ namespace LSSD.Lunch.WebManager.Services
             return _repository.GetById(GUID);
         }
 
+        public Student Get(string GUID) 
+        {
+            return _repository.GetById(GUID);
+        }
+
         public IEnumerable<Student> GetAll() 
         {
             return _repository.GetAll();            
         }
+        
         public void InsertOrUpdate(Student Student) 
         {
             _repository.Update(Student);
+        }
+
+        public void Delete(Student student) {
+            _repository.Delete(student);
         }
         
     }
