@@ -39,19 +39,38 @@ namespace LSSD.Lunch.Reports
         private Document GenerateBody(List<Student> Students) {
 
             List<OpenXmlElement> pageParts = new List<OpenXmlElement>();
-
-            // For each student, add an ID card
-            // Should be able to fit 6-8 per page
+                        
+            int columns = 2;
+                        
+            // Split students into groups based on columns
+            List<List<Student>> studentGroups = new List<List<Student>>();
             
-            foreach(Student student in Students) 
+            for(int x = 0; x < Students.Count; x+=columns)
             {
+                studentGroups.Add(Students.GetRange(x,Math.Min(Students.Count - x, columns)));
+            }
+           
+            foreach(List<Student> studentGroup in studentGroups) 
+            {
+                TableRow row = TableHelper.StickyTableRow();
+
+                for(int x = 0; x < columns; x++) 
+                {
+                    if (studentGroup.Count > x)
+                    {
+                        row.AppendChild(TableHelper.ContainerCell(
+                            generateIDCard(studentGroup[x]),
+                            ParagraphHelper.WhiteSpace(),
+                            ParagraphHelper.WhiteSpace()
+                            )
+                        );
+                    } else {
+                        row.AppendChild(TableHelper.EmptyCell());
+                    }
+                }
+
                 pageParts.Add(
-                    TableHelper.StyledTable(
-                        TableHelper.StickyTableRow(
-                            TableHelper.LabelCell(student.Name),
-                            TableHelper.ContainerCell(generateIDCard(student))
-                        )
-                    )
+                    TableHelper.BorderlessTable(row)
                 );
             }
 

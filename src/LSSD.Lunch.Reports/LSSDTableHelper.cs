@@ -45,6 +45,22 @@ namespace LSSD.Lunch.Reports
             return table;
         }
 
+        public static Table BorderlessTable(params OpenXmlElement[] childItems) {
+            Table table = new Table(
+                new TableLayout() {  Type = TableLayoutValues.Autofit },
+                new TableWidth() { 
+                    Type = TableWidthUnitValues.Pct, 
+                    Width = $"{100 * 50}"
+                    },
+                LSSDTableStyles.Margins()
+            );
+
+            foreach(OpenXmlElement e in childItems) {
+                table.AppendChild(e);
+            }
+
+            return table;
+        }
         
         public static TableRow StickyTableRow(params OpenXmlElement[] childItems) 
         {
@@ -196,7 +212,31 @@ namespace LSSD.Lunch.Reports
 
             TableCell tc = new TableCell(
                 new TableCellProperties(),
-                new Paragraph(containerRun)
+                new Paragraph(containerRun) {
+                    ParagraphProperties= new ParagraphProperties(
+                        new Justification() { Val = JustificationValues.Center },
+                        new SpacingBetweenLines() { Before = "0", After = "0" }
+                    )
+                }
+            );
+
+            return tc;
+        }
+
+        public static TableCell EmptyCell()  {
+            TableCell tc = new TableCell(
+                new Paragraph(
+                    string.Empty
+                )  {
+                    ParagraphProperties = new ParagraphProperties(
+                        new Justification() { Val = JustificationValues.Center },
+                        new SpacingBetweenLines() { Before = "0", After = "0" }
+                    ) {
+                        ParagraphStyleId = new ParagraphStyleId() {
+                            Val = LSSDDocumentStyles.FieldValue
+                        }
+                    }
+                }
             );
 
             return tc;
