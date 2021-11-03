@@ -257,10 +257,6 @@ namespace CardScannerUI
                         Trace.WriteLine("could not deserialize"); //DEBUG
                     }
                 }
-                foreach (Transaction i in unsyncedTransactions) //DEBUG
-                {
-                    Trace.WriteLine("deserialized-> studentID: " + i.StudentID + " studentName: " + i.StudentName + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID);
-                }
                 txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
             }
         }
@@ -315,10 +311,7 @@ namespace CardScannerUI
                         
                     }
                 }
-                foreach (Transaction i in unsyncedTransactions) //DEBUG
-                {
-                    Trace.WriteLine("deserialized-> studentID: " + i.StudentID + " studentName: " + i.StudentName + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID);
-                }
+
                 txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString();
             }
         }
@@ -331,61 +324,15 @@ namespace CardScannerUI
             {
                 var responseStudents = await client.GetAsync("api/Students/School/" + ThisSchool.Id);
                 students = await responseStudents.Content.ReadAsAsync<List<Student>>();
-                
-                Trace.WriteLine("get students response status: " + responseStudents.StatusCode); //DEBUG
-                if (this.students != null) //DEBUG
-                {
-                    foreach (Student i in students)
-                    {
-                        Trace.WriteLine("Name: " + i.Name + " StudentID: " + i.StudentID + " SchoolID: " + i.SchoolID + " Balance: " + i.Balance + " MedicalInfo: " + i.MedicalInfo);
-                    }
-                }
-                else
-                {
-                    Trace.WriteLine("Students is null");
-                }
 
-                /*
-                var responseSchools = await client.GetAsync("api/Schools");
-                schools = await responseSchools.Content.ReadAsAsync<List<School>>();
-                Trace.WriteLine("get schools response status: " + responseSchools.StatusCode); //DEBUG
-                if (this.schools != null) //DEBUG
-                {
-                    foreach (School i in schools)
-                    {
-                        Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID);
-                    }
-                }
-                else
-                {
-                    Trace.WriteLine("Schools is null");
-                }
-                */
-                var responseFood = await client.GetAsync("api/FoodItems/School/" + ThisSchool.ID);
-                Trace.WriteLine(ThisSchool.ID); //DEBUG
-                foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();
-                Trace.WriteLine("response: " + responseFood); //DEBUG
-
-                Trace.WriteLine("get food response status: " + responseFood.StatusCode); //DEBUG
-                if (foodItems != null) //DEBUG
-                {
-                    foreach (FoodItem i in foodItems)
-                    {
-                        Trace.WriteLine("Name: " + i.Name + " ID: " + i.ID + " SchoolID: " + i.SchoolID + " Cost: " + i.Cost + " Description: " + i.Description);
-                    }
-                }
-                else
-                {
-                    Trace.WriteLine("FoodItems is null");
-                }
-
+                var responseFood = await client.GetAsync("api/FoodItems/School/" + ThisSchool.Id);
+                foodItems = await responseFood.Content.ReadAsAsync<ObservableCollection<FoodItem>>();  
             }
             catch 
             {
                 await ReadDataFromJsonAsync();
                 connectionFailed = true;
             }
-            Trace.WriteLine("1"); //DEBUG
         }
 
         /**<summary>Asynchronously reads student and foodItem data from the backup JSON files and stores it in the window's lists.</summary>
@@ -492,7 +439,7 @@ namespace CardScannerUI
 
             foreach (Student i in students)
             {
-                if (i.StudentID.Equals(studentID))
+                if (i.StudentId.Equals(studentID))
                 {
                     return i;
                 }
@@ -523,7 +470,11 @@ namespace CardScannerUI
                 await SyncAllTransactionsAsync(); //automatically shows the loading dialog box and disables the main window
             }
 
-            lastTransaction = new Transaction(StudentID, FoodID, foodName, cost, student.Name, ThisSchool.ID, ThisSchool.Name); //sets last transaction so it can be undone
+            lastTransaction = new Transaction() {
+                StudentID = StudentID,
+                FoodItem = FoodID
+            };
+                StudentID, FoodID, foodName, cost, student.Name, ThisSchool.ID, ThisSchool.Name); //sets last transaction so it can be undone
 
             //add new transaction to the GUI list and the JSON list
             guiTransactions.Add(lastTransaction);
@@ -559,11 +510,6 @@ namespace CardScannerUI
                 File.WriteAllText(transactionsJsonPath, SerializeJsonString); //overwrites the JSON with the updated list of transactions
                 lastTransaction = null;
                 txtUnsyncedTransactionsCount.Text = unsyncedTransactions.Count.ToString(); 
-                foreach (Transaction i in guiTransactions) //DEBUG
-                {
-                    Trace.WriteLine("remaining transaction->  name: " + i.StudentName + " ID: " + i.StudentID + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID); //DEBUG
-                }
-
             }
             buttonUndoTransaction.IsEnabled = false; //disable the button after undo
             Keyboard.Focus(txtEnterStudentNum); //keep the cursor in the enter student number box
@@ -586,10 +532,7 @@ namespace CardScannerUI
             IsEnabled = false;
 
             List<string> syncedTransactionIDs = new List<string>(); //stores the IDs of the transactions that have been synced
-            foreach (Transaction i in unsyncedTransactions) //DEBUG
-            {
-                Trace.WriteLine("unsyned transaction-> ID: " + i.ID + " name: " + i.StudentName + " studentID: " + i.StudentID + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID); //DEBUG
-            }
+            
             //List<Transaction> syncedTransactions = new List<Transaction>();
             bool successfullySynced = true;
 
@@ -597,7 +540,7 @@ namespace CardScannerUI
             {
                 try
                 {
-                    Trace.WriteLine("trying to sync a transaction with ID: " + i.ID); //DEBUG
+                    Trace.WriteLine("trying to sync a transaction with ID: " + i.Id.ToString()); //DEBUG
                     string jsonString = JsonSerializer.Serialize(i);
                     var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
                     var response = await client.PostAsync("api/Transactions", httpContent);
@@ -605,7 +548,7 @@ namespace CardScannerUI
                     Trace.WriteLine("IsSuccessStatusCode: " + response.IsSuccessStatusCode); //DEBUG
                     if (response.IsSuccessStatusCode)
                     {
-                        syncedTransactionIDs.Add(i.ID); //if successfully synced, add to list of synced transactions
+                        syncedTransactionIDs.Add(i.Id.ToString()); //if successfully synced, add to list of synced transactions
                     }
                     else
                     {
@@ -641,12 +584,9 @@ namespace CardScannerUI
             else
             {
                 //remove the transactions that were synced from the unsynced transactions list (compare by ID to avoid potential bugs)
-                int testInt = unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactionIDs.Any(y => y.Equals(x.ID))); //testInt is for DEBUG
+                int testInt = unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactionIDs.Any(y => y.Equals(x.Id.ToString()))); //testInt is for DEBUG
                 Trace.WriteLine("num transactions removed: " + testInt); //DEBUG - says 1 was removed when 0 were actually removed
-                foreach (Transaction i in unsyncedTransactions) //DEBUG
-                {
-                    Trace.WriteLine("transaction not removed-> ID: " + i.ID + " name: " + i.StudentName + " studentID: " + i.StudentID + " cost: " + i.Cost + " item: " + i.FoodName + " foodID: " + i.FoodID + " schoolName: " + i.SchoolName + " schoolID: " + i.SchoolID); //DEBUG
-                }
+                
                 //unsyncedTransactions.ToList().RemoveAll(x => !syncedTransactions.Any(y => y.ID.Equals(x.ID)));
                 string SerializeJsonString = JsonSerializer.Serialize(unsyncedTransactions);
                 File.WriteAllText(transactionsJsonPath, SerializeJsonString); //overwrites the JSON with the updated list of unsynced transactions
@@ -674,7 +614,7 @@ namespace CardScannerUI
             IsEnabled = false;
             for (int i = unsyncedTransactions.Count - 1; i >= 0; i--)
             {
-                Trace.WriteLine("trying to sync a transaction with ID: " + unsyncedTransactions[i].ID); //DEBUG
+                Trace.WriteLine("trying to sync a transaction with ID: " + unsyncedTransactions[i].Id); //DEBUG
                 Trace.WriteLine(unsyncedTransactions[i]); //DEBUG
                 string jsonString = JsonSerializer.Serialize(unsyncedTransactions[i]);
                 var httpContent = new StringContent(jsonString, Encoding.UTF8, "application/json");
@@ -747,7 +687,7 @@ namespace CardScannerUI
                 FoodItem selectedItem = dataGridFoodItems.SelectedItem as FoodItem;
                 if (selectedItem != null)
                 {
-                    string foodID = selectedItem.ID;
+                    string foodID = selectedItem.Id.ToString();
                     string foodName = selectedItem.Name;
                     decimal cost = selectedItem.Cost;
                     Student student = GetStudentByID(studentID);

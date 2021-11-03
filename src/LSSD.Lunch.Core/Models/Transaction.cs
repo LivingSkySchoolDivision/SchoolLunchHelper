@@ -15,7 +15,7 @@ namespace LSSD.Lunch
 
         public DateTime Timestamp { get; set; }
         public Guid StudentID { get; set; }
-        public Guid FoodItem { get; set; }
+        public Guid FoodItemID { get; set; }
         public Guid SchoolId { get; set; }
 
         public string StudentName { get; set; }
