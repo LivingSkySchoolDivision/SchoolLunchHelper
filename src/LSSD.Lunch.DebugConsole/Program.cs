@@ -34,13 +34,18 @@ namespace LSSD.Lunch.DebugConsole
             {
                 new Student() {
                     Id = Guid.NewGuid(),
-                    StudentId = "3040199",
+                    StudentId = "1324567",
                     Name = "Jane Smith"
                 },
                 new Student() {
                     Id = Guid.NewGuid(),
-                    StudentId = "3040199",
+                    StudentId = "7654321",
                     Name = "Bruce Wayne"
+                },
+                new Student() {
+                    Id = Guid.NewGuid(),
+                    StudentId = "1234567",
+                    Name = "Bill Gates"
                 }
             };
 

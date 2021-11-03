@@ -35,6 +35,28 @@ namespace LSSD.Lunch.Reports
                 mainPart.Document = GenerateBody(Students);
             }
         }
+        
+        private Document GenerateBody(List<Student> Students) {
+
+            List<OpenXmlElement> pageParts = new List<OpenXmlElement>();
+
+            // For each student, add an ID card
+            // Should be able to fit 6-8 per page
+            
+            foreach(Student student in Students) 
+            {
+                pageParts.Add(
+                    TableHelper.StyledTable(
+                        TableHelper.StickyTableRow(
+                            TableHelper.LabelCell(student.Name),
+                            TableHelper.ContainerCell(generateIDCard(student))
+                        )
+                    )
+                );
+            }
+
+            return new Document(new Body(pageParts));
+        }
 
         private void EmbedStudentBarcodeImages(WordprocessingDocument document, List<Student> students)
         {
@@ -203,25 +225,6 @@ namespace LSSD.Lunch.Reports
 
             return new Run();
         }
-
-        private Document GenerateBody(List<Student> Students) {
-
-            List<OpenXmlElement> pageParts = new List<OpenXmlElement>();
-
-            // For each student, add an ID card
-            // Should be able to fit 6-8 per page
-            
-            foreach(Student student in Students) 
-            {
-                pageParts.Add(generateIDCard(student));
-                pageParts.Add(ParagraphHelper.WhiteSpace());
-                pageParts.Add(ParagraphHelper.WhiteSpace());
-                pageParts.Add(ParagraphHelper.WhiteSpace());
-            }
-
-            return new Document(new Body(pageParts));
-        }
-
 
     }
 }
