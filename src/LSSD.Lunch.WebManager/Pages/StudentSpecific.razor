@@ -1,4 +1,5 @@
 @page "/students/{id}"
+@using Reports
 @using Services
 
 @code {
@@ -48,6 +49,23 @@
         
         // Navigate back 
         NavigationManager.NavigateTo("/students");
+    }
+
+    protected void OnClick_GenerateIDCard(Student thisObj)
+    {
+        byte[] fileBytes;
+
+        using (ReportFactory formFactory = new ReportFactory()) 
+        {
+            string filename = formFactory.GenerateStudentIDCardSheet(new List<Student>() { thisObj });
+
+            if (!string.IsNullOrEmpty(filename)) {
+                fileBytes = System.IO.File.ReadAllBytes(filename);
+            } else {
+                Console.WriteLine("Something went wrong, and the report could not be created.");
+            }            
+        }
+
     }
 
 }
@@ -100,7 +118,9 @@
                 <div class="col">
                     <button type="button" class="btn btn-danger btn-block" @onclick="() => OnClick_Delete(thisObj)">Delete</button>
                 </div>
-                <div class="col"></div>
+                <div class="col">
+                    <button type="button" class="btn btn-primary btn-block" @onclick="() => OnClick_GenerateIDCard(thisObj)">ID Card</button>
+                </div>
                 <div class="col">
                     <button type="submit" class="btn btn-primary btn-block">Save</button>
                 </div>
