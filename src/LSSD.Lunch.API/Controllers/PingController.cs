@@ -17,7 +17,7 @@ namespace LSSD.Lunch.API.Controllers
         {
             return new JsonResult(new { ping = "pong" }, new System.Text.Json.JsonSerializerOptions()
                 {
-                    IgnoreNullValues = false,
+                    DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
                     WriteIndented = true
                 });
         }
