@@ -56,7 +56,7 @@
         // Navigate to the API endpoint
         await JSRuntime.InvokeAsync<object>(
             "FileSaveAs",
-            "filename.docx",
+            "lunchcard-" + thisObj.StudentId + "-" + thisObj.Name.ToLower().Replace(" ", "").Replace("'","").Replace(",","") + ".docx",
             "/IndividualIDCard/" + thisObj.Id            
             );
     }
@@ -112,8 +112,9 @@
                     <button type="button" class="btn btn-danger btn-block" @onclick="() => OnClick_Delete(thisObj)">Delete</button>
                 </div>
                 <div class="col">
-                    <button type="button" class="btn btn-primary btn-block" @onclick="() => OnClick_GenerateIDCard(thisObj)">ID Card</button>
-                    <!--<a href="javascript:void(0)" @onclick=@(() => OnClick_GenerateIDCard(thisObj)) >ID Card</a>-->
+                    @if (thisObj.Id != new Guid()) {
+                        <button type="button" class="btn btn-primary btn-block" @onclick="() => OnClick_GenerateIDCard(thisObj)">ID Card</button>
+                    }                    
                 </div>
                 <div class="col">
                     <button type="submit" class="btn btn-primary btn-block">Save</button>
