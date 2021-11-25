@@ -1,67 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Azure.KeyVault;
-using Microsoft.Azure.Services.AppAuthentication;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.AzureKeyVault;
+using LSSD.MongoDB;
 
 namespace LSSD.Lunch.StudentImporter
 {
     public class Program
     {
-        static IConfiguration configuration = new ConfigurationBuilder()
-                   .AddJsonFile($"appsettings.json", true, true)
-                   .AddEnvironmentVariables()
-                   .Build();
         static string dbConnectionString = string.Empty;
-        static string azkvEndpoint = configuration["KEYVAULT_ENDPOINT"];
 
         public static void Main(string[] args)
         {
-            loadDBConnectionStringFromKeyVault();
+            try {
+                FileStream configFile = File.Open("config.json", FileMode.Open);
+                if (configFile != null) {
+                    ConfigFile config = System.Text.Json.JsonSerializer.Deserialize<ConfigFile>(configFile);
 
-            // Check syntax
+                    // For now just ingest "input.txt"
 
-            // Read in the file
+                    MongoDbConnection dbConnection = new MongoDbConnection(config.ConnectionString);
 
-            // Get list of students from DB
+                    MongoRepository<Student> studentRepository = new MongoRepository<Student>(dbConnection);
+                    MongoRepository<School> schoolRepository = new MongoRepository<School>(dbConnection);
 
-            // Find new students
+                    List<School> allSchools = schoolRepository.GetAll().ToList();
+                    List<Student> allStudents = studentRepository.GetAll().ToList();
 
-            // Find students to make inactive            
-        }
+                    // Put existing students in a dictionary for easier processing
 
-        private static void loadDBConnectionStringFromKeyVault()
-        {
-            try
-            {
-                Console.WriteLine("> Connecting to Azure Key Vault...");
-                var azureServiceTokenProvider = new AzureServiceTokenProvider();
-                var keyVaultClient = new KeyVaultClient(
-                                new KeyVaultClient.AuthenticationCallback(
-                                    azureServiceTokenProvider.KeyVaultTokenCallback));
-                Console.WriteLine("> Retrieving secrets...");
-                IConfiguration conf = new ConfigurationBuilder()
-                    .AddAzureKeyVault(azkvEndpoint, keyVaultClient, new DefaultKeyVaultSecretManager())
-                    .Build();
+                    Dictionary<string, Student> studentsByStudentNumber = allStudents.ToDictionary(x => x.StudentId);
+                    List<Student> newStudentsNeeded = new List<Student>();
 
-                string connstr = conf.GetConnectionString("InternalDatabase");
 
-                if (string.IsNullOrEmpty(connstr))
-                {
-                    Console.WriteLine("> ERROR: Couldn't find a connection string!");
-                    Thread.Sleep(3000);
+                    foreach(Student student in InputFileParser.ParseInputFile("input.txt"))
+                    {
+                        Console.WriteLine(student.StudentId + ": " + student.Name + " (" + student.HomeRoom + ")");
+                    }
+
+                    
+
+                    // Get list of students from DB
+
+                    // Find new students
+
+                    // Find students to make inactive
+
+                    // Find schools to add
+
                 }
-                else
-                {
-                    Console.WriteLine("> Setting connection string...");
-                    dbConnectionString = connstr;
-                }
-            } catch(Exception ex)
-            {
-                Console.WriteLine("> ERROR: " + ex.Message);
             }
+            catch(Exception ex) {
+                Console.WriteLine("ERROR: " + ex.Message);
+            }
+
+
         }
+
+
     }
 }
