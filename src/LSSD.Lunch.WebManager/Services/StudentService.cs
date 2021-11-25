@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LSSD.Lunch.WebManager.Services
 {
@@ -25,6 +26,11 @@ namespace LSSD.Lunch.WebManager.Services
         public IEnumerable<Student> GetAll() 
         {
             return _repository.GetAll();            
+        }
+
+        public IEnumerable<Student> GetAllActive() 
+        {
+            return _repository.GetAll().Where(x => x.IsActive == true);            
         }
         
         public void InsertOrUpdate(Student Student) 

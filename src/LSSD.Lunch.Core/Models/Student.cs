@@ -16,5 +16,6 @@ namespace LSSD.Lunch
 		public string Name { get;set ;}
 		public Guid SchoolId { get; set; }
 		public string MedicalInfo { get; set; }
+		public bool IsActive { get; set; }
 	}
 }

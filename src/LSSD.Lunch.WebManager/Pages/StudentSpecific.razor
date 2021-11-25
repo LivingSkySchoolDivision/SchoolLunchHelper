@@ -104,6 +104,11 @@
                 </InputSelect>
                 <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.SchoolId)" />
             </div>
+            
+            <div class="form-group row">
+                <label for="resourceName" class="col-sm-3">Active: </label>
+                <div class="col-sm-8">@(thisObj.IsActive.ToYesOrNo())</div>
+            </div>
 
         </div>
         <div class="form-group">
