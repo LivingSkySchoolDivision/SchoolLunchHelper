@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSSD.Lunch.Reports", "LSSD.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSSD.Lunch.DebugConsole", "LSSD.Lunch.DebugConsole\LSSD.Lunch.DebugConsole.csproj", "{FD24A063-ACA6-47A0-B362-B198754CFCCB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LSSD.Lunch.StudentImporter", "LSSD.Lunch.StudentImporter\LSSD.Lunch.StudentImporter.csproj", "{6080F648-D4FD-4FF3-8994-7A92AB7337FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -142,5 +144,17 @@ Global
 		{FD24A063-ACA6-47A0-B362-B198754CFCCB}.Release|x64.Build.0 = Release|Any CPU
 		{FD24A063-ACA6-47A0-B362-B198754CFCCB}.Release|x86.ActiveCfg = Release|Any CPU
 		{FD24A063-ACA6-47A0-B362-B198754CFCCB}.Release|x86.Build.0 = Release|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Debug|x64.Build.0 = Debug|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Debug|x86.Build.0 = Debug|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Release|x64.ActiveCfg = Release|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Release|x64.Build.0 = Release|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Release|x86.ActiveCfg = Release|Any CPU
+		{6080F648-D4FD-4FF3-8994-7A92AB7337FD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
