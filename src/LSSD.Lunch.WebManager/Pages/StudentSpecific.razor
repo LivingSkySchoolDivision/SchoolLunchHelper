@@ -3,13 +3,16 @@
 @using Services
 @inject IJSRuntime JSRuntime
 @code {
-    
+
     [Inject]
     StudentService _repo { get; set; }
 
     [Inject]
     SchoolService _schoolrepo { get; set; }
-    
+
+    [Inject]
+    TransactionService _transactionrepo { get; set; }
+
     [Inject]
     NavigationManager NavigationManager { get; set; }
 
@@ -18,11 +21,14 @@
 
     Student thisObj = null;
 
+    List<Transaction> _studentTransactions = new List<Transaction>();
+    Decimal adjustAmount = 0;
 
     protected override void OnInitialized()
     {
         if (id != (new Guid()).ToString()) {
             thisObj = _repo.Get(id);
+            _studentTransactions = _transactionrepo.GetForStudentGUID(id).ToList();
         } else {
             thisObj = new Student();
         }
@@ -37,8 +43,8 @@
     {
         // Save
         _repo.InsertOrUpdate(thisObj);
-        
-        // Navigate back 
+
+        // Navigate back
         NavigationManager.NavigateTo("/students");
     }
 
@@ -46,8 +52,8 @@
     {
         // Save
         _repo.Delete(thisObj);
-        
-        // Navigate back 
+
+        // Navigate back
         NavigationManager.NavigateTo("/students");
     }
 
@@ -57,15 +63,43 @@
         await JSRuntime.InvokeAsync<object>(
             "FileSaveAs",
             "lunchcard-" + thisObj.StudentId + "-" + thisObj.Name.ToLower().Replace(" ", "").Replace("'","").Replace(",","") + ".docx",
-            "/IndividualIDCard/" + thisObj.Id            
+            "/IndividualIDCard/" + thisObj.Id
             );
     }
+
+    protected void addTransaction(decimal Dollars, string Username) 
+    {
+        Transaction newTransaction = new Transaction() 
+        {
+            TimestampUTC = DateTime.UtcNow,
+            StudentID = thisObj.Id,
+            StudentNumber = thisObj.StudentId,
+            ItemDescription = "Funds adjusted by " + Username,
+            Amount = (decimal)Dollars
+        };
+
+        _transactionrepo.InsertOrUpdate(newTransaction);
+        _studentTransactions.Add(newTransaction);
+        
+    }
+
+    protected void OnSubmit_AddTransaction(string Username)
+    {
+        if (adjustAmount != (decimal)0)
+        {
+            addTransaction(adjustAmount, Username);  
+
+            // Reset adjust amount
+            adjustAmount = 0;     
+        }
+    }
+
 
 }
 
 <AuthorizeView Context="user">
-    <Authorized>
-      
+    <Authorized Context="Auth">
+
     <div class="container">
 
     @if(thisObj != null) {
@@ -85,7 +119,7 @@
                 <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@thisObj.LastName"></InputText>
                 <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.Name)" />
             </div>
-            
+
             <div class="form-group row">
                 <label for="resourceStudentNumber" class="col-sm-3">Student ID: </label>
                 <InputText id="resourceStudentNumber" class="form-control col-sm-8" @bind-Value="@thisObj.StudentId"></InputText>
@@ -97,13 +131,13 @@
                 <InputText id="resourceHomeRoom" class="form-control col-sm-8" @bind-Value="@thisObj.HomeRoom"></InputText>
                 <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.HomeRoom)" />
             </div>
-            
+
             <div class="form-group row">
                 <label for="resourceMedical" class="col-sm-3">Medical: </label>
                 <InputTextArea id="resourceMedical" class="form-control col-sm-8" @bind-Value="@thisObj.MedicalInfo"></InputTextArea>
                 <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.MedicalInfo)" />
             </div>
-            
+
             <div class="form-group row">
                 <label for="resourceSchool" class="col-sm-3">School: </label>
                 <InputSelect  id="resourceSchool" class="form-control col-sm-8" @bind-Value="@thisObj.SchoolId">
@@ -115,33 +149,79 @@
                 </InputSelect>
                 <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.SchoolId)" />
             </div>
-            
+
             <div class="form-group row">
                 <label for="resourceEnabled" class="col-sm-3">Active: </label>
                 <div class="col-sm-8">
                     <InputCheckbox  id="resourceEnabled" @bind-Value="@thisObj.IsActive"></InputCheckbox>
-                    <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.IsActive)" />
+                    <ValidationMessage class="offset-sm-3 col-sm-8" For="@(() => thisObj.IsActive)" />
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="resourceMedical" class="col-sm-3">Balance: </label>
+                <div class="col-sm-2">
+                    @(_studentTransactions.Sum(x => x.Amount).ToString("C"))
                 </div>
             </div>
 
         </div>
         <div class="form-group">
-            <div class="form-row">                
+            <div class="form-row">
                 <div class="col">
                     <button type="button" class="btn btn-danger btn-block" @onclick="() => OnClick_Delete(thisObj)">Delete</button>
                 </div>
                 <div class="col">
                     @if (thisObj.Id != new Guid()) {
                         <button type="button" class="btn btn-primary btn-block" @onclick="() => OnClick_GenerateIDCard(thisObj)">ID Card</button>
-                    }                    
+                    }
                 </div>
                 <div class="col">
-                    <button type="submit" class="btn btn-primary btn-block">Save</button>
+                    <button type="submit" class="btn btn-primary btn-block" @onclick="() => HandleValidSubmit()">Save</button>
                 </div>
             </div>
         </div>
 
         </EditForm>
+
+
+        <EditForm Model="@adjustAmount">
+        <br/><br/>
+        <h2>Add or remove funds</h2>
+        <div class="form-group">
+            <div class="form-row">
+                <div class="col">
+                    <InputNumber  id="adjustAmountValue" class="form-control col-sm-8" @bind-Value="@adjustAmount" placeholder="$5.00"></InputNumber>
+                </div>
+                <div class="col">
+                    <button type="submit" class="btn btn-primary btn-block" @onclick="() => OnSubmit_AddTransaction(Auth.User.Identity.Name)">Add</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="col" style="text-align: right;">
+                    <button type="button" class="btn btn-primary" @onclick="() => addTransaction(1,Auth.User.Identity.Name)">+1</button>&nbsp;
+                    <button type="button" class="btn btn-primary" @onclick="() => addTransaction(2,Auth.User.Identity.Name)">+2</button>&nbsp;
+                    <button type="button" class="btn btn-primary" @onclick="() => addTransaction(5,Auth.User.Identity.Name)">+5</button>&nbsp;
+                    <button type="button" class="btn btn-primary" @onclick="() => addTransaction(10,Auth.User.Identity.Name)">+10</button>&nbsp;
+                    <button type="button" class="btn btn-primary" @onclick="() => addTransaction(20,Auth.User.Identity.Name)">+20</button>&nbsp;
+                </div>
+            </div>
+        </div>
+        </EditForm>
+
+        <br/><br/>
+        <h2>Transaction history</h2>
+        <p><i>Newest transactions on top</i></p>
+        @foreach(Transaction transaction in _studentTransactions.OrderByDescending(x => x.TimestampUTC))
+        {
+            <div class="row">
+                <div class="col-sm-3">@(transaction.TimestampUTC.ToLongDateString())</div>
+                <div class="col-sm-2">@(transaction.TimestampUTC.ToLongTimeString())</div>
+                <div class="col-sm-5">@(transaction.ItemDescription)</div>
+                <div class="col-sm-2" style="text-align: right;">@(transaction.Amount.ToString("C"))</div>
+            </div>
+        }
+
     } else {
         <i>Object not found</i>
     }
