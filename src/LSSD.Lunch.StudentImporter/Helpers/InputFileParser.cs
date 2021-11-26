@@ -14,7 +14,10 @@ namespace LSSD.Lunch.StudentImporter {
             {
                 Student parsed = parseLine(line);
                 if (parsed != null) {
-                    returnMe.Add(parsed);
+                    if (!string.IsNullOrEmpty(parsed.StudentId)) // Ignore students with empty student IDs
+                    {
+                        returnMe.Add(parsed);
+                    }
                 }
             }
 
@@ -35,7 +38,8 @@ namespace LSSD.Lunch.StudentImporter {
                 return new Student() {
                     SchoolName = parsedline[0],
                     StudentId = parsedline[1],
-                    Name = parsedline[2] + " " + parsedline[3],
+                    FirstName = parsedline[2],
+                    LastName = parsedline[3],
                     HomeRoom = parsedline[4]                    
                 };
             }

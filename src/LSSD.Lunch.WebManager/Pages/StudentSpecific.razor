@@ -76,8 +76,13 @@
                 <div class="col-sm-6">@thisObj.Id.ToString()</div>
             </div>
             <div class="form-group row">
-                <label for="resourceName" class="col-sm-3">Name: </label>
-                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@thisObj.Name"></InputText>
+                <label for="resourceName" class="col-sm-3">First Name: </label>
+                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@thisObj.FirstName"></InputText>
+                <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.Name)" />
+            </div>
+            <div class="form-group row">
+                <label for="resourceName" class="col-sm-3">Last Name: </label>
+                <InputText id="resourceName" class="form-control col-sm-8" @bind-Value="@thisObj.LastName"></InputText>
                 <ValidationMessage class="offset-sm-3 col-sm-68" For="@(() => thisObj.Name)" />
             </div>
             

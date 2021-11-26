@@ -110,6 +110,13 @@ namespace LSSD.MongoDB
             }
         }
 
+        public void Update(List<T> entities) 
+        {
+            foreach(T entity in entities)
+            {
+                Update(entity);
+            }
+        }
 
         private bool isValidGUID(string input)
         {
