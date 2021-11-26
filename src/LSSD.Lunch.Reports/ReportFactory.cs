@@ -23,7 +23,6 @@ namespace LSSD.Lunch.Reports
             if (!Directory.Exists(_tempDirPath)) {
                 Directory.CreateDirectory(_tempDirPath);
             }
-            Console.WriteLine("Temp directory is: " + _tempDirPath);
         }
 
 
