@@ -56,10 +56,12 @@
 
             <table class="table">
 
-            @foreach(Student student in AllStudents.OrderBy(x => x.Name).Where(x => x.Name.ToLower().Contains(searchString))) 
+            @foreach(Student student in AllStudents.OrderBy(x => x.Name).Where(x => x.Name.ToLower().Contains(searchString) || x.StudentId.ToLower().Contains(searchString)))
             {
                 <tr>
+                    <td>@(student.SchoolName)</td>
                     <td><a href="students/@(student.Id)">@(student.Name) @if(!student.IsActive) { <i> (inactive)</i> } </a></td>
+                    <td>@(student.StudentId)</td>
                 </tr>
             }
 
