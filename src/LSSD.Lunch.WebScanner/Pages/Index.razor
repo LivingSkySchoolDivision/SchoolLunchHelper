@@ -1,9 +1,56 @@
 ﻿@page "/"
+@using LSSD.Lunch
+@inject IJSRuntime jsRuntime
 
-<PageTitle>Index</PageTitle>
+@code {
+    List<Transaction> transactions = new List<Transaction>();
+    string scannedValue = string.Empty;
+    public string InputID = "input-id";
 
-<h1>Hello, world!</h1>
 
-Welcome to your new app.
+    protected void HandleScan()
+    {
+        Console.WriteLine(scannedValue);
+        scannedValue = string.Empty;
+        
+        jsRuntime.InvokeVoidAsync("focusInput", InputID);
+    }
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+}
+
+<PageTitle>Scanner</PageTitle>
+
+<div style="max-width: 1000px; min-width: 500px; margin-left: auto; margin-right: auto;">
+
+<h1>LSSD Lunch Scanner</h1>
+
+    <EditForm Model="@scannedValue">
+        <div class="row">
+            <div class="col col-sm-10">
+                <InputText id="@InputID" class="form-control col-sm-8" @bind-Value="@scannedValue" placeholder="Student ID"></InputText>
+            </div>
+            <div class="col col-sm-2">
+                <button type="submit" class="btn btn-primary btn-block" @onclick="() => HandleScan()">Save</button>
+            </div>
+        </div>
+                
+    </EditForm>
+
+<br/><br/>
+<h3>Last 500 transactions</h3>
+<div style="">
+    @foreach(Transaction trans in transactions) 
+    {
+        <div class="row">
+            <div class="col col-sm-2">@(trans.TimestampUTC.ToLongDateString())</div>
+            <div class="col col-sm-2">@(trans.TimestampUTC.ToShortTimeString()))</div>
+            <div class="col col-sm-2">@(trans.StudentName)</div>
+            <div class="col col-sm-2">@(trans.StudentNumber)</div>
+            <div class="col col-sm-2">@(trans.Amount.ToString("C"))</div>
+
+        </div>
+    }
+</div>
+
+</div>
+

@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <ItemGroup>
+    <ProjectReference Include="..\LSSD.Lunch.Core\Core.csproj" />
+    <ProjectReference Include="..\LSSD.MongoDB\LSSD.MongoDB.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <Nullable>enable</Nullable>
