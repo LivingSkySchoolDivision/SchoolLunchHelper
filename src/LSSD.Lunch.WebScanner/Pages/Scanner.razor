@@ -1,6 +1,8 @@
 @page "/{schoolguid}/{mealguid}"
 @using LSSD.Lunch
 @using LSSD.Lunch.WebScanner.Services
+@using LSSD.Lunch.Extensions
+@using System.Configuration
 @inject IJSRuntime jsRuntime
 
 @code {
@@ -24,6 +26,9 @@
     
     [Inject]
     NavigationManager NavigationManager { get; set; }
+
+    [Inject]
+    IConfiguration _configuration { get; set; }
 
     List<Transaction> transactions = new List<Transaction>();
     string scannedValue = string.Empty;
@@ -116,15 +121,13 @@
 
 <br/><br/>
 <h3>Previous Transactions</h3>
-<p>Note: Times are currently displayed in UTC time zone. They will be adjusted in the future to the local timezone.</p>
 <div style="">
     @foreach(Transaction trans in transactions.OrderByDescending(x => x.TimestampUTC)) 
     {
         <div class="row">
-            <div class="col col-sm-2">@(trans.TimestampUTC.ToShortDateString())</div>
-            <div class="col col-sm-1">@(trans.TimestampUTC.ToShortTimeString())</div>
-            <div class="col col-sm-3">@(trans.StudentName)</div>
-            <div class="col col-sm-1">@(trans.StudentNumber)</div>
+            <div class="col col-sm-2">@(trans.TimestampUTC.AdjustForTimezone(_configuration["Settings:TimeZone"] ?? string.Empty).ToShortDateString())</div>
+            <div class="col col-sm-2">@(trans.TimestampUTC.AdjustForTimezone(_configuration["Settings:TimeZone"] ?? string.Empty).ToLongTimeString())</div>
+            <div class="col col-sm-4">@(trans.StudentName)</div>            
             <div class="col col-sm-3">@(trans.ItemDescription)</div>
             <div class="col col-sm-1">@(trans.Amount.ToString("C"))</div>
         </div>

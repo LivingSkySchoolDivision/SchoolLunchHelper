@@ -32,6 +32,7 @@ if (!string.IsNullOrEmpty(GetKeyVaultEndpoint()))
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddLocalization();
+builder.Configuration.AddConfiguration(configuration);
 builder.Services.AddScoped<SchoolService>();
 builder.Services.AddScoped<FoodItemService>();
 builder.Services.AddScoped<StudentService>();
@@ -41,7 +42,6 @@ builder.Services.AddSingleton<IRepository<School>, MongoRepository<School>>();
 builder.Services.AddSingleton<IRepository<Student>, MongoRepository<Student>>();
 builder.Services.AddSingleton<IRepository<Transaction>, MongoRepository<Transaction>>();
 builder.Services.AddSingleton<IRepository<FoodItem>, MongoRepository<FoodItem>>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

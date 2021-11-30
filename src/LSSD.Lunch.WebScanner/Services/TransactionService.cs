@@ -5,58 +5,58 @@ using System.Linq.Expressions;
 
 namespace LSSD.Lunch.WebScanner.Services
 {
-    public class TransactionService 
+    public class TransactionService
     {
-        private readonly IRepository<Transaction> _repository;        
+        private readonly IRepository<Transaction> _repository;
 
-        public TransactionService (IRepository<Transaction> Repository) 
+        public TransactionService (IRepository<Transaction> Repository)
         {
-            this._repository = Repository;            
+            this._repository = Repository;
         }
 
-        public Transaction Get(Guid GUID) 
-        {
-            return _repository.GetById(GUID);
-        }
-
-        public Transaction Get(string GUID) 
+        public Transaction Get(Guid GUID)
         {
             return _repository.GetById(GUID);
         }
 
-        public IEnumerable<Transaction> GetAll() 
+        public Transaction Get(string GUID)
         {
-            return _repository.GetAll();            
+            return _repository.GetById(GUID);
         }
 
-        public void InsertOrUpdate(Transaction Transaction) 
+        public IEnumerable<Transaction> GetAll()
+        {
+            return _repository.GetAll();
+        }
+
+        public void InsertOrUpdate(Transaction Transaction)
         {
             _repository.Update(Transaction);
         }
 
-        public void Delete(Transaction item) 
+        public void Delete(Transaction item)
         {
             _repository.Delete(item);
         }
 
-        public IEnumerable<Transaction> GetForStudentID(string StudentId) 
+        public IEnumerable<Transaction> GetForStudentID(string StudentId)
         {
             return _repository.Find(x => x.StudentNumber == StudentId);
         }
 
-        public IEnumerable<Transaction> GetForStudentGUID(Guid StudentGuid) 
-        {            
+        public IEnumerable<Transaction> GetForStudentGUID(Guid StudentGuid)
+        {
             return _repository.Find(x => x.StudentID == StudentGuid);
         }
 
-        public IEnumerable<Transaction> GetForStudentGUID(string StudentGuid) 
+        public IEnumerable<Transaction> GetForStudentGUID(string StudentGuid)
         {
             Guid id = Guid.Parse(StudentGuid);
-            List<Transaction> results = _repository.Find(x => x.StudentID == id).ToList();            
+            List<Transaction> results = _repository.Find(x => x.StudentID == id).ToList();
             return results;
         }
-        
-        public IEnumerable<Transaction> GetForStudentGUID(Guid StudentGuid, DateTime StartDateUTC, DateTime EndDateUTC) 
+
+        public IEnumerable<Transaction> GetForStudentGUID(Guid StudentGuid, DateTime StartDateUTC, DateTime EndDateUTC)
         {
             return _repository.Find(x => x.Id == StudentGuid && x.TimestampUTC >= StartDateUTC && x.TimestampUTC <= EndDateUTC);
         }
@@ -65,7 +65,7 @@ namespace LSSD.Lunch.WebScanner.Services
         {
             return _repository.Find(predicate);
         }
-        
+
     }
 
 }
