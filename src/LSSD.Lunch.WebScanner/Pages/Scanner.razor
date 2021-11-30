@@ -103,10 +103,7 @@
 
 <div style="max-width: 1000px; min-width: 500px; margin-left: auto; margin-right: auto;">
 
-<h1>LSSD Lunch Scanner</h1>
-
-    <p>School: @(_selectedSchool.Name)</p>
-    <p>Meal: @(_selectedMeal.Name)</p>
+    <p><b>School:</b> @(_selectedSchool.Name), <b>Meal:</b> @(_selectedMeal.Name)</p>
     <EditForm Model="@scannedValue" OnValidSubmit="@HandleScan">
         <div class="row">
             <div class="col col-sm-12">
@@ -118,19 +115,18 @@
 
 
 <br/><br/>
-<h3>Last 500 transactions</h3>
+<h3>Previous Transactions</h3>
 <p>Note: Times are currently displayed in UTC time zone. They will be adjusted in the future to the local timezone.</p>
 <div style="">
     @foreach(Transaction trans in transactions.OrderByDescending(x => x.TimestampUTC)) 
     {
         <div class="row">
-            <div class="col col-sm-2">@(trans.TimestampUTC.ToLongDateString())</div>
+            <div class="col col-sm-2">@(trans.TimestampUTC.ToShortDateString())</div>
             <div class="col col-sm-1">@(trans.TimestampUTC.ToShortTimeString())</div>
             <div class="col col-sm-3">@(trans.StudentName)</div>
             <div class="col col-sm-2">@(trans.StudentNumber)</div>
             <div class="col col-sm-3">@(trans.ItemDescription)</div>
             <div class="col col-sm-1">@(trans.Amount.ToString("C"))</div>
-
         </div>
     }
 </div>
