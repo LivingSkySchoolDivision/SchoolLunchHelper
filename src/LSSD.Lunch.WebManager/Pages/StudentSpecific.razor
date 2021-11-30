@@ -1,5 +1,8 @@
 @page "/students/{id}"
+@using Microsoft.Extensions.Configuration
 @using Services
+@using LSSD.Lunch.Extensions
+@using System.Configuration
 @inject IJSRuntime JSRuntime
 @code {
 
@@ -14,6 +17,9 @@
 
     [Inject]
     NavigationManager NavigationManager { get; set; }
+
+    [Inject]
+    IConfiguration _configuration { get; set; }
 
     [Parameter]
     public string id { get; set; }
@@ -214,8 +220,8 @@
         @foreach(Transaction transaction in _studentTransactions.OrderByDescending(x => x.TimestampUTC))
         {
             <div class="row">
-                <div class="col-sm-3">@(transaction.TimestampUTC.ToLongDateString())</div>
-                <div class="col-sm-2">@(transaction.TimestampUTC.ToLongTimeString())</div>
+                <div class="col-sm-3">@(transaction.TimestampUTC.AdjustForTimezone(_configuration["Settings:TimeZone"] ?? string.Empty).ToLongDateString())</div>
+                <div class="col-sm-2">@(transaction.TimestampUTC.AdjustForTimezone(_configuration["Settings:TimeZone"] ?? string.Empty).ToLongTimeString())</div>
                 <div class="col-sm-5">@(transaction.ItemDescription)</div>
                 <div class="col-sm-2" style="text-align: right;">@(transaction.Amount.ToString("C"))</div>
             </div>

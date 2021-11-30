@@ -91,6 +91,7 @@ namespace LSSD.Lunch.WebManager
                 };
             });
 
+            services.AddLocalization();            
             services.AddAuthorization();
             
             services.AddSingleton<MongoDbConnection>(x => new MongoDbConnection(Configuration.GetConnectionString("InternalDatabase")));
@@ -122,6 +123,7 @@ namespace LSSD.Lunch.WebManager
             app.UseStaticFiles();
 
             app.UseRouting();
+            app.UseRequestLocalization("en-CA");
             
             app.UseAuthentication();
             app.UseAuthorization();
