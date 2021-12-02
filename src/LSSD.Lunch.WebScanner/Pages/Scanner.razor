@@ -51,7 +51,7 @@
                     StudentNumber = scannedValue,
                     StudentName = student.Name,
                     ItemDescription = _selectedMeal.Name,
-                    Amount = _selectedMeal.Cost,
+                    Amount = (_selectedMeal.Cost * -1),
                     FoodItemID = _selectedMeal.Id,
                     StudentID = student.Id
                 };
