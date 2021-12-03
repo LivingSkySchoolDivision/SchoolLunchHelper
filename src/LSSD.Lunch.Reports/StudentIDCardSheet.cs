@@ -32,7 +32,7 @@ namespace LSSD.Lunch.Reports
                 // These need to be added first, and then they can be referenced in the rendered document later
                 EmbedStudentBarcodeImages(document, Students);
 
-                mainPart.Document = GenerateBody(Students);
+                mainPart.Document = GenerateBody(Students.OrderBy(x => x.HomeRoom).ThenBy(x => x.LastName).ThenBy(x => x.FirstName).ToList());
             }
         }
         
@@ -58,10 +58,11 @@ namespace LSSD.Lunch.Reports
                 {
                     if (studentGroup.Count > x)
                     {
-                        row.AppendChild(TableHelper.ContainerCell(
-                            generateIDCard(studentGroup[x]),
-                            ParagraphHelper.WhiteSpace(),
-                            ParagraphHelper.WhiteSpace()
+                        row.AppendChild(
+                            TableHelper.ContainerCell(
+                                generateIDCard(studentGroup[x]),
+                                ParagraphHelper.WhiteSpace(),
+                                ParagraphHelper.WhiteSpace()
                             )
                         );
                     } else {
@@ -106,7 +107,7 @@ namespace LSSD.Lunch.Reports
                 new TableLayout() { Type = TableLayoutValues.Autofit },
                 new TableWidth() {
                     Type = TableWidthUnitValues.Pct,
-                    Width = $"{40 * 50}" // 40% in fiftieths of a percent
+                    Width = $"{95 * 50}" // 40% in fiftieths of a percent
                 },
                 LSSDTableStyles.ThickOutsideBorders(),
                 LSSDTableStyles.WideMargins()
@@ -118,20 +119,18 @@ namespace LSSD.Lunch.Reports
                         new CantSplit()
                     ),
                     new TableCell(
-                        new Paragraph(
-                            new Run(
-                                new Text(student.Name)
-                            )                            
-                        ) {
-                            ParagraphProperties = new ParagraphProperties(
-                                new Justification() { Val = JustificationValues.Center },
-                                new SpacingBetweenLines() { Before = "0", After = "0" }
-                            ) {
-                                ParagraphStyleId = new ParagraphStyleId() {
-                                    Val = LSSDDocumentStyles.FieldLabel
-                                }
-                            }
-                        }                        
+                        ParagraphHelper.Paragraph(student.Name, LSSDDocumentStyles.IDCardName, JustificationValues.Center)
+                    )                  
+                )                
+            );
+
+            returnMe.AppendChild(
+                new TableRow(
+                    new TableRowProperties(
+                        new CantSplit()
+                    ),
+                    new TableCell(
+                        ParagraphHelper.Paragraph(student.HomeRoom, LSSDDocumentStyles.IDCardHomeRoom, JustificationValues.Center)
                     )                  
                 )                
             );
@@ -161,8 +160,6 @@ namespace LSSD.Lunch.Reports
 
         private OpenXmlElement insertImageByStudentId(string studentID)
         {
-            //return new Run(new Text("Derp"));
-
             if (!string.IsNullOrEmpty(studentID))
             {
                 if (barcodeReferenceIDs.ContainsKey(studentID))

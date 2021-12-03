@@ -4,6 +4,10 @@ using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace LSSD.Lunch.Reports {
     class LSSDDocumentStyles {
+
+        public const string IDCardName = "ID Card Name";
+        public const string IDCardHomeRoom = "ID Card Homeroom";
+
         public const string FieldLabel = "Field Label";
         public const string FieldValue = "Field Value";
         public const string FieldValueBig = "Field Value Big";
@@ -62,6 +66,41 @@ namespace LSSD.Lunch.Reports {
                     )
                 });
 
+
+                stylePart.Styles.Append(new Style(
+                    new PrimaryStyle() { Val = OnOffOnlyValues.On }, // Should it show up in the list of styles in the editor
+                    new StyleName() { Val = IDCardName }
+                ) { 
+                    Type = StyleValues.Paragraph,
+                    StyleId = IDCardName,
+                    CustomStyle = true,
+                    Default = false,
+                    StyleRunProperties = new StyleRunProperties(
+                        new Bold(),
+                        new RunFonts() { Ascii = FontName },
+                        new FontSize() { Val = "26" } // Double the font size value you see in Word
+                    ){
+                        Color = new Color() { Val = "000000" }
+                    }
+                });
+
+                stylePart.Styles.Append(new Style(
+                    new PrimaryStyle() { Val = OnOffOnlyValues.On }, // Should it show up in the list of styles in the editor
+                    new StyleName() { Val = IDCardHomeRoom }
+                ) { 
+                    Type = StyleValues.Paragraph,
+                    StyleId = IDCardHomeRoom,
+                    CustomStyle = true,
+                    Default = false,
+                    StyleRunProperties = new StyleRunProperties(
+                        new RunFonts() { Ascii = FontName },
+                        new FontSize() { Val = "18" } // Double the font size value you see in Word
+                    ){
+                        Color = new Color() { Val = "000000" }
+                    }
+                });
+
+
                 stylePart.Styles.Append(new Style(
                     new PrimaryStyle() { Val = OnOffOnlyValues.On }, // Should it show up in the list of styles in the editor
                     new StyleName() { Val = SectionTitle }
@@ -106,7 +145,7 @@ namespace LSSD.Lunch.Reports {
                         new Bold(), 
                         new Color() { ThemeColor = ThemeColorValues.Text1 }, 
                         new RunFonts() { Ascii = FontName },
-                        new FontSize() { Val = "18" } // Double the font size value you see in Word
+                        new FontSize() { Val = "26" } // Double the font size value you see in Word
                     )
                 });
                 
