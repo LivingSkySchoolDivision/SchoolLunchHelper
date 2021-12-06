@@ -94,7 +94,7 @@ namespace LSSD.Lunch.Reports {
                     Default = false,
                     StyleRunProperties = new StyleRunProperties(
                         new RunFonts() { Ascii = FontName },
-                        new FontSize() { Val = "18" } // Double the font size value you see in Word
+                        new FontSize() { Val = "26" } // Double the font size value you see in Word
                     ){
                         Color = new Color() { Val = "000000" }
                     }

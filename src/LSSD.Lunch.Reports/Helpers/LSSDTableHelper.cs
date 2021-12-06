@@ -7,7 +7,6 @@ namespace LSSD.Lunch.Reports
 {
     static class TableHelper 
     {
-
         public static Table StyledTable(params OpenXmlElement[] childItems) {
             Table table = new Table(
                 new TableLayout() {  Type = TableLayoutValues.Autofit },

@@ -109,7 +109,7 @@ namespace LSSD.Lunch.Reports
                     Type = TableWidthUnitValues.Pct,
                     Width = $"{95 * 50}" // 40% in fiftieths of a percent
                 },
-                LSSDTableStyles.ThickOutsideBorders(),
+                LSSDTableStyles.ThickOutsideBorders("A0A0A0"),
                 LSSDTableStyles.WideMargins()
             );            
 
@@ -149,8 +149,8 @@ namespace LSSD.Lunch.Reports
                                     Val = LSSDDocumentStyles.FieldLabel
                                 }
                             }
-                        }  
-                    )
+                        }
+                    ).WithWidth(50)
                 )
             );
 
@@ -168,7 +168,7 @@ namespace LSSD.Lunch.Reports
 
                     Drawing returnMe = new Drawing(
                         new OpenXMLDrawingWP.Inline(
-                            new OpenXMLDrawingWP.Extent() { Cx = 1715040, Cy = 336960 },
+                            new OpenXMLDrawingWP.Extent() { Cx = 2415040, Cy = 336960 }, // { Cx = 1715040, Cy = 336960 },
                             new OpenXMLDrawingWP.EffectExtent()
                             {
                                 LeftEdge = 0L,
@@ -213,7 +213,7 @@ namespace LSSD.Lunch.Reports
                                             new OpenXMLPictures.ShapeProperties(
                                                 new OpenXMLDrawing.Transform2D(
                                                     new OpenXMLDrawing.Offset() { X = 0L, Y = 0L },
-                                                    new OpenXMLDrawing.Extents() { Cx = 2858400, Cy = 561600 }),
+                                                    new OpenXMLDrawing.Extents() { Cx = 3858400, Cy = 561600 }), //{ Cx = 2858400, Cy = 561600 }
                                                     new OpenXMLDrawing.PresetGeometry(
                                                         new OpenXMLDrawing.AdjustValueList()
                                                 )

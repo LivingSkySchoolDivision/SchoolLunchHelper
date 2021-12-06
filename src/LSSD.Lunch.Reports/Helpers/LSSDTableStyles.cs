@@ -25,6 +25,15 @@ namespace LSSD.Lunch.Reports {
                 );
         }
 
+        public static OpenXmlElement ThinMargins() {
+            return new TableCellMarginDefault(
+                    new TopMargin() { Width = "25", Type = TableWidthUnitValues.Dxa },
+                    new LeftMargin() { Width = "25", Type = TableWidthUnitValues.Dxa },
+                    new BottomMargin() { Width = "17", Type = TableWidthUnitValues.Dxa },
+                    new RightMargin() { Width = "25", Type = TableWidthUnitValues.Dxa }
+                );
+        }
+
         public static OpenXmlElement Borders() {
             return Borders(_defaultBorderColor);
         }
