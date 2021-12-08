@@ -31,14 +31,13 @@ namespace LSSD.Lunch.StudentImporter
             catch(Exception ex) {
                 Console.WriteLine("ERROR: " + ex.Message);
             }
-
         }
 
         private static ConfigFile parseConfigFile(string configFileName)
         {
             ConfigFile returnMe = new ConfigFile();
 
-            using (FileStream configFile = File.Open(configFileName, FileMode.Open))
+            using (FileStream configFile = new FileStream(configFileName, FileMode.Open, FileAccess.Read))
             {
                 if (configFile != null) {
                     ConfigFile? config = System.Text.Json.JsonSerializer.Deserialize<ConfigFile>(configFile);
@@ -233,10 +232,10 @@ namespace LSSD.Lunch.StudentImporter
             RootCommand rootCommand = new RootCommand(
                 description: "Imports students into the LSSD Lunch database."
             ) {
-                new Option<string>(new string[] { "--inputfile", "-inputfile", "-i"} , "The path to the input file."),
-                new Option<string>(new string[] { "--configfile", "-configfile", "-c" }, "The path to the configuration file."),
-                new Option<string>(new string[] { "--onlyschoolsnamed", "-onlyschoolsnamed", "-filter", "-f" }, "Ignore any students from schools not listed (comma delimited, don't use spaces)"),
-                new Option<bool>(new string[] { "--deactivate", "-deactivate", "-d" }, "Whether to deactivate students not in input file, or leave them untouched (default: false).")
+                new Option<string>(new string[] { "-inputfile", "-i"} , "The path to the input file."),
+                new Option<string>(new string[] { "-configfile", "-c" }, "The path to the configuration file."),
+                new Option<string>(new string[] { "-filter", "-f" }, "Ignore any students from schools not listed (comma delimited, don't use spaces)"),
+                new Option<bool>(new string[] { "-deactivate", "-d" }, "Whether to deactivate students not in input file, or leave them untouched (default: false).")
             };
 
             rootCommand.Handler = CommandHandler.Create<string, string, string, bool>(handleParameters);
