@@ -1,0 +1,33 @@
+@page "/fooditems"
+@using Services
+@code {
+    [Inject]
+    FoodItemService _repo { get; set; }
+
+    List<FoodItem> AllFoodItems = new List<FoodItem>();
+
+    protected override void OnInitialized()
+    {
+        AllFoodItems = _repo.GetAll().ToList();        
+    }
+}
+
+<AuthorizeView Context="user">
+    <Authorized>      
+        <div class="container">
+            <h1>Meals / Food Items</h1>
+
+            <a href="/fooditems/@(new Guid())">New</a>
+            <table class="table">
+
+            @foreach(FoodItem item in AllFoodItems.OrderBy(x => x.Name)) 
+            {
+                <tr>
+                    <td><a href="fooditems/@(item.Id)">@(item.Name)</a></td>
+                </tr>
+            }
+
+            </table>
+        </div>
+    </Authorized>
+</AuthorizeView>

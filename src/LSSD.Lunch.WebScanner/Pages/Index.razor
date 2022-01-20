@@ -1,0 +1,33 @@
+﻿@page "/"
+@using LSSD.Lunch
+@using LSSD.Lunch.WebScanner.Services
+
+@code {
+    [Inject] 
+    SchoolService _schoolService { get; set; }
+
+    [Inject] 
+    FoodItemService _mealService { get; set; }
+
+}
+
+<PageTitle>School / Meal Selector</PageTitle>
+
+<div style="max-width: 1000px; min-width: 500px; margin-left: auto; margin-right: auto;">
+
+<p>Select a school and meal:</p>
+@foreach (School school in _schoolService.GetAll())
+{
+    <h4>@school.Name</h4>
+    <ul>
+    @foreach(FoodItem meal in _mealService.GetForSchool(school.Id)) 
+    {
+        <li><a href="/@(school.Id)/@(meal.Id)">@(meal.Name) (@(meal.Cost.ToString("C")))</a></li>
+    }
+    </ul>
+    <br/>
+}
+
+
+</div>
+

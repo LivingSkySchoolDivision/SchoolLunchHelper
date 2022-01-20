@@ -1,0 +1,138 @@
+@page "/{schoolguid}/{mealguid}"
+@using LSSD.Lunch
+@using LSSD.Lunch.WebScanner.Services
+@using LSSD.Lunch.Extensions
+@using System.Configuration
+@inject IJSRuntime jsRuntime
+
+@code {
+    [Parameter]
+    public string schoolguid { get; set; }
+
+    [Parameter]
+    public string mealguid { get; set; }
+
+    [Inject] 
+    SchoolService _schoolService { get; set; }
+
+    [Inject]
+    FoodItemService _mealService { get; set; }
+
+    [Inject] 
+    StudentService _studentService { get; set; }
+
+    [Inject] 
+    TransactionService _transactionService { get; set; }
+    
+    [Inject]
+    NavigationManager NavigationManager { get; set; }
+
+    [Inject]
+    IConfiguration _configuration { get; set; }
+
+    List<Transaction> transactions = new List<Transaction>();
+    string scannedValue = string.Empty;
+    public string inputTextID = "txtScanInput";
+
+    School _selectedSchool { get; set; }
+    FoodItem _selectedMeal { get; set; }
+
+    protected void HandleScan()
+    {
+        if (!string.IsNullOrEmpty(scannedValue))
+        {
+            // Check if this student ID is valid
+            Student student = _studentService.GetByStudentNumber(scannedValue);
+
+            if (student != null)
+            {
+                Transaction newTransaction = new Transaction() {
+                    TimestampUTC = DateTime.UtcNow,
+                    StudentNumber = scannedValue,
+                    StudentName = student.Name,
+                    ItemDescription = _selectedMeal.Name,
+                    Amount = (_selectedMeal.Cost * -1),
+                    FoodItemID = _selectedMeal.Id,
+                    StudentID = student.Id
+                };
+
+                _transactionService.InsertOrUpdate(newTransaction);
+                transactions.Add(newTransaction);                
+            }
+
+            // Reset scanned value
+            scannedValue = string.Empty;
+            StateHasChanged();
+        }        
+    }
+
+
+    protected override void OnInitialized()
+    {
+        // Load the given school
+        if (!string.IsNullOrEmpty(schoolguid))
+        {
+            _selectedSchool = _schoolService.Get(schoolguid);
+        }
+
+        // Load the given meal
+        if (!string.IsNullOrEmpty(mealguid)) 
+        {
+            _selectedMeal = _mealService.Get(mealguid);
+        }
+
+        // If either of these things are null or invalid, navigate back to the index page
+        if ((_selectedSchool == null) || (_selectedMeal == null)) 
+        {            
+            // Navigate back
+            NavigationManager.NavigateTo("/");
+        }
+
+        // Populate list of previous transactions
+        transactions = _transactionService.Find(x => x.FoodItemID == _selectedMeal.Id && x.TimestampUTC > DateTime.UtcNow.AddDays(-5)).OrderBy(x => x.TimestampUTC).ToList();
+    }
+
+    // Always focus on the input text box when the page loads or refreshes
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        focusOnInputText();
+    }
+
+    protected void focusOnInputText()
+    {
+        jsRuntime.InvokeVoidAsync("focusInput", inputTextID);        
+    }
+}
+
+<PageTitle>Scanner</PageTitle>
+
+<div style="max-width: 1000px; min-width: 500px; margin-left: auto; margin-right: auto;">
+
+    <p><b>School:</b> @(_selectedSchool.Name), <b>Meal:</b> @(_selectedMeal.Name)</p>
+    <EditForm Model="@scannedValue" OnValidSubmit="@HandleScan">
+        <div class="row">
+            <div class="col col-sm-12">
+                <InputText id="@inputTextID" class="form-control col-sm-8" @bind-Value="@scannedValue" placeholder="Student ID"></InputText >
+            </div>
+        </div>
+    </EditForm>
+
+
+
+<br/><br/>
+<h3>Previous Transactions</h3>
+<div style="min-width: 900px;">
+    @foreach(Transaction trans in transactions.OrderByDescending(x => x.TimestampUTC)) 
+    {
+        <div class="row">
+            <div class="col col-sm-2">@(trans.TimestampUTC.AdjustForTimezone(_configuration["Settings:TimeZone"] ?? string.Empty).ToShortDateString())</div>
+            <div class="col col-sm-2">@(trans.TimestampUTC.AdjustForTimezone(_configuration["Settings:TimeZone"] ?? string.Empty).ToLongTimeString())</div>
+            <div class="col col-sm-4">@(trans.StudentName)</div>            
+            <div class="col col-sm-3">@(trans.ItemDescription)</div>
+            <div class="col col-sm-1">@(trans.Amount.ToString("C"))</div>
+        </div>
+    }
+</div>
+
+</div>
+
