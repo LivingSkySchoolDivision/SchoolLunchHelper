@@ -89,7 +89,7 @@
         }
 
         // Populate list of previous transactions
-        transactions = _transactionService.Find(x => x.FoodItemID == _selectedMeal.Id).Take(300).ToList();
+        transactions = _transactionService.Find(x => x.FoodItemID == _selectedMeal.Id && x.TimestampUTC > DateTime.UtcNow.AddDays(-5)).OrderBy(x => x.TimestampUTC).ToList();
     }
 
     // Always focus on the input text box when the page loads or refreshes
