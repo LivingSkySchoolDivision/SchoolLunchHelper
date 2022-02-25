@@ -17,12 +17,14 @@ namespace LSSD.Lunch.WebManager.Controllers
         private readonly ILogger<StudentBalanceReport> _logger;
         private readonly StudentService _studentService;
         private readonly SchoolService _schoolService;
+        private readonly TransactionService _transactionService;
 
-        public StudentBalanceReport(ILogger<StudentBalanceReport> logger, StudentService studentService, SchoolService schoolService)
+        public StudentBalanceReport(ILogger<StudentBalanceReport> logger, StudentService studentService, SchoolService schoolService, TransactionService transactionService)
         {
             _logger = logger;
             _studentService = studentService;
             _schoolService = schoolService;
+            _transactionService = transactionService;
         }
 
         [HttpGet("{schoolguid}")]
@@ -35,13 +37,14 @@ namespace LSSD.Lunch.WebManager.Controllers
 
             if (selectedSchool != null) {            
                 List<Student> students = _studentService.GetAllForSchool(selectedSchool).ToList();
+                List<Transaction> schoolTransactions = _transactionService.GetForStudents(students).ToList();
 
                 byte[] fileBytes = null;
                 string downloadFilename = "lunch-report-all-student-balances-" + DateTime.Today.ToLongDateString().Replace(" ", "").Replace("-","").Replace(",","") + ".xlsx";
 
                 using (ReportFactory formFactory = new ReportFactory()) 
                 {
-                    string filename = formFactory.GenerateStudentBalanceReport(students, selectedSchool);
+                    string filename = formFactory.GenerateStudentBalanceReport(students, schoolTransactions, selectedSchool);
 
                     if (!string.IsNullOrEmpty(filename)) {
                         fileBytes = System.IO.File.ReadAllBytes(filename);

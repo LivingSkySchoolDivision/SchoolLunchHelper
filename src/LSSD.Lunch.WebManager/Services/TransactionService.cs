@@ -48,6 +48,13 @@ namespace LSSD.Lunch.WebManager.Services
             return _repository.Find(x => x.StudentID == StudentGuid);
         }
 
+        public IEnumerable<Transaction> GetForStudents(List<Student> Students) 
+        {            
+            List<Guid?> studentGuids = Students.Select(x => (Guid?)x.Id).ToList();
+
+            return _repository.Find(x => studentGuids.Contains(x.StudentID));
+        }
+
         public IEnumerable<Transaction> GetForStudentGUID(string StudentGuid) 
         {
             Guid id = Guid.Parse(StudentGuid);

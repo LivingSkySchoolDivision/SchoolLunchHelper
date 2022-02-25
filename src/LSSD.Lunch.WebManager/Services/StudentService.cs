@@ -35,7 +35,7 @@ namespace LSSD.Lunch.WebManager.Services
 
         public IEnumerable<Student> GetAllForSchool(School school)
         {
-            return _repository.GetAll().Where(x => x.IsActive == true);
+            return _repository.GetAll().Where(x => x.SchoolId == school.Id);
         }
 
         public void InsertOrUpdate(Student Student)

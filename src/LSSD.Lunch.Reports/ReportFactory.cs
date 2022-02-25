@@ -25,7 +25,7 @@ namespace LSSD.Lunch.Reports
             }
         }
 
-        public string GenerateStudentBalanceReport(List<Student> Students, School School) 
+        public string GenerateStudentBalanceReport(List<Student> Students, List<Transaction> AllTransactions, School School) 
         {
             // Perhaps make a better way of naming the files
             // for now random will do though
@@ -34,7 +34,7 @@ namespace LSSD.Lunch.Reports
             StudentBalanceReport generator = new StudentBalanceReport();
 
             // Generate the file
-            generator.Generate(Students, School, filename);
+            generator.Generate(Students, AllTransactions, School, filename);
 
             // Store the filename in the tracking list
             _generatedFileNames.Add(filename);
