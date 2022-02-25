@@ -25,6 +25,25 @@ namespace LSSD.Lunch.Reports
             }
         }
 
+        public string GenerateStudentBalanceReport(List<Student> Students, School School) 
+        {
+            // Perhaps make a better way of naming the files
+            // for now random will do though
+            string filename = Path.Combine(_tempDirPath, (Guid.NewGuid()).ToString() + ".docx");
+            
+            StudentBalanceReport generator = new StudentBalanceReport();
+
+            // Generate the file
+            generator.Generate(Students, School, filename);
+
+            // Store the filename in the tracking list
+            _generatedFileNames.Add(filename);
+            
+            // Return the filename
+            return filename;
+
+        }
+
 
         public string GenerateStudentIDCardSheet(List<Student> Students)
         {

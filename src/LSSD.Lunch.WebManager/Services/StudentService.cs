@@ -4,36 +4,41 @@ using System.Linq;
 
 namespace LSSD.Lunch.WebManager.Services
 {
-    public class StudentService 
+    public class StudentService
     {
-        private readonly IRepository<Student> _repository;        
+        private readonly IRepository<Student> _repository;
 
-        public StudentService (IRepository<Student> Repository) 
+        public StudentService (IRepository<Student> Repository)
         {
-            this._repository = Repository;            
+            this._repository = Repository;
         }
 
-        public Student Get(Guid GUID) 
-        {
-            return _repository.GetById(GUID);
-        }
-
-        public Student Get(string GUID) 
+        public Student Get(Guid GUID)
         {
             return _repository.GetById(GUID);
         }
 
-        public IEnumerable<Student> GetAll() 
+        public Student Get(string GUID)
         {
-            return _repository.GetAll();            
+            return _repository.GetById(GUID);
         }
 
-        public IEnumerable<Student> GetAllActive() 
+        public IEnumerable<Student> GetAll()
         {
-            return _repository.GetAll().Where(x => x.IsActive == true);            
+            return _repository.GetAll();
         }
-        
-        public void InsertOrUpdate(Student Student) 
+
+        public IEnumerable<Student> GetAllActive()
+        {
+            return _repository.GetAll().Where(x => x.IsActive == true);
+        }
+
+        public IEnumerable<Student> GetAllForSchool(School school)
+        {
+            return _repository.GetAll().Where(x => x.IsActive == true);
+        }
+
+        public void InsertOrUpdate(Student Student)
         {
             _repository.Update(Student);
         }
@@ -41,7 +46,7 @@ namespace LSSD.Lunch.WebManager.Services
         public void Delete(Student student) {
             _repository.Delete(student);
         }
-        
+
     }
 
 }
