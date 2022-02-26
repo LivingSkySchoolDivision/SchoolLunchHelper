@@ -6,13 +6,19 @@ using DocumentFormat.OpenXml.Spreadsheet;
 namespace LSSD.Lunch.Reports
 {
     public static class ExcelHelper
-    {
-
+    {     
         public static void AddNumberToCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, int Number)
         {
             Cell cell = insertCellInWorksheet(Column, Row, WorksheetPart);
             cell.CellValue = new CellValue(Number);
             cell.DataType = new EnumValue<CellValues>(CellValues.Number);            
+        }
+
+        public static void AddCurrencyToCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, decimal Number)
+        {
+            Cell cell = insertCellInWorksheet(Column, Row, WorksheetPart);
+            cell.CellValue = new CellValue(Number);
+            cell.DataType = new EnumValue<CellValues>(CellValues.Number);
         }
 
         public static void AddNumberToCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, decimal Number)

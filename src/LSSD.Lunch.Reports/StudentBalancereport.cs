@@ -50,22 +50,63 @@ namespace LSSD.Lunch.Reports
                 ExcelHelper.AddPageReportTitleCell(workbookpart, worksheetPart, "A", 1, "LSSD Student Balance Report");
                 ExcelHelper.AddPageReportTitleCell(workbookpart, worksheetPart, "A", 2, School.Name);
 
-                // Headers
-                ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "A", 4, "Last Name");
-                ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "B", 4, "First Name");
-                ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "C", 4, "Active?");
-                ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "D", 4, "Homeroom");
-                ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "E", 4, "Total Money In");
-                ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "F", 4, "Total Money Out");
-                ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "G", 4, "Current Balance");
+                uint dataRowIndex = 4;
 
-                uint dataRowIndex = 5; // Row to start student list on
+                // Put a quick summary on top
+                decimal totalMoneyIn = 0;
+                decimal totalMoneyOut = 0;
+                decimal totalBalance = 0;
+
+                foreach(Transaction trans in AllTransactions)
+                {
+                    totalBalance += trans.Amount;
+
+                    if (trans.Amount > (decimal)0.000) 
+                    {
+                        totalMoneyIn += trans.Amount;
+                    }
+                    
+                    if (trans.Amount < (decimal)0.000) 
+                    {
+                        totalMoneyOut += trans.Amount;
+                    }
+                }
+
+                ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total money in");
+                ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "B", dataRowIndex, totalMoneyIn);
+                dataRowIndex++;
+
+                ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total money out");
+                ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "B", dataRowIndex, (totalMoneyOut*-1));
+                dataRowIndex++;
+
+                ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total balance");
+                ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "B", dataRowIndex, totalBalance);
+                dataRowIndex++;
+
+                dataRowIndex++;
+
+                // Headers
+                addHeaderRow(workbookpart, worksheetPart, dataRowIndex);
+                dataRowIndex++;
+
+                 // Row to start student list on
                 foreach(Student student in Students.OrderByDescending(x => x.IsActive).ThenBy(x => x.LastName).ThenBy(x => x.FirstName))
                 {
                     List<Transaction> thisStudentTransactions = transactionDictionary.ContainsKey(student.Id) ? transactionDictionary[student.Id] : new List<Transaction>();
                     addStudentRow(workbookpart, worksheetPart, dataRowIndex, student, thisStudentTransactions);
                     dataRowIndex++;
                 }
+
+                // space between last row and total row
+                dataRowIndex++;
+
+                addSummaryRow(workbookpart, worksheetPart, dataRowIndex, AllTransactions);
+                dataRowIndex++;
+
+                
+                ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total students");
+                ExcelHelper.AddNumberToCell(workbookpart, worksheetPart, "B", dataRowIndex, (Students.Count()));
 
                 /////
 
@@ -98,6 +139,45 @@ namespace LSSD.Lunch.Reports
             return returnMe;
         }
 
+        private void addHeaderRow(WorkbookPart workbookpart, WorksheetPart worksheetPart, uint RowNum)
+        {   
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "A", RowNum, "Last Name");
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "B", RowNum, "First Name");
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "C", RowNum, "Active?");
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "D", RowNum, "Homeroom");
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "E", RowNum, "Total Money In");
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "F", RowNum, "Total Money Out");
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "G", RowNum, "Current Balance");
+            ExcelHelper.AddHeadingCell(workbookpart, worksheetPart, "H", RowNum, "Student Owes");
+        }
+
+        private void addSummaryRow(WorkbookPart workbookpart, WorksheetPart worksheetPart, uint RowNum, List<Transaction> Transactions)
+        {            
+            decimal totalMoneyIn = 0;
+            decimal totalMoneyOut = 0;
+            decimal totalBalance = 0;
+
+            foreach(Transaction trans in Transactions)
+            {
+                totalBalance += trans.Amount;
+
+                if (trans.Amount > (decimal)0.000) 
+                {
+                    totalMoneyIn += trans.Amount;
+                }
+                
+                if (trans.Amount < (decimal)0.000) 
+                {
+                    totalMoneyOut += trans.Amount;
+                }
+            }
+
+            ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", RowNum, "TOTALS");
+            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "E", RowNum, totalMoneyIn);
+            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "F", RowNum, (totalMoneyOut * -1));
+            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "G", RowNum, totalBalance);
+        }
+
         private void addStudentRow(WorkbookPart workbookpart, WorksheetPart worksheetPart, uint RowNum, Student Student, List<Transaction> Transactions)
         {            
             decimal totalMoneyIn = 0;
@@ -124,9 +204,10 @@ namespace LSSD.Lunch.Reports
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "B", RowNum, Student.FirstName);
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "C", RowNum, Student.IsActive.ToYesOrNo());
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "D", RowNum, Student.HomeRoom);
-            ExcelHelper.AddNumberToCell(workbookpart, worksheetPart, "E", RowNum, totalMoneyIn);
-            ExcelHelper.AddNumberToCell(workbookpart, worksheetPart, "F", RowNum, totalMoneyOut);
-            ExcelHelper.AddNumberToCell(workbookpart, worksheetPart, "G", RowNum, totalBalance);
+            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "E", RowNum, totalMoneyIn);
+            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "F", RowNum, (totalMoneyOut * -1));
+            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "G", RowNum, totalBalance);
+            ExcelHelper.AddTextCell(workbookpart, worksheetPart, "H", RowNum, (!(totalBalance >= (decimal)0.00)).ToYesOrNo());
         }
     }
 }
