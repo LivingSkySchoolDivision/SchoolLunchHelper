@@ -25,6 +25,44 @@ namespace LSSD.Lunch.Reports
             }
         }
 
+        public string GenerateStudentBalanceReport(List<Student> Students, List<Transaction> AllTransactions, School School, string LocalTimeZone) 
+        {
+            // Perhaps make a better way of naming the files
+            // for now random will do though
+            string filename = Path.Combine(_tempDirPath, (Guid.NewGuid()).ToString() + ".docx");
+            
+            StudentBalanceReport generator = new StudentBalanceReport();
+
+            // Generate the file
+            generator.Generate(Students, AllTransactions, School,LocalTimeZone, filename);
+
+            // Store the filename in the tracking list
+            _generatedFileNames.Add(filename);
+            
+            // Return the filename
+            return filename;
+
+        }
+
+        public string GnerateTransactionLog(List<Transaction> AllTransactions, School School, string LocalTimeZone) 
+        {
+            // Perhaps make a better way of naming the files
+            // for now random will do though
+            string filename = Path.Combine(_tempDirPath, (Guid.NewGuid()).ToString() + ".docx");
+            
+            TransactionLog generator = new TransactionLog();
+
+            // Generate the file
+            generator.Generate(AllTransactions, School,LocalTimeZone, filename);
+
+            // Store the filename in the tracking list
+            _generatedFileNames.Add(filename);
+            
+            // Return the filename
+            return filename;
+
+        }
+
 
         public string GenerateStudentIDCardSheet(List<Student> Students)
         {

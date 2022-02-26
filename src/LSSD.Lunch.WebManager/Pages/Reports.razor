@@ -1,0 +1,19 @@
+@page "/Reports"
+@using Services
+@using LSSD.Lunch.Extensions
+@using Microsoft.Extensions.Configuration
+@using LSSD.Lunch.WebManager.Components
+@code {
+   
+
+}
+
+<AuthorizeView Context="user">
+    <Authorized>      
+        <div class="container">
+            <h1>Reports</h1>
+            <ReportComponent_StudentBalanceReport></ReportComponent_StudentBalanceReport>
+            <br/>
+        </div>
+    </Authorized>
+</AuthorizeView>
