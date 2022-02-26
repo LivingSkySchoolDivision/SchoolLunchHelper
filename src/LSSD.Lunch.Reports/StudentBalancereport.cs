@@ -2,6 +2,7 @@ using System;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using LSSD.Lunch.Extensions;
 using LSSD.Lunch.Reports;
 
 // A fairly simple spreadsheet of students with balances
@@ -16,7 +17,12 @@ namespace LSSD.Lunch.Reports
 {
     class StudentBalanceReport
     {
-        public void Generate(List<Student> Students, List<Transaction> AllTransactions, School School, string Filename) {
+        string _timeZone = string.Empty;
+
+        public void Generate(List<Student> Students, List<Transaction> AllTransactions, School School, string TimeZone, string Filename) 
+        {            
+            _timeZone = TimeZone;
+
             if (File.Exists(Filename)) {
                 File.Delete(Filename);
             }
@@ -49,8 +55,10 @@ namespace LSSD.Lunch.Reports
 
                 ExcelHelper.AddPageReportTitleCell(workbookpart, worksheetPart, "A", 1, "LSSD Student Balance Report");
                 ExcelHelper.AddPageReportTitleCell(workbookpart, worksheetPart, "A", 2, School.Name);
+                ExcelHelper.AddPageReportTitleCell(workbookpart, worksheetPart, "A", 3, DateTime.UtcNow.AdjustForTimezone(_timeZone).ToShortDateString());
+                ExcelHelper.AddPageReportTitleCell(workbookpart, worksheetPart, "A", 4, DateTime.UtcNow.AdjustForTimezone(_timeZone).ToLongTimeString());
 
-                uint dataRowIndex = 4;
+                uint dataRowIndex = 6;
 
                 // Put a quick summary on top
                 decimal totalMoneyIn = 0;
@@ -73,15 +81,15 @@ namespace LSSD.Lunch.Reports
                 }
 
                 ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total money in");
-                ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "B", dataRowIndex, totalMoneyIn);
+                ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "B", dataRowIndex, totalMoneyIn);
                 dataRowIndex++;
 
                 ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total money out");
-                ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "B", dataRowIndex, (totalMoneyOut*-1));
+                ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "B", dataRowIndex, (totalMoneyOut*-1));
                 dataRowIndex++;
 
                 ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total balance");
-                ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "B", dataRowIndex, totalBalance);
+                ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "B", dataRowIndex, totalBalance);
                 dataRowIndex++;
 
                 dataRowIndex++;
@@ -106,7 +114,7 @@ namespace LSSD.Lunch.Reports
 
                 
                 ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", dataRowIndex, "Total students");
-                ExcelHelper.AddNumberToCell(workbookpart, worksheetPart, "B", dataRowIndex, (Students.Count()));
+                ExcelHelper.AddNumberCell(workbookpart, worksheetPart, "B", dataRowIndex, (Students.Count()));
 
                 /////
 
@@ -173,9 +181,9 @@ namespace LSSD.Lunch.Reports
             }
 
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "A", RowNum, "TOTALS");
-            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "E", RowNum, totalMoneyIn);
-            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "F", RowNum, (totalMoneyOut * -1));
-            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "G", RowNum, totalBalance);
+            ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "E", RowNum, totalMoneyIn);
+            ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "F", RowNum, (totalMoneyOut * -1));
+            ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "G", RowNum, totalBalance);
         }
 
         private void addStudentRow(WorkbookPart workbookpart, WorksheetPart worksheetPart, uint RowNum, Student Student, List<Transaction> Transactions)
@@ -204,9 +212,9 @@ namespace LSSD.Lunch.Reports
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "B", RowNum, Student.FirstName);
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "C", RowNum, Student.IsActive.ToYesOrNo());
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "D", RowNum, Student.HomeRoom);
-            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "E", RowNum, totalMoneyIn);
-            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "F", RowNum, (totalMoneyOut * -1));
-            ExcelHelper.AddCurrencyToCell(workbookpart, worksheetPart, "G", RowNum, totalBalance);
+            ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "E", RowNum, totalMoneyIn);
+            ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "F", RowNum, (totalMoneyOut * -1));
+            ExcelHelper.AddCurrencyCell(workbookpart, worksheetPart, "G", RowNum, totalBalance);
             ExcelHelper.AddTextCell(workbookpart, worksheetPart, "H", RowNum, (!(totalBalance >= (decimal)0.00)).ToYesOrNo());
         }
     }

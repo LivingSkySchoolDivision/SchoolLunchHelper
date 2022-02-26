@@ -13,15 +13,15 @@ namespace LSSD.Lunch.WebManager.Controllers
 {
     [Route("[controller]")]
     [ApiController]
-    public class StudentBalanceReport : ControllerBase
+    public class TransactionLogController : ControllerBase
     {
-        private readonly ILogger<StudentBalanceReport> _logger;
+        private readonly ILogger<TransactionLogController> _logger;
         private readonly StudentService _studentService;
         private readonly SchoolService _schoolService;
         private readonly TransactionService _transactionService;
         private IConfiguration _configuration;
 
-        public StudentBalanceReport(ILogger<StudentBalanceReport> logger, StudentService studentService, SchoolService schoolService, TransactionService transactionService, IConfiguration configuration)
+        public TransactionLogController(ILogger<TransactionLogController> logger, StudentService studentService, SchoolService schoolService, TransactionService transactionService, IConfiguration configuration)
         {
             _logger = logger;
             _studentService = studentService;
@@ -43,11 +43,11 @@ namespace LSSD.Lunch.WebManager.Controllers
                 List<Transaction> schoolTransactions = _transactionService.GetForStudents(students).ToList();
 
                 byte[] fileBytes = null;
-                string downloadFilename = "lunch-report-all-student-balances-" + DateTime.Today.ToLongDateString().Replace(" ", "").Replace("-","").Replace(",","") + ".xlsx";
+                string downloadFilename = "lunch-transaction-report-" + DateTime.Today.ToLongDateString().Replace(" ", "").Replace("-","").Replace(",","") + ".xlsx";
 
                 using (ReportFactory formFactory = new ReportFactory()) 
                 {
-                    string filename = formFactory.GenerateStudentBalanceReport(students, schoolTransactions, selectedSchool, _configuration["Settings:TimeZone"] ?? string.Empty);
+                    string filename = formFactory.GnerateTransactionLog(schoolTransactions, selectedSchool, _configuration["Settings:TimeZone"] ?? string.Empty);
 
                     if (!string.IsNullOrEmpty(filename)) {
                         fileBytes = System.IO.File.ReadAllBytes(filename);

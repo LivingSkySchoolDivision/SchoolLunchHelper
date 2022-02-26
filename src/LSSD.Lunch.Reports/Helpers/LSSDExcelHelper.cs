@@ -6,22 +6,30 @@ using DocumentFormat.OpenXml.Spreadsheet;
 namespace LSSD.Lunch.Reports
 {
     public static class ExcelHelper
-    {     
-        public static void AddNumberToCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, int Number)
+    {   
+
+        public static void AddDateCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, string Date)
+        {
+            Cell cell = insertCellInWorksheet(Column, Row, WorksheetPart);
+            cell.CellValue = new CellValue(Date);
+            cell.DataType = new EnumValue<CellValues>(CellValues.Date);            
+        }
+
+        public static void AddNumberCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, int Number)
         {
             Cell cell = insertCellInWorksheet(Column, Row, WorksheetPart);
             cell.CellValue = new CellValue(Number);
             cell.DataType = new EnumValue<CellValues>(CellValues.Number);            
         }
 
-        public static void AddCurrencyToCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, decimal Number)
+        public static void AddCurrencyCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, decimal Number)
         {
             Cell cell = insertCellInWorksheet(Column, Row, WorksheetPart);
             cell.CellValue = new CellValue(Number);
             cell.DataType = new EnumValue<CellValues>(CellValues.Number);
         }
 
-        public static void AddNumberToCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, decimal Number)
+        public static void AddNumberCell(WorkbookPart WorkbookPart, WorksheetPart WorksheetPart, string Column, uint Row, decimal Number)
         {
             Cell cell = insertCellInWorksheet(Column, Row, WorksheetPart);
             cell.CellValue = new CellValue(Number);

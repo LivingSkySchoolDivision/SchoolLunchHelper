@@ -1,0 +1,42 @@
+@using Services
+@inject IJSRuntime JSRuntime
+
+@code {   
+
+    [Inject]
+    SchoolService _schoolRepository { get; set; }
+
+    List<School> AllSchools = new List<School>();
+    
+    [Parameter]
+    public string BackRoute { get; set; } = "";
+
+    protected override void OnInitialized()
+    {
+        AllSchools = _schoolRepository.GetAll().ToList();        
+    }
+    
+
+    protected async void OnClick_GenerateReport(School thisObj)
+    {
+        // Navigate to the API endpoint
+        await JSRuntime.InvokeAsync<object>(
+            "FileSaveAs",
+            "lunch-transaction-log-" + DateTime.Today.ToLongDateString().Replace(" ", "").Replace("-","").Replace(",","") + ".xlsx",
+            "/TransactionLog/" + thisObj.Id
+            );
+    }
+}
+
+<div style="margin: 10px; padding: 20px; border: 1px solid #A0A0A0; border-radius: 5px;">
+    <h3>Transaction Log</h3>
+    @foreach(School school in AllSchools) {
+        <div style="width: 100%; text-align: left;">            
+            @if (school.Id != new Guid()) {
+                <button type="button" class="btn btn-block btn-primary" @onclick="() => OnClick_GenerateReport(school)">@school.Name</button>
+            }
+        </div>
+    }    
+</div>
+
+
