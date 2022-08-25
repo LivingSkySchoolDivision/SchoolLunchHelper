@@ -1,0 +1,44 @@
+@page "/Consolidate"
+@using Services
+@using LSSD.Lunch.Extensions
+@using Microsoft.Extensions.Configuration
+@using LSSD.Lunch.WebManager.Components
+@code {
+    [Inject]
+    SchoolService _schoolRepository { get; set; }
+
+    List<School> AllSchools = new List<School>();
+
+    protected override void OnInitialized()
+    {
+        AllSchools = _schoolRepository.GetAll().ToList();        
+    }    
+
+    string HistoricalBalanceName { get; set;}
+
+    public void OnClick_CreateHistoricalBalances(School thisSchool) 
+    {
+        Console.WriteLine("TEST!");
+
+    }
+}
+
+<AuthorizeView Context="user">
+    <Authorized>      
+        <div class="container">
+            <h1>Consolidate Balances</h1>            
+            <br/>
+
+            <div style="margin: 10px; padding: 20px; border: 1px solid #A0A0A0; border-radius: 5px;">
+                @foreach(School school in AllSchools) {
+                    <div style="width: 100%; text-align: left;">            
+                        @if (school.Id != new Guid()) {
+                            <button type="button" class="btn btn-block btn-primary" @onclick="() => OnClick_CreateHistoricalBalances(school)">@school.Name</button>
+                        }
+                    </div>
+                }    
+            </div>
+
+        </div>
+    </Authorized>
+</AuthorizeView>
