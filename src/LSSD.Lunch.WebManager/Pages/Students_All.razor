@@ -1,0 +1,61 @@
+@page "/allstudents"
+@using Services
+@inject IJSRuntime JSRuntime
+@code {
+    [Inject]
+    StudentService _repo { get; set; }
+
+    string searchString = string.Empty;
+    
+    protected async void OnClick_GenerateIDCards_All()
+    {
+        // Navigate to the API endpoint
+        await JSRuntime.InvokeAsync<object>(
+            "FileSaveAs",
+            "lunchcards-all.docx",
+            "/AllIDCards"
+            );
+    }
+
+    protected async void OnClick_GenerateIDCards_Active()
+    {
+        // Navigate to the API endpoint
+        await JSRuntime.InvokeAsync<object>(
+            "FileSaveAs",
+            "lunchcards-active.docx",
+            "/AllActiveIDCards/"
+            );
+    }
+}
+
+<AuthorizeView Context="user">
+    <Authorized>      
+        <div class="container">
+            <h1>All Students</h1>
+
+            <a href="/students/@(new Guid())">Add Student</a>
+            <button type="button" class="btn btn-link" @onclick="() => OnClick_GenerateIDCards_All()">Create ID Cards</button>                    
+            <br/>
+
+
+            <EditForm Model="@searchString">
+                <InputText id="searchTextBox" class="form-control" @bind-Value="@searchString" placeholder="Search students..."></InputText>
+            </EditForm>
+
+            <br>
+
+            <table class="table">
+
+            @foreach(Student student in _repo.GetAll().OrderBy(x => x.Name).Where(x => x.Name.ToLower().Contains(searchString) || x.StudentId.ToLower().Contains(searchString)))
+            {
+                <tr>
+                    <td>@(student.SchoolName)</td>
+                    <td><a href="students/@(student.Id)">@(student.Name) @if(!student.IsActive) { <i> (inactive)</i> } </a></td>
+                    <td>@(student.StudentId)</td>
+                </tr>
+            }
+
+            </table>
+        </div>
+    </Authorized>
+</AuthorizeView>

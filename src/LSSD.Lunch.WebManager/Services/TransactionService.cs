@@ -33,9 +33,25 @@ namespace LSSD.Lunch.WebManager.Services
             _repository.Update(Transaction);
         }
 
+        public void InsertOrUpdate(List<Transaction> Transactions) 
+        {
+            foreach(Transaction trans in Transactions)
+            {
+                _repository.Update(trans);
+            }
+        }
+
         public void Delete(Transaction item) 
         {
             _repository.Delete(item);
+        }
+
+        public void Delete(List<Transaction> items) 
+        {
+            foreach(Transaction item in items) 
+            {
+                _repository.Delete(item);
+            }
         }
 
         public IEnumerable<Transaction> GetForStudentID(string StudentId) 

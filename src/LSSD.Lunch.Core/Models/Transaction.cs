@@ -10,12 +10,12 @@ namespace LSSD.Lunch
         public Guid Id { get; set; }
         public DateTime TimestampUTC { get; set; }
 
-
         public string StudentNumber { get; set; }
         public string StudentName { get; set; }
         public string ItemDescription { get; set; }
         public decimal Amount { get; set; }
 
+        public bool IsLastYearCarryOver { get; set; }
 
         // Optional things
         public Guid? FoodItemID { get; set; }

@@ -1,0 +1,13 @@
+@using Services
+
+@code {
+    [Parameter]
+    public Student student { get; set; } = null;
+}
+
+<tr>
+    <td>@(student.SchoolName)</td>
+    <td>@(student.StudentId)</td>
+    <td><a href="/students/@(student.Id)">@(student.Name) @if(!student.IsActive) { <i> (inactive)</i> } </a></td>
+    <td>@(student.HomeRoom)</td>
+</tr>

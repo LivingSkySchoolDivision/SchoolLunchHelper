@@ -7,36 +7,130 @@
     [Inject]
     SchoolService _schoolRepository { get; set; }
 
+    [Inject]
+    StudentService _studentRepository { get; set; }
+
+    [Inject]
+    TransactionService _transactionService { get; set; }
+
     List<School> AllSchools = new List<School>();
+    Dictionary<School,List<string>> historical_balance_status = new Dictionary<School, List<string>>();
 
     protected override void OnInitialized()
     {
-        AllSchools = _schoolRepository.GetAll().ToList();        
-    }    
+        AllSchools = _schoolRepository.GetAll().ToList();
+        foreach(School school in AllSchools)
+        {
+            historical_balance_status.Add(school, new List<string>());
+        }
+    }
 
-    string HistoricalBalanceName { get; set;}
-
-    public void OnClick_CreateHistoricalBalances(School thisSchool) 
+    public void OnClick_CreateHistoricalBalances(School thisSchool)
     {
-        Console.WriteLine("TEST!");
+        historical_balance_status[thisSchool].Clear();
+        historical_balance_status[thisSchool].Add("Starting balance consolidation for school: " + thisSchool.Name);
 
+        // Store a date for this, so we don't have widely varying dates.
+        DateTime timestamp = DateTime.UtcNow;
+
+        // Store a GUID to tag all balances from the same run
+        Guid balanceRunID = Guid.NewGuid();
+
+        // The date is the date and time the user pushed the button.
+        List<Student> schoolStudents = _studentRepository.GetAllForSchool(thisSchool).ToList();
+
+        // Get ALL transactions and put them in a dictionary
+        List<Transaction> schoolTransactions = _transactionService.GetForStudents(schoolStudents).ToList();
+        Dictionary<string, List<Transaction>> transactionsByStudent = new Dictionary<string, List<Transaction>>();
+        foreach(Transaction trans in schoolTransactions)
+        {
+            if (!transactionsByStudent.ContainsKey(trans.StudentNumber))
+            {
+                transactionsByStudent.Add(trans.StudentNumber, new List<Transaction>());
+            }
+            transactionsByStudent[trans.StudentNumber].Add(trans);
+        }
+
+        List<Transaction> newHistoricalBalances = new List<Transaction>();
+
+        historical_balance_status[thisSchool].Add("Calculating balances for all students...");
+
+        // For each student in this school
+        // Calculate a consolidated balance
+        foreach(Student student in schoolStudents)
+        {
+            List<Transaction> thisStudentTransactions = new List<Transaction>();
+            if (transactionsByStudent.ContainsKey(student.StudentId))
+            {
+                thisStudentTransactions = transactionsByStudent[student.StudentId];
+            }
+
+            decimal newBalance = (decimal)0.00;
+
+            foreach(Transaction trans in thisStudentTransactions)
+            {
+                newBalance += trans.Amount;
+            }
+
+            // Create a new balance forward object
+            if (newBalance != (decimal)0.00)
+            {
+                newHistoricalBalances.Add(new Transaction()
+                {
+                    TimestampUTC = timestamp,
+                    StudentNumber = student.StudentId,
+                    StudentName = student.Name,
+                    StudentID = student.Id,
+                    Amount = newBalance,
+                    IsLastYearCarryOver = true,
+                    ItemDescription = "Carry-over from previous year"
+                });
+            }
+        }
+
+        historical_balance_status[thisSchool].Add("Finished calculating balances.");
+        historical_balance_status[thisSchool].Add("Adding balances to database...");
+
+        // Delete all loaded schoolTransactions from DB
+        _transactionService.Delete(schoolTransactions);
+
+        // Add historicalbalance objects to DB
+        _transactionService.InsertOrUpdate(newHistoricalBalances);
+
+        historical_balance_status[thisSchool].Add("Clearing transaction logs from database...");
+
+        // Done
+        historical_balance_status[thisSchool].Add("Done!");
     }
 }
 
 <AuthorizeView Context="user">
-    <Authorized>      
+    <Authorized>
         <div class="container">
-            <h1>Consolidate Balances</h1>            
+            <h1 style="color: white; background-color: red; border-radius: 5px; padding: 10px; font-weight: bold;">Danger zone</h1>
+            <p>These buttons are designed to be pushed once per school year.</p>
+            <br/><br/>
+            <h2>Consolidate Balances</h2>
             <br/>
+            <p>Consolidate all student balances and erase all transactions. Previous year's data will be visible on the student info page.</p>
 
             <div style="margin: 10px; padding: 20px; border: 1px solid #A0A0A0; border-radius: 5px;">
                 @foreach(School school in AllSchools) {
-                    <div style="width: 100%; text-align: left;">            
+                    <div style="width: 100%; text-align: left;">
                         @if (school.Id != new Guid()) {
-                            <button type="button" class="btn btn-block btn-primary" @onclick="() => OnClick_CreateHistoricalBalances(school)">@school.Name</button>
+                            <button type="button" class="btn btn-block btn-danger" @onclick="() => OnClick_CreateHistoricalBalances(school)">@school.Name</button>
                         }
+                        <pre>
+                        @if (historical_balance_status.ContainsKey(school))
+                        {
+                            @foreach(string line in historical_balance_status[school])
+                            {
+                                @line<br/>
+                            }
+                        }
+                        </pre>
                     </div>
-                }    
+                }
             </div>
 
         </div>
