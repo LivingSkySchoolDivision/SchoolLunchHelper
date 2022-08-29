@@ -1,19 +1,14 @@
 @page "/students"
 @using Services
+@using LSSD.Lunch.WebManager.Components
+
 @inject IJSRuntime JSRuntime
 @code {
     [Inject]
     StudentService _repo { get; set; }
 
-    List<Student> AllStudents = new List<Student>();
 
     string searchString = string.Empty;
-
-    protected override void OnInitialized()
-    {
-        AllStudents = _repo.GetAll().ToList();        
-    }
-
     
     protected async void OnClick_GenerateIDCards_All()
     {
@@ -39,11 +34,10 @@
 <AuthorizeView Context="user">
     <Authorized>      
         <div class="container">
-            <h1>Students</h1>
+            <h1>Active Students</h1>
 
             <a href="/students/@(new Guid())">Add Student</a>
-            <button type="button" class="btn btn-link" @onclick="() => OnClick_GenerateIDCards_Active()">ID Cards: Active</button>
-            <button type="button" class="btn btn-link" @onclick="() => OnClick_GenerateIDCards_All()">ID Cards: All</button>
+            <button type="button" class="btn btn-link" @onclick="() => OnClick_GenerateIDCards_Active()">Create ID Cards</button>            
                     
             <br/>
 
@@ -56,13 +50,9 @@
 
             <table class="table">
 
-            @foreach(Student student in AllStudents.OrderBy(x => x.Name).Where(x => x.Name.ToLower().Contains(searchString) || x.StudentId.ToLower().Contains(searchString)))
+            @foreach(Student student in _repo.GetAllActive().OrderBy(x => x.Name).Where(x => x.Name.ToLower().Contains(searchString) || x.StudentId.ToLower().Contains(searchString)))
             {
-                <tr>
-                    <td>@(student.SchoolName)</td>
-                    <td><a href="students/@(student.Id)">@(student.Name) @if(!student.IsActive) { <i> (inactive)</i> } </a></td>
-                    <td>@(student.StudentId)</td>
-                </tr>
+                <StudentTableRowComponent Student="@student"></StudentTableRowComponent>
             }
 
             </table>

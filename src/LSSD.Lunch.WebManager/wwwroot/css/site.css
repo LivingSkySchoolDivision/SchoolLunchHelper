@@ -81,6 +81,10 @@ a, .btn-link {
 .resource_group h4 {
 }
 
+.main_inner {
+    width: 60%;
+}
+
 .resource_description {
     font-size: 75%;
     padding-left: 22px;
