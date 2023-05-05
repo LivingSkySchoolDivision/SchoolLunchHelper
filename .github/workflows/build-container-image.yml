@@ -23,13 +23,13 @@ jobs:
       matrix:
         include:
           - dockerfile: src/Dockerfile-API
-            image: ghcr.io/livingskyschooldivision/easyaspi-api
+            image: ghcr.io/livingskyschooldivision/lunch-api
             context: ./src
           - dockerfile: src/Dockerfile-Manager
-            image: ghcr.io/livingskyschooldivision/easyaspi-manager
+            image: ghcr.io/livingskyschooldivision/lunch-manager
             context: ./src
           - dockerfile: src/Dockerfile-WebScanner
-            image: ghcr.io/livingskyschooldivision/easyaspi-webscanner
+            image: ghcr.io/livingskyschooldivision/lunch-webscanner
             context: ./src
     permissions:
       contents: read
