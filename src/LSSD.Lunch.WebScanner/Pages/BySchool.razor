@@ -1,0 +1,56 @@
+@page "/{schoolguid}"
+@using LSSD.Lunch
+@using LSSD.Lunch.WebScanner.Services
+@inject NavigationManager NavManager
+
+@code {
+    [Parameter]
+    public string schoolguid { get; set; }
+    
+    [Inject] 
+    SchoolService _schoolService { get; set; }
+
+    [Inject] 
+    FoodItemService _mealService { get; set; }
+
+}
+<PageTitle>Meal Selector</PageTitle>
+
+<div style="max-width: 1000px; min-width: 500px; margin-left: auto; margin-right: auto;">
+
+@{
+    List<School> SelectedSchools = _schoolService.GetAll().Where(x => x.Id == new Guid(schoolguid)).ToList();
+}
+
+@if (SelectedSchools.Count == 1) {
+    @foreach (School school in SelectedSchools)
+    {
+        <h4>@school.Name</h4>
+        <ul>
+
+        @{
+            List<FoodItem> AllFoodItems = _mealService.GetForSchool(school.Id).ToList();
+        }       
+    
+        @if(AllFoodItems.Count == 1) {
+            NavManager.NavigateTo("/" + school.Id + "/" + AllFoodItems[0].Id);
+            
+        } else {
+            @foreach(FoodItem meal in AllFoodItems) 
+            {
+                <li><a href="/@(school.Id)/@(meal.Id)">@(meal.Name) (@(meal.Cost.ToString("C")))</a></li>
+            }
+        }
+        
+        </ul>
+        <br/>
+    }
+} else {
+    <i>School not found</i>
+}
+
+
+
+
+</div>
+

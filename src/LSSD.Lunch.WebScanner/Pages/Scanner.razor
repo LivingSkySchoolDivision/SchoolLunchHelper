@@ -88,6 +88,11 @@
             NavigationManager.NavigateTo("/");
         }
 
+        // If the meal doesn't belong to the school, navigate back to the index page
+        if (_selectedMeal.SchoolId != _selectedSchool.Id) {
+            NavigationManager.NavigateTo("/");
+        }
+
         // Populate list of previous transactions
         transactions = _transactionService.Find(x => x.FoodItemID == _selectedMeal.Id && x.TimestampUTC > DateTime.UtcNow.AddDays(-5)).OrderBy(x => x.TimestampUTC).ToList();
     }
