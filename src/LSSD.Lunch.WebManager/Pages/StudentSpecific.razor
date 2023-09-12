@@ -205,11 +205,13 @@
             </div>
             <div class="form-row">
                 <div class="col" style="text-align: right;">
+                    <button type="button" class="btn btn-primary" @onclick="() => addTransaction(-1,Auth.User.Identity.Name)">-1</button>&nbsp;
                     <button type="button" class="btn btn-primary" @onclick="() => addTransaction(1,Auth.User.Identity.Name)">+1</button>&nbsp;
                     <button type="button" class="btn btn-primary" @onclick="() => addTransaction(2,Auth.User.Identity.Name)">+2</button>&nbsp;
                     <button type="button" class="btn btn-primary" @onclick="() => addTransaction(5,Auth.User.Identity.Name)">+5</button>&nbsp;
                     <button type="button" class="btn btn-primary" @onclick="() => addTransaction(10,Auth.User.Identity.Name)">+10</button>&nbsp;
                     <button type="button" class="btn btn-primary" @onclick="() => addTransaction(15,Auth.User.Identity.Name)">+15</button>&nbsp;
+                    <button type="button" class="btn btn-primary" @onclick="() => addTransaction(19,Auth.User.Identity.Name)">+19</button>&nbsp;
                     <button type="button" class="btn btn-primary" @onclick="() => addTransaction(20,Auth.User.Identity.Name)">+20</button>&nbsp;
                 </div>
             </div>
